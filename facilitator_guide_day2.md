@@ -6,7 +6,7 @@
 # Pre-Day Checklist
 
 - [ ] Day 1 debrief notes reviewed -- know which teams need extra support
-- [ ] Claude Project demo pre-loaded: "Horizon Europe Grant Assistant" with custom instructions and 2-3 uploaded files (call topic PDF, budget template)
+- [ ] Copilot Notebook demo pre-loaded: "Horizon Europe Grant Assistant" with a working brief and 2-3 added files (call topic PDF, budget template)
 - [ ] NotebookLM demo notebook pre-loaded: 3 source documents uploaded (Horizon Europe call topic PDF, work programme section, Programme Guide chapter), some questions already asked
 - [ ] Google Gemini: full Model Grant Agreement PDF ready for upload (100+ pages)
 - [ ] Perplexity AI: test your three demo queries to ensure they return current, cited results
@@ -44,7 +44,7 @@
 3. "What does the reverse prompt technique give you?" --> A reusable single prompt that captures everything from a long conversation
 4. "When would you use the 'ask me questions first' approach?" --> When you're unsure what context matters, or for complex tasks
 
-If the room is quiet, call on specific teams.
+If the meeting is quiet, call on specific teams (invite them to unmute).
 
 **Team prompt showcase (5 min):**
 > "Each team: hold up or read your single best prompt from yesterday. The one you're most proud of. No explanation needed -- just the prompt."
@@ -58,17 +58,17 @@ Let each team read theirs quickly. Brief applause or acknowledgment. This reinfo
 ### Facilitation Script
 
 **The Level 2 wall (5 min):**
-> "Yesterday you learned to write great prompts. Here's the problem: every time you open a new conversation with Claude, you start from zero. It doesn't remember that you're a research manager. It doesn't remember your institution's rules. It doesn't remember the prompts you refined yesterday."
+> "Yesterday you learned to write great prompts. Here's the problem: every time you open a new chat with Copilot, you start from zero. It doesn't remember that you're a research manager. It doesn't remember your institution's rules. It doesn't remember the prompts you refined yesterday."
 
 > "Imagine if every time you walked into your office, your colleagues had complete amnesia. You'd have to re-introduce yourself, re-explain your projects, re-describe your role. Every. Single. Day. That's what using AI at Level 2 feels like."
 
 **The Level 3 solution (5 min):**
-> "Level 3 solves this. The key concept is persistent context -- giving the AI a workspace that remembers who you are, what you're working on, and how you want it to behave. In Claude, this is called Projects. In ChatGPT, it's Custom GPTs. The AI retains instructions and reference files across every new conversation."
+> "Level 3 solves this. The key concept is persistent context -- giving the AI a workspace that remembers who you are, what you're working on, and how you want it to behave. In Microsoft 365 Copilot, this is Copilot Notebooks. In ChatGPT, it's Custom GPTs. The AI keeps your brief and reference sources across every new chat."
 
 > "Today is about building these workspaces and learning to use specialized tools for specialized jobs. By the end of today, you'll have:"
 Write on whiteboard:
 ```
-1. A Claude Project configured for your team's domain
+1. A Copilot Notebook configured for your team's domain
 2. A NotebookLM notebook analyzing your core documents
 3. A long-context analysis from Gemini
 4. A citation-backed intelligence briefing from Perplexity
@@ -77,7 +77,7 @@ Write on whiteboard:
 
 **Live contrast demo (10 min):**
 
-Open Claude Desktop. Start a new conversation (NOT in a Project). Type:
+Open Microsoft 365 Copilot. Start a new chat (NOT in a Notebook). Type:
 ```
 Draft a 200-word summary of our project's progress for the mid-term review.
 ```
@@ -85,50 +85,50 @@ Show the response -- it's generic, asks for details, can't be specific.
 
 > "See? It doesn't know anything about 'our project.'"
 
-Now switch to your pre-loaded Claude Project ("Horizon Europe Grant Assistant"). Start a new conversation within the Project. Type the same thing:
+Now switch to your pre-loaded Copilot Notebook ("Horizon Europe Grant Assistant"). Start a new chat within the Notebook. Type the same thing:
 ```
 Draft a 200-word summary of our project's progress for the mid-term review.
 ```
-Show the response -- it references the uploaded documents, uses the right terminology, follows the custom instructions.
+Show the response -- it references the added sources, uses the right terminology, follows the working brief.
 
-> "Same prompt. Completely different result. The Project already knows the context. That's the difference between Level 2 and Level 3."
+> "Same prompt. Completely different result. The Notebook already knows the context. That's the difference between Level 2 and Level 3."
 
 > "Now let's build yours."
 
 ---
 
-# MODULE 2.2 | Claude Projects for Research Management
+# MODULE 2.2 | Copilot Notebooks for Research Management
 **Time: 09:30 - 11:00 (90 min)**
 
 ## Learning Objectives
-- Participants can create a Claude Project with custom instructions and reference files
-- Participants understand how to write effective custom instructions for their domain
-- Teams have a working, tested Claude Project for their research management area
+- Participants can create a Copilot Notebook with a working brief and reference sources
+- Participants understand how to write an effective working brief for their domain
+- Teams have a working, tested Copilot Notebook for their research management area
 
 ---
 
-## Segment 1: Demo -- Building a "Grant Writing Assistant" Project (09:30 - 09:55, 25 min)
+## Segment 1: Demo -- Building a "Grant Writing Assistant" Notebook (09:30 - 09:55, 25 min)
 
 ### Setup
-- Claude Desktop open, logged in
-- If you have a pre-built Project, delete it or start fresh so you can build live
-- Have your custom instructions text ready to type (or paste in segments)
-- Have 2-3 sample files ready to upload
+- Microsoft 365 Copilot open, logged in
+- If you have a pre-built Notebook, start a fresh one so you can build live
+- Have your working brief text ready to type (or paste in segments)
+- Have 2-3 sample files ready to add
 
 ### Facilitation Script
 
-> "I'm going to build a Claude Project from scratch, step by step. Follow along on your screens -- you'll be building your own version in a few minutes."
+> "I'm going to build a Copilot Notebook from scratch, step by step. Follow along on your screens -- you'll be building your own version in a few minutes."
 
-**Step 1: Create the Project (3 min)**
+**Step 1: Create the Notebook (3 min)**
 
-Navigate to the Projects section in Claude. Click "New Project."
+Navigate to Notebooks in Microsoft 365 Copilot. Click "New notebook."
 > "Name it something clear and specific. I'm calling mine 'Horizon Europe Grant Assistant.' Not just 'Work' or 'AI stuff' -- you want to know exactly what this workspace is for."
 
 Set the name. Show where the description field is.
 
-**Step 2: Write Custom Instructions (10 min)**
+**Step 2: Write the Working Brief (10 min)**
 
-> "This is the most important part. Custom instructions tell Claude how to behave EVERY TIME you start a new conversation in this Project. Think of it as briefing a new team member on their first day."
+> "This is the most important part. Add a working brief as the first note in the Notebook -- it tells Copilot how you want it to behave whenever you work in this Notebook. Think of it as briefing a new team member on their first day."
 
 Type the instructions, explaining each section as you go:
 
@@ -137,7 +137,7 @@ You are an experienced EU research management advisor working with
 university research offices. You specialize in Horizon Europe
 collaborative projects (RIAs and IAs).
 ```
-> "First: who is Claude in this context? An EU research management advisor. This sets the vocabulary, the level of expertise, and the frame of reference."
+> "First: who is Copilot in this context? An EU research management advisor. This sets the vocabulary, the level of expertise, and the frame of reference."
 
 ```
 When drafting text:
@@ -164,26 +164,26 @@ Output formatting:
 - Include word/character counts when relevant
 - Mark assumptions clearly with [ASSUMPTION] tags
 ```
-> "Fourth: formatting rules. The [ASSUMPTION] tag is particularly useful -- when Claude isn't sure about something, I want it to mark it clearly rather than just making something up."
+> "Fourth: formatting rules. The [ASSUMPTION] tag is particularly useful -- when Copilot isn't sure about something, I want it to mark it clearly rather than just making something up."
 
-> "A tip: you can use ChatGPT to help draft these instructions. Describe your role and what you need, and ask it to write Claude Project custom instructions for you. Meta-prompting strikes again."
+> "A tip: you can use ChatGPT to help draft this brief. Describe your role and what you need, and ask it to write a Copilot Notebook working brief for you. Meta-prompting strikes again."
 
-**Step 3: Upload Reference Files (5 min)**
+**Step 3: Add Reference Sources (5 min)**
 
-> "Now we add reference files. These are documents that Claude can access in every conversation within this Project."
+> "Now we add reference sources. These are documents that Copilot can draw on in every chat in this Notebook."
 
 Upload your sample files:
 1. A Horizon Europe call topic (PDF)
 2. A budget template (Excel or PDF)
 3. Optionally: a sample proposal section or institutional guidelines
 
-> "A few rules about files: Claude can read PDFs, text files, and code files. There are size limits on the free tier. For very large documents -- like a full 200-page Programme Guide -- you might want to upload just the relevant chapter, or use Gemini for the full document."
+> "A few rules about files: Copilot can read PDFs, Word, Excel, and text files. There are size limits, so for a very large document -- like a full 200-page Programme Guide -- add just the relevant chapter, or use Gemini for the full document."
 
 > "What makes good reference files? Things you reference repeatedly: call texts, templates, institutional SOPs, style guides, policy documents."
 
 **Step 4: Test It (7 min)**
 
-Start a new conversation in the Project. Type:
+Start a new chat in the Notebook. Type:
 ```
 Based on the uploaded call topic, draft a 500-word excellence
 section outline identifying 3 key objectives and their alignment
@@ -193,24 +193,24 @@ with the call expected outcomes.
 Let the response generate. Point out:
 > "Look -- it references the call topic I uploaded. It uses the terminology from the document. It follows the formatting rules from my instructions. And it flagged an [ASSUMPTION] about TRL levels because the call wasn't specific."
 
-Start ANOTHER new conversation in the same Project. Type:
+Start ANOTHER new chat in the same Notebook. Type:
 ```
 What are the three biggest risks in our budget approach for this call?
 ```
 
-> "New conversation, but it still knows the call, still follows my instructions. I didn't have to re-explain anything. That's persistent context."
+> "New chat, but it still knows the call, still follows my brief. I didn't have to re-explain anything. That's persistent context."
 
 ---
 
-## Segment 2: Team Exercise 2.1 -- "Build Your Domain Project" (09:55 - 10:40, 45 min)
+## Segment 2: Team Exercise 2.1 -- "Build Your Domain Notebook" (09:55 - 10:40, 45 min)
 
 ### Instructions to Give (5 min)
 
-> "Now it's your turn. Each team is going to build a Claude Project for your domain. Here are your assignments."
+> "Now it's your turn. Each team is going to build a Copilot Notebook for your domain. Here are your assignments."
 
 Display:
 
-| Team | Project Name | Key Focus |
+| Team | Notebook Name | Key Focus |
 |------|-------------|-----------|
 | A | Grant Lifecycle Hub | Grant writing, call analysis, budget rules |
 | B | Compliance Advisor | Ethics review, regulatory frameworks, documentation |
@@ -220,37 +220,37 @@ Display:
 
 > "Here's your workflow for the next 40 minutes:"
 ```
-1. DRAFT custom instructions (10 min)
+1. DRAFT your working brief (10 min)
    - Use ChatGPT meta-prompting: describe your domain and role,
-     ask it to write Claude Project instructions
+     ask it to write a Copilot Notebook working brief
    - Review and refine as a team
 
-2. BUILD the Project in Claude (5 min)
-   - Create the Project, paste in your instructions
-   - Upload 2-3 reference files (your own documents or the samples
-     in the shared drive)
+2. BUILD the Notebook in Microsoft 365 Copilot (5 min)
+   - Create the Notebook, add your working brief as the first note
+   - Add 2-3 reference sources (your own documents or the samples
+     in the shared Teams files)
 
-3. TEST with 3 different conversations (15 min)
-   - Conversation 1: Ask it to draft something (test writing quality)
-   - Conversation 2: Ask it to analyze/review something (test analytical quality)
-   - Conversation 3: Ask it a domain-specific question (test knowledge application)
+3. TEST with 3 different chats (15 min)
+   - Chat 1: Ask it to draft something (test writing quality)
+   - Chat 2: Ask it to analyze/review something (test analytical quality)
+   - Chat 3: Ask it a domain-specific question (test knowledge application)
 
 4. ITERATE (10 min)
-   - What didn't work? Refine the instructions.
+   - What didn't work? Refine the brief.
    - What context was missing? Add it.
    - Run the test that failed again.
 ```
 
-> "Important: only ONE team member creates the Project, since you're sharing an account or working on one person's account. The other two team members should be helping draft instructions and evaluating outputs. Take turns driving."
+> "Important: only ONE team member creates the Notebook, since you're sharing an account or working on one person's account. The other two team members should be helping draft the brief and evaluating outputs. Take turns driving."
 
 ### During the Exercise (40 min)
 
-**Priority table visits:**
+**Priority breakout-room visits:**
 
-**Minutes 0-10 (Instruction drafting phase):**
+**Minutes 0-10 (Brief drafting phase):**
 
-Common issue: teams go straight to Claude without meta-prompting.
-> "Start in ChatGPT. Tell it: 'I'm a [role] at a [type of institution]. I need Claude Project custom instructions that make Claude behave as my [domain] assistant. Here's what I need it to do well: [list tasks].' Then refine what it gives you."
+Common issue: teams go straight to Copilot without meta-prompting.
+> "Start in ChatGPT. Tell it: 'I'm a [role] at a [type of institution]. I need a Copilot Notebook working brief that makes Copilot behave as my [domain] assistant. Here's what I need it to do well: [list tasks].' Then refine what it gives you."
 
 Common issue: instructions too vague.
 > "I see 'Be helpful with compliance.' That's too broad. WHAT compliance? Which regulations? What types of projects? What does 'helpful' look like -- drafting documents? Reviewing documents? Answering questions?"
@@ -275,19 +275,19 @@ Coaching prompts per team:
 **Minutes 10-25 (Building and testing phase):**
 
 Common issue: teams upload only one file.
-> "Upload at least 2-3 files. The more context the Project has, the better it performs. What documents do you reference constantly in your work? Those are your reference files."
+> "Add at least 2-3 files. The more context the Notebook has, the better it performs. What documents do you reference constantly in your work? Those are your reference sources."
 
 Common issue: first test conversation gives underwhelming results.
-> "Don't abandon the Project -- iterate the instructions. What was wrong with the output? Was it the wrong tone? Too generic? Missing domain knowledge? Add a specific instruction to fix that."
+> "Don't abandon the Notebook -- iterate the brief. What was wrong with the output? Was it the wrong tone? Too generic? Missing domain knowledge? Add a specific instruction to the brief to fix that."
 
 Watch for instructions that are too restrictive:
-> "If you tell it 'only answer based on uploaded files,' you're limiting it to a NotebookLM-style tool. You want Claude to combine its general knowledge WITH your specific documents. Say 'reference the uploaded files when relevant, but also draw on your knowledge of [domain].'"
+> "If you tell it 'only answer based on the added sources,' you're limiting it to a NotebookLM-style tool. You want Copilot to combine its general knowledge WITH your specific documents. Say 'reference the added sources when relevant, but also draw on your knowledge of [domain].'"
 
 **Minutes 25-40 (Iteration phase):**
 
 Check that each team has:
-- [ ] Custom instructions written and pasted
-- [ ] At least 2 reference files uploaded
+- [ ] Working brief written and added
+- [ ] At least 2 reference sources added
 - [ ] At least 2 test conversations completed
 - [ ] At least 1 instruction refinement made based on test results
 
@@ -303,9 +303,9 @@ At 10:35, give a 5-minute warning: "Start wrapping up. Pick the one query you wa
 
 ### Facilitation Script
 
-> "Each team: 3 minutes. Show us your Project. I want to see three things:"
+> "Each team: 3 minutes. Show us your Notebook. I want to see three things:"
 ```
-1. Your custom instructions (read the key parts)
+1. Your working brief (read the key parts)
 2. One live query -- run it now and show the output
 3. One thing you'd change or add based on testing
 ```
@@ -313,14 +313,14 @@ At 10:35, give a 5-minute warning: "Start wrapping up. Pick the one query you wa
 **For each team presentation, prepare one coaching comment:**
 
 Possible comments:
-- "Notice how [Team X] included specific document section references in their instructions -- that's why Claude's output follows the right structure."
+- "Notice how [Team X] included specific document section references in their brief -- that's why Copilot's output follows the right structure."
 - "I love that [Team X] added the instruction about flagging assumptions. That builds trust -- you know when the AI is guessing."
-- "The instruction about audience adaptation is clever -- [Team D] can use the same Project for press releases and policy briefs by just specifying the audience in the conversation."
+- "The instruction about audience adaptation is clever -- [Team D] can use the same Notebook for press releases and policy briefs by just specifying the audience in the chat."
 - "Great iteration -- the first version was too generic, and adding [specific instruction] fixed it. That's exactly the process: test, evaluate, refine."
 - "For [Team X], I'd suggest adding an instruction about what NOT to do. For example: 'Do not use jargon that a non-specialist reviewer wouldn't understand' or 'Do not make claims without evidence from the uploaded sources.'"
 
 **Closing:**
-> "You now have a persistent AI workspace for your domain. Every new conversation inherits your instructions and files. You'll keep refining this throughout the course. Let's take a break, and then we'll learn a fundamentally different tool -- one that's grounded entirely in your documents."
+> "You now have a persistent AI workspace for your domain. Every new chat stays grounded in your brief and sources. You'll keep refining this throughout the course. Let's take a break, and then we'll learn a fundamentally different tool -- one that's grounded entirely in your documents."
 
 ---
 
@@ -339,7 +339,7 @@ During break:
 
 ## Learning Objectives
 - Participants can create a NotebookLM notebook, upload sources, and ask source-grounded questions
-- Participants understand the difference between NotebookLM (source-grounded) and Claude/ChatGPT (general knowledge + context)
+- Participants understand the difference between NotebookLM (source-grounded) and Copilot/ChatGPT (general knowledge + context)
 - Teams have a working NotebookLM notebook for their domain with structured outputs
 
 ---
@@ -356,9 +356,9 @@ During break:
 ### Facilitation Script
 
 **Introduction (3 min):**
-> "NotebookLM is fundamentally different from Claude or ChatGPT. Those tools combine their training data -- everything they've ever been trained on -- with whatever you give them. NotebookLM does the opposite: it ONLY uses the documents you upload. Nothing else."
+> "NotebookLM is fundamentally different from Copilot or ChatGPT. Those tools combine their training data -- everything they've ever been trained on -- with whatever you give them. NotebookLM does the opposite: it ONLY uses the documents you upload. Nothing else."
 
-> "Why does this matter? Because when Claude says 'the overhead rate is 25%,' you don't know if that's from its training data, from a document you uploaded, or something it hallucinated. When NotebookLM says 'the overhead rate is 25%,' it shows you the exact sentence in the exact document where it found that. Click the citation, and you're looking at the source."
+> "Why does this matter? Because when Copilot says 'the overhead rate is 25%,' you don't know if that's from its training data, from a document you uploaded, or something it hallucinated. When NotebookLM says 'the overhead rate is 25%,' it shows you the exact sentence in the exact document where it found that. Click the citation, and you're looking at the source."
 
 > "For research management -- where accuracy and traceability matter enormously -- this is a critical tool."
 
@@ -447,12 +447,12 @@ Display the assignment table:
 
 ### During the Exercise (35 min)
 
-**Table visit priorities:**
+**Breakout-room visit priorities:**
 
 **Minutes 0-8 (Upload phase):**
 
 Common issue: "We don't have documents to upload."
-> "Use the sample documents in your team's shared Google Drive folder. Or upload something from your real work -- even a policy document from your institution's website."
+> "Use the sample documents in your team's shared Teams channel (Files). Or upload something from your real work -- even a policy document from your institution's website."
 
 Common issue: uploading too many documents at once.
 > "Start with 2-3 focused documents. You can always add more. Too many sources can dilute the answers."
@@ -507,7 +507,7 @@ Take 2-3 observations from the room. Likely themes:
 Draw a simple comparison on the whiteboard:
 
 ```
-NotebookLM                  Claude Projects              Perplexity
+NotebookLM                  Copilot Notebooks            Perplexity
 - Only YOUR sources         - Your files + general       - Live web search
 - Every claim cited           knowledge                  - Every claim cited
 - No hallucination risk     - More creative/flexible     - Current information
@@ -517,7 +517,7 @@ NotebookLM                  Claude Projects              Perplexity
   audit trails                brainstorming                discovery
 ```
 
-> "These three tools complement each other perfectly. NotebookLM tells you what's IN your documents. Claude helps you WRITE and CREATE based on that knowledge. Perplexity tells you what's happening IN THE WORLD right now. Level 3 means knowing when to use which one."
+> "These three tools complement each other perfectly. NotebookLM tells you what's IN your documents. Copilot helps you WRITE and CREATE based on that knowledge. Perplexity tells you what's happening IN THE WORLD right now. Level 3 means knowing when to use which one."
 
 > "After lunch, we'll work with Gemini for long documents and Perplexity for research intelligence. Then we'll connect everything in Obsidian."
 
@@ -539,7 +539,7 @@ During lunch:
 ## Learning Objectives
 - Participants understand Gemini's advantage for processing very long documents
 - Participants can perform cross-section extraction and structured analysis on long documents
-- Participants can articulate when to use Gemini vs. NotebookLM vs. Claude for document work
+- Participants can articulate when to use Gemini vs. NotebookLM vs. Copilot for document work
 
 ---
 
@@ -553,7 +553,7 @@ During lunch:
 ### Facilitation Script
 
 **Context setting (2 min):**
-> "Gemini's superpower is its context window -- how much text it can process at once. While Claude and ChatGPT can handle moderate-length documents, Gemini can process up to a million tokens. That's roughly 750,000 words, or a 1,500-page book."
+> "Gemini's superpower is its context window -- how much text it can process at once. While Copilot and ChatGPT can handle moderate-length documents, Gemini can process up to a million tokens. That's roughly 750,000 words, or a 1,500-page book."
 
 > "For research management, this matters when you're working with: full grant agreements, complete programme guides, multi-hundred-page regulatory documents, or multiple documents at once."
 
@@ -614,7 +614,7 @@ Show the result:
    Examples: "List all deadlines mentioned anywhere in the document"
              "Find all sections that discuss financial rules"
 
-3. Tool comparison: Take the SAME question and ask it in Claude
+3. Tool comparison: Take the SAME question and ask it in Copilot
    (or NotebookLM if you uploaded the same doc there). Compare
    the results. (10 min)
 ```
@@ -623,7 +623,7 @@ Show the result:
 
 ### During the Exercise (27 min)
 
-**Table visits -- key coaching:**
+**Breakout-room visits -- key coaching:**
 
 **If Gemini gives a very general summary:**
 > "Be more specific in your request. Instead of 'summarize this document,' try 'create a section-by-section summary with key obligations, deadlines, and defined terms for each section.'"
@@ -634,12 +634,12 @@ Show the result:
 **For the tool comparison task:**
 
 Coach teams to notice:
-- Does Gemini find information Claude missed (or vice versa)?
+- Does Gemini find information Copilot missed (or vice versa)?
 - Are there factual discrepancies between the tools' answers?
 - Which tool's format/structure is more useful?
 - Which tool is faster?
 
-> "The point isn't which tool is 'better' -- it's understanding what each is best at. If you need to quickly scan a 200-page document, Gemini is your tool. If you need to deeply analyze 3 specific documents with citations, NotebookLM is better. If you need to write something based on a document, Claude Projects wins."
+> "The point isn't which tool is 'better' -- it's understanding what each is best at. If you need to quickly scan a 200-page document, Gemini is your tool. If you need to deeply analyze 3 specific documents with citations, NotebookLM is better. If you need to write something based on a document, Copilot Notebooks win."
 
 ---
 
@@ -655,17 +655,17 @@ Guide the discussion toward practical decision-making:
 ```
 How long is the document?
 |
-+-- Short (< 20 pages) --> Claude Project (upload as reference file)
++-- Short (< 20 pages) --> Copilot Notebook (add as reference source)
 |
-+-- Medium (20-100 pages) --> Claude OR Gemini (either works)
++-- Medium (20-100 pages) --> Copilot OR Gemini (either works)
 |
 +-- Long (100+ pages) --> Gemini for exploration, then extract
-                          key sections for Claude/NotebookLM
+                          key sections for Copilot/NotebookLM
 |
 Multiple documents to cross-reference?
 |
 +-- Yes, need citations --> NotebookLM
-+-- Yes, need creative synthesis --> Claude Project
++-- Yes, need creative synthesis --> Copilot Notebook
 +-- Yes, very long docs --> Gemini
 ```
 
@@ -692,7 +692,7 @@ Multiple documents to cross-reference?
 ### Facilitation Script
 
 **Positioning (2 min):**
-> "Perplexity is the tool for when you need CURRENT, VERIFIABLE information. Unlike Claude, which draws on training data that might be months old, Perplexity searches the live web and cites every source."
+> "Perplexity is the tool for when you need CURRENT, VERIFIABLE information. Unlike Copilot's general answers, which can draw on model knowledge that may be months old, Perplexity searches the live web and cites every source."
 
 > "For research management, this is invaluable for: tracking policy changes, monitoring success rates, benchmarking against other institutions, and staying current on regulatory developments."
 
@@ -739,7 +739,7 @@ Navigate to the statistics section for the same topic as Query 1 (ERC success ra
 Show the CSV export feature:
 > "You can also export Dashboard data as CSV. Watch this."
 
-Export a CSV. Then switch to Claude Desktop and upload it:
+Export a CSV. Then switch to Microsoft 365 Copilot and upload it:
 ```
 I'm uploading a CSV export from the Horizon Dashboard showing success
 rates by call topic for Cluster 4 over the past 3 years. Analyze
@@ -765,7 +765,7 @@ Display:
 
 | Team | Research Question |
 |------|------------------|
-| A | What are the latest trends in EU funding success rates and common proposal weaknesses identified by evaluators? (Also: download success rate data from Horizon Dashboard, upload CSV to Claude for trend analysis, and cross-reference with Perplexity findings) |
+| A | What are the latest trends in EU funding success rates and common proposal weaknesses identified by evaluators? (Also: download success rate data from Horizon Dashboard, upload CSV to Copilot for trend analysis, and cross-reference with Perplexity findings) |
 | B | What are the newest EU regulations affecting research ethics and data protection in 2025-2026? |
 | C | What frameworks are European universities using to measure research impact beyond publications? |
 | D | What are the best practices for research communication and public engagement in EU projects? |
@@ -779,7 +779,7 @@ Display:
 - Sources (at least 5 verified citations)
 ```
 
-> "Workflow: use Perplexity to research, then structure the briefing in Claude (paste the Perplexity findings as context), and save the final version in Obsidian at /04-Team-Project/Intelligence-Briefing.md"
+> "Workflow: use Perplexity to research, then structure the briefing in Copilot (paste the Perplexity findings as context), and save the final version in Obsidian at /04-Team-Project/Intelligence-Briefing.md"
 
 ### During the Exercise (22 min)
 
@@ -794,16 +794,16 @@ On citation verification:
 > "Have one team member click through the top 3 citations while another works on follow-up queries. Verify that the sources actually say what Perplexity claims."
 
 On structuring the briefing:
-> "Once you have enough Perplexity results, copy the key findings and paste them into Claude with the instruction: 'Organize these research findings into a structured intelligence briefing for research management administrators at a European university. Include an executive summary, key findings, and implications for our institution.'"
+> "Once you have enough Perplexity results, copy the key findings and paste them into Copilot with the instruction: 'Organize these research findings into a structured intelligence briefing for research management administrators at a European university. Include an executive summary, key findings, and implications for our institution.'"
 
 On using the Horizon Dashboard (especially Team A):
-> "Go to dashboard.tech.ec.europa.eu. Find the statistics for your cluster or call topic. Export the data as CSV. Upload it to Claude and ask for a trend analysis. Then compare those official numbers with what Perplexity told you. Which source is more current? More detailed? Do they agree?"
+> "Go to dashboard.tech.ec.europa.eu. Find the statistics for your cluster or call topic. Export the data as CSV. Upload it to Copilot and ask for a trend analysis. Then compare those official numbers with what Perplexity told you. Which source is more current? More detailed? Do they agree?"
 
 If other teams want to use the Dashboard:
 > "Any team can use it. Team C, look at project completion rates and deliverable statistics. Team E, check open access compliance rates. The Dashboard has data relevant to every domain."
 
 On the combined workflow:
-> "This is your first multi-tool workflow! Horizon Dashboard for official data --> Perplexity for research context --> Claude for analysis and writing --> Obsidian for storage. Notice how each tool does what it's best at."
+> "This is your first multi-tool workflow! Horizon Dashboard for official data --> Perplexity for research context --> Copilot for analysis and writing --> Obsidian for storage. Notice how each tool does what it's best at."
 
 **If teams finish early:**
 > "Try a second, more specific query. Or try asking Perplexity to compare your institution's practices with the best practices it found."
@@ -922,7 +922,7 @@ Open a Kanban board:
 ```
 | To Do | In Progress | Done |
 |-------|-------------|------|
-| Build Claude Project | Test NotebookLM | Complete tool comparison |
+| Build Copilot Notebook | Test NotebookLM | Complete tool comparison |
 | Create Canva visual | | Write prompt library |
 ```
 
@@ -958,7 +958,7 @@ Write on whiteboard:
 
 3. SET UP the AI Session Log template (3 min)
    - Create a template note in /01-Templates/
-   - Use the structure I showed you (copy from the projector)
+   - Use the structure I showed you (copy from the shared screen)
    - Log 3 sessions from today retroactively
 
 4. CREATE a Kanban board for Day 3 (5 min)
@@ -1032,11 +1032,11 @@ YOUR WORKFLOW MUST:
 3. Produce a tangible output artifact (document, visual, tool)
 4. Be documented in Obsidian well enough for a colleague to follow
 5. Include a visual summary created in Canva
-6. Include an interactive tool built as a Claude Artifact
+6. Include an interactive tool built as a Copilot agent
 7. Mark all human quality gates explicitly
 ```
 
-**Distribute scenario briefs (5 min):**
+**Share scenario briefs in Teams (5 min):**
 Hand out or display each team's scenario. Read the scenarios briefly:
 
 > "Team A: A new Horizon Europe call has been published. You'll build the complete workflow from call discovery to go/no-go decision to proposal outline."
@@ -1053,7 +1053,7 @@ Hand out or display each team's scenario. Read the scenarios briefly:
 ```
 09:00 - 09:45  Level 4 intro & workflow design framework
 09:45 - 10:30  Canva AI workshop (visual outputs)
-10:45 - 11:45  Claude Artifacts workshop (interactive tools)
+10:45 - 11:45  Copilot Agents workshop (interactive tools)
 11:45 - 12:30  Capstone work session (Part 1)
 13:30 - 15:00  Capstone work session (Part 2)
 15:15 - 16:30  Presentations (12+3 min per team)
@@ -1081,7 +1081,7 @@ Walk around and verify:
 - Kanban boards are being updated
 
 **Common concern:** "We can't build all of this in one day."
-> "You don't have to build everything from scratch. You already have a Claude Project, a NotebookLM notebook, refined prompts, and an intelligence briefing. Reuse everything from Days 1 and 2. Day 3 is about connecting what you've already built into a workflow and adding the new pieces: Canva visual and Claude Artifact."
+> "You don't have to build everything from scratch. You already have a Copilot Notebook, a NotebookLM notebook, refined prompts, and an intelligence briefing. Reuse everything from Days 1 and 2. Day 3 is about connecting what you've already built into a workflow and adding the new pieces: Canva visual and Copilot agent."
 
 ---
 
@@ -1103,11 +1103,11 @@ Display:
 
 ## End-of-Day Facilitator Debrief
 
-- [ ] Review each team's Claude Project instructions -- note any that need significant improvement
+- [ ] Review each team's Copilot Notebook brief -- note any that need significant improvement
 - [ ] Check Obsidian vaults if possible -- are teams set up correctly for Day 3?
 - [ ] Review the capstone scenario briefs -- do any teams need additional sample documents?
-- [ ] Prepare the Canva demo for Module 3.2 (have a Claude-generated text ready to design)
-- [ ] Prepare the Artifact demo for Module 3.3 (test the readiness checklist Artifact)
+- [ ] Prepare the Canva demo for Module 3.2 (have a Copilot-generated text ready to design)
+- [ ] Prepare the agent demo for Module 3.3 (test the readiness checker agent)
 - [ ] Set up the presentation order for Module 3.5 (alphabetical by team, or reverse, or draw)
 - [ ] Prepare peer evaluation forms for the presentations
 - [ ] Check the timing: 5 teams x 15 min = 75 min exactly for the presentation block

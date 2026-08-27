@@ -2,7 +2,8 @@
 ## 3-Day Course Roadmap | Levels 1-4
 
 **Participants:** 15 (5 teams of 3)
-**Primary AI Environment:** Claude Desktop / Claude Cowork
+**Primary AI Environment:** Microsoft 365 Copilot (Chat, Notebooks, Pages, and Agents)
+**Delivery:** Live online (synchronous) via Microsoft Teams -- plenary in the main meeting, teamwork in 5 breakout rooms
 **Progression:** Level 1 (Question Asker) --> Level 2 (Prompt Crafter) --> Level 3 (Power User) --> Level 4 (Workflow Weaver)
 
 ---
@@ -11,7 +12,7 @@
 
 | Tool | Role in Course | Tier |
 |------|---------------|------|
-| **Claude Desktop / Cowork** | Primary AI environment; Projects, Artifacts, collaborative work | Free / Pro |
+| **Microsoft 365 Copilot** | Primary AI environment; Copilot Chat, Notebooks (persistent context), Pages (collaborative canvas), and custom Agents | Microsoft 365 (Copilot Chat / Copilot licence) |
 | **ChatGPT Free** | Meta-prompting, comparison baseline, Canvas prototyping | Free |
 | **NotebookLM** | Document analysis, source grounding, knowledge synthesis | Free |
 | **Perplexity AI** | Research discovery, citation-backed exploration | Free |
@@ -25,15 +26,17 @@
 ## Pre-Course Setup (Distributed 1 Week Before)
 
 ### Participant Preparation
-1. Create free accounts: Claude (claude.ai), ChatGPT, NotebookLM, Perplexity, Google Gemini, Canva
-2. Bookmark the Horizon Dashboard (dashboard.tech.ec.europa.eu) and explore its main sections (projects, statistics, country profiles)
-3. Install Obsidian desktop app
-4. Bring 2-3 real work documents (anonymized if needed): a funding call text, a project report, a policy/regulation document, meeting minutes, or similar research management artifacts
-5. Complete a 5-question self-assessment survey: current AI usage, biggest workflow pain points, expectations
+1. Confirm access to **Microsoft 365 Copilot** (sign in with your work/school account at microsoft365.com) and create free accounts for the supporting tools: ChatGPT, NotebookLM, Perplexity, Google Gemini, Canva
+2. Install **Microsoft Teams**, join the course team via the invite link, and test your camera, microphone, and screen sharing before Day 1
+3. Bookmark the Horizon Dashboard (dashboard.tech.ec.europa.eu) and explore its main sections (projects, statistics, country profiles)
+4. Install Obsidian desktop app
+5. Have 2-3 real work documents ready on your computer (anonymized if needed): a funding call text, a project report, a policy/regulation document, meeting minutes, or similar research management artifacts
+6. Complete a 5-question self-assessment survey: current AI usage, biggest workflow pain points, expectations
 
 ### Instructor Preparation
-- Pre-build an Obsidian vault template with folder structure for the course
-- Prepare a shared Google Drive folder per team for document exchange
+- Set up the course in **Microsoft Teams**: a main meeting for plenary sessions and one breakout room (channel) per team
+- Pre-build an Obsidian vault template with folder structure for the course and host it at a download link (posted in Teams)
+- Prepare a shared Teams channel (with a OneDrive/SharePoint files folder) per team for document exchange
 - Prepare a "Research Management Scenario Bank" with realistic tasks (grant writing, compliance checks, reporting, stakeholder communication, event planning, data management plans)
 
 ---
@@ -69,13 +72,13 @@ Five teams of three, ideally mixed by:
    - Set expectations: by Day 3, each team will have a working AI-assisted workflow for their domain
 
 2. **Live Diagnostic: Where Are You Now?** (20 min)
-   - Each participant opens Claude Desktop and asks it a question they would normally Google related to their work
+   - Each participant opens Microsoft 365 Copilot and asks it a question they would normally Google related to their work
    - Examples: "What is Horizon Europe?", "How do I write a data management plan?", "What are the eligibility criteria for ERC grants?"
    - Collect and display the prompts anonymously -- observe patterns (short, no context, no constraints)
 
 3. **The AI Landscape for Research Management** (25 min)
    - Quick tour of tools they will use (live demo of each, 3 min per tool)
-   - Positioning: Claude Desktop as the "home base", other tools as specialized instruments
+   - Positioning: Microsoft 365 Copilot as the "home base", other tools as specialized instruments
    - Key concept: AI is not one tool, it is an ecosystem
 
 ---
@@ -85,7 +88,7 @@ Five teams of three, ideally mixed by:
 **Core Concept:** AI as a capable conversational partner, not a search engine.
 
 **Demo (15 min): The Same Question, Three Ways**
-Using Claude Desktop, demonstrate with a research management scenario:
+Using Microsoft 365 Copilot, demonstrate with a research management scenario:
 - Version 1 (Google-style): "Horizon Europe budget"
 - Version 2 (Better): "Explain the budget structure of Horizon Europe Pillar 2 collaborative projects"
 - Version 3 (Good): "I'm preparing a budget for a Horizon Europe Cluster 4 collaborative project with 8 partners. Explain the eligible cost categories, overhead calculation method, and common budgeting mistakes."
@@ -93,7 +96,7 @@ Using Claude Desktop, demonstrate with a research management scenario:
 Show how output quality scales with input quality.
 
 **Team Exercise 1.1: "First Contact" (30 min)**
-Each team member picks one real task from their daily work and asks Claude Desktop about it as they naturally would. Then they:
+Each team member picks one real task from their daily work and asks Microsoft 365 Copilot about it as they naturally would. Then they:
 1. Screenshot the prompt and response
 2. Rate the usefulness (1-5)
 3. Identify what was missing from the response
@@ -114,7 +117,7 @@ Each team member picks one real task from their daily work and asks Claude Deskt
 **Core Concept:** The Instruction-Context-Constraints (ICC) framework and the power of asking AI to ask you questions first.
 
 **Demo (20 min): The ICC Framework in Research Management**
-Live in Claude Desktop:
+Live in Microsoft 365 Copilot:
 
 **Prompt anatomy for a real task -- drafting a partner search announcement:**
 ```
@@ -152,11 +155,11 @@ Each team presents their best before/after transformation (2 min each), followed
 
 **Core Concept:** Using AI to write better prompts (meta-prompting), and the "reverse prompt" technique.
 
-**Demo (20 min): Meta-Prompting with ChatGPT + Claude**
+**Demo (20 min): Meta-Prompting with ChatGPT + Copilot**
 1. In ChatGPT Free: "I need to use an AI assistant to help me draft the narrative impact section of an EU project's periodic report. Write the optimal prompt I should use, including all the context and constraints that would produce the best result."
-2. Take ChatGPT's generated prompt --> paste it into Claude Desktop
+2. Take ChatGPT's generated prompt --> paste it into Microsoft 365 Copilot
 3. Compare with a manually written prompt for the same task
-4. Show the "reverse prompt" technique: after a long back-and-forth that produced a good result, ask Claude: "Write the single prompt that would have gotten us to this result on the first try."
+4. Show the "reverse prompt" technique: after a long back-and-forth that produced a good result, ask Copilot: "Write the single prompt that would have gotten us to this result on the first try."
 
 **Team Exercise 1.3: "The Prompt Factory" (40 min)**
 Each team works on TWO research management tasks from their domain:
@@ -172,7 +175,7 @@ Each team works on TWO research management tasks from their domain:
 Workflow per task:
 1. Use ChatGPT Free to generate the meta-prompt
 2. Refine the meta-prompt as a team
-3. Execute in Claude Desktop
+3. Execute in Microsoft 365 Copilot
 4. Iterate until satisfied
 5. Use the "reverse prompt" technique to capture the final optimized prompt
 6. Save the final prompt as a reusable template
@@ -194,12 +197,12 @@ Workflow per task:
 
 **Demo (15 min): The Same Prompt, Four Tools**
 Take one research management prompt and run it simultaneously in:
-- Claude Desktop
+- Microsoft 365 Copilot
 - ChatGPT Free
 - Google Gemini
 - Perplexity AI
 
-Show differences in: depth, structure, citation behavior, tone, accuracy. Highlight that Perplexity cites sources, Gemini handles longer inputs, Claude excels at nuanced writing, ChatGPT is strong at structured outputs.
+Show differences in: depth, structure, citation behavior, tone, accuracy. Highlight that Perplexity cites sources, Gemini handles longer inputs, Copilot draws on your Microsoft 365 content and is strong at grounded drafting, ChatGPT is strong at structured outputs.
 
 **Ground Truth Check with the Horizon Dashboard (5 min)**
 Open the Horizon Dashboard (dashboard.tech.ec.europa.eu). Show how to pull real statistics -- e.g., success rates by call topic, funding by country, number of participants by organization type. Compare one specific claim from the AI outputs against the Dashboard's official data. Key message: the Dashboard provides the authoritative numbers that AI tools may approximate, hallucinate, or have outdated versions of. Always verify quantitative claims against official sources.
@@ -207,7 +210,7 @@ Open the Horizon Dashboard (dashboard.tech.ec.europa.eu). Show how to pull real 
 **Team Exercise 1.4: "AI Tool Comparison Matrix" (35 min)**
 Each team runs one of their refined prompts across all four tools and fills in a comparison matrix:
 
-| Criterion | Claude | ChatGPT | Gemini | Perplexity |
+| Criterion | Copilot | ChatGPT | Gemini | Perplexity |
 |-----------|--------|---------|--------|------------|
 | Accuracy | | | | |
 | Completeness | | | | |
@@ -225,7 +228,7 @@ Each team runs one of their refined prompts across all four tools and fills in a
 ### MODULE 1.6 | Day 1 Wrap-Up & Obsidian Introduction (16:15 - 17:00)
 
 **Obsidian Setup (30 min)**
-- Install the pre-built vault template (instructor distributes via USB/download)
+- Install the pre-built vault template (instructor shares a download link in Teams)
 - Vault structure:
   ```
   /AI-Research-Admin-Course
@@ -271,19 +274,19 @@ Each team runs one of their refined prompts across all four tools and fills in a
 
 **Level 3 Framing (20 min)**
 - The key frustration at Level 2: rebuilding context from scratch every conversation
-- The solution: Projects (Claude), Custom GPTs (ChatGPT), and persistent context
-- Demo: show the difference between a bare Claude conversation and one inside a Project with custom instructions and uploaded files
+- The solution: Copilot Notebooks (Microsoft 365 Copilot), Custom GPTs (ChatGPT), and persistent context
+- Demo: show the difference between a bare Copilot chat and one working inside a Copilot Notebook grounded in a curated set of files and a working brief
 
 ---
 
-### MODULE 2.2 | Claude Projects for Research Management (09:30 - 11:00)
+### MODULE 2.2 | Copilot Notebooks for Research Management (09:30 - 11:00)
 
-**Core Concept:** Building dedicated AI workspaces with persistent context, custom instructions, and reference files.
+**Core Concept:** Building dedicated AI workspaces with persistent context, a working brief, and reference files.
 
-**Demo (25 min): Building a "Grant Writing Assistant" Project in Claude**
-Live setup of a Claude Project:
-1. **Project name:** "Horizon Europe Grant Assistant"
-2. **Custom instructions:**
+**Demo (25 min): Building a "Grant Writing Assistant" Notebook in Microsoft 365 Copilot**
+Live setup of a Copilot Notebook:
+1. **Notebook name:** "Horizon Europe Grant Assistant"
+2. **Working brief** (add as the first note/source so Copilot stays grounded in it -- on Day 3 this same brief becomes your custom agent's instructions):
    ```
    You are an experienced EU research management advisor working with
    university research offices. You specialize in Horizon Europe
@@ -307,15 +310,15 @@ Live setup of a Claude Project:
    - Include word/character counts when relevant
    - Mark assumptions clearly with [ASSUMPTION] tags
    ```
-3. **Upload reference files:** A call topic text (PDF), the team's CV/expertise summary, a template from a previous successful proposal
-4. **First conversation:** "Based on the uploaded call topic, draft a 500-word excellence section outline identifying 3 key objectives and their alignment with the call expected outcomes."
+3. **Add reference sources:** A call topic text (PDF), the team's CV/expertise summary, a template from a previous successful proposal
+4. **First chat:** "Based on the call topic in this notebook, draft a 500-word excellence section outline identifying 3 key objectives and their alignment with the call expected outcomes."
 
-Show how every new conversation in this Project inherits the instructions and files.
+Show how every chat in this Notebook stays grounded in the same sources and brief -- and how the team can open the Notebook together and co-work in real time.
 
-**Team Exercise 2.1: "Build Your Domain Project" (45 min)**
-Each team builds a Claude Project tailored to their research management domain:
+**Team Exercise 2.1: "Build Your Domain Notebook" (45 min)**
+Each team builds a Copilot Notebook tailored to their research management domain:
 
-| Team | Project Name | Key Instructions | Reference Files to Upload |
+| Team | Notebook Name | Working Brief (key points) | Reference Sources to Add |
 |------|-------------|-----------------|--------------------------|
 | A | Grant Lifecycle Hub | Grant writing style, call analysis, budget rules | Sample call text, budget template |
 | B | Compliance Advisor | Ethics review language, regulatory frameworks | Ethics checklist, GDPR template |
@@ -324,13 +327,13 @@ Each team builds a Claude Project tailored to their research management domain:
 | E | Data Management Office | FAIR principles, DMP standards, repository knowledge | DMP template, funder data policies |
 
 Each team:
-1. Writes custom instructions (use ChatGPT meta-prompting to help draft them)
-2. Uploads 2-3 real or sample reference files
-3. Runs 3 test conversations to verify the Project works as intended
-4. Iterates on the instructions based on output quality
+1. Writes a working brief (use ChatGPT meta-prompting to help draft it)
+2. Adds 2-3 real or sample reference sources
+3. Runs 3 test chats to verify the Notebook stays grounded and useful
+4. Iterates on the brief and sources based on output quality
 
 **Share-Out (20 min)**
-Each team demos their Project: shows the instructions, runs one query, and explains what they'd change.
+Each team demos their Notebook: shows the brief and sources, runs one query, and explains what they'd change.
 
 ---
 
@@ -370,8 +373,8 @@ Each team:
 4. Generates an Audio Overview and listens to it during break (optional)
 
 **Debrief (15 min)**
-- When to use NotebookLM vs. Claude Projects vs. Perplexity
-- Key insight: NotebookLM is grounded in YOUR sources (no hallucination from external data), Claude Projects are more flexible and creative, Perplexity searches the live web
+- When to use NotebookLM vs. Copilot Notebooks vs. Perplexity
+- Key insight: NotebookLM is grounded in YOUR sources (no hallucination from external data), Copilot Notebooks connect that persistent context to your Microsoft 365 work, Perplexity searches the live web
 
 ---
 
@@ -395,7 +398,7 @@ Each team:
 Each team uploads their longest, most complex document to Gemini and performs:
 1. A full-document summary with structured output
 2. A cross-section extraction task (pulling related information from different parts)
-3. A comparison with how Claude or NotebookLM handled similar queries
+3. A comparison with how Copilot or NotebookLM handled similar queries
 
 Document the strengths and limitations in their Obsidian tool notes.
 
@@ -430,7 +433,7 @@ Each team uses Perplexity to research a current topic in their domain and produc
 
 | Team | Research Question |
 |------|------------------|
-| A | What are the latest trends in EU funding success rates and common proposal weaknesses? (Cross-reference Perplexity findings with Horizon Dashboard statistics; export Dashboard CSV data and upload to Claude for trend analysis) |
+| A | What are the latest trends in EU funding success rates and common proposal weaknesses? (Cross-reference Perplexity findings with Horizon Dashboard statistics; export Dashboard CSV data and upload to Copilot for trend analysis) |
 | B | What are the newest EU regulations affecting research ethics and data protection in 2025-2026? |
 | C | What frameworks are European universities using to measure research impact beyond publications? |
 | D | What are the best practices for research communication and public engagement in EU projects? |
@@ -487,7 +490,7 @@ Each participant writes `/05-Daily-Reflections/Day2.md` in Obsidian.
 ---
 
 ### Day 2 Deliverables Checklist
-- [ ] Claude Project built and tested for team domain
+- [ ] Copilot Notebook built and tested for team domain
 - [ ] NotebookLM notebook with analyzed documents and structured output
 - [ ] Long-context analysis completed in Gemini
 - [ ] Perplexity intelligence briefing with citations saved in Obsidian
@@ -519,13 +522,13 @@ Step 1: [Horizon Dashboard] Pull official success rates, funding
         cluster/call topic; export CSV for analysis
 Step 2: [Perplexity] Research the call topic landscape, competing
         projects, and evaluator feedback trends
-Step 3: [Claude Project] Upload Dashboard CSV export, ask Claude to
-        analyze success patterns and identify strategic positioning
+Step 3: [Copilot Notebook] Add the Dashboard CSV export, ask Copilot
+        to analyze success patterns and identify strategic positioning
 Step 4: [NotebookLM] Upload call text + work programme, extract
         requirements and evaluation criteria
 Step 5: [Gemini] Upload full programme guide + call text, cross-reference
         eligibility and financial rules
-Step 6: [Claude Project] Synthesize all previous outputs into a
+Step 6: [Copilot Notebook] Synthesize all previous outputs into a
         go/no-go assessment memo with data-backed justification
 Step 7: [Canva AI] Create a visual one-pager summarizing the opportunity
         for internal stakeholders
@@ -553,7 +556,7 @@ Teams finalize their Day 3 project workflow design using this framework.
 **Core Concept:** Creating professional visual deliverables that research managers actually need: one-pagers, infographics, presentation slides, and visual summaries.
 
 **Demo (15 min): From AI Text to Visual Asset**
-1. Take a Claude-generated project summary and paste it into Canva
+1. Take a Copilot-generated project summary and paste it into Canva
 2. Use Canva's Magic Design to generate a one-pager layout
 3. Show Canva AI features: text-to-image for illustrations, Magic Write for copy refinement, bulk create for variations
 4. Build a simple 3-slide presentation: project overview, timeline, team/budget
@@ -569,7 +572,7 @@ Each team creates ONE visual asset relevant to their domain using Canva AI:
 | D | A social media card set (3 cards) for a research project announcement |
 | E | A visual checklist poster for FAIR data compliance |
 
-Use AI-generated text from their Claude Project as the content source.
+Use AI-generated text from their Copilot Notebook as the content source.
 
 ---
 
@@ -577,33 +580,36 @@ Use AI-generated text from their Claude Project as the content source.
 
 ---
 
-### MODULE 3.3 | Claude Artifacts for Rapid Prototyping (10:45 - 11:45)
+### MODULE 3.3 | Copilot Agents: Build Your Own AI Tools (10:45 - 11:45)
 
-**Core Concept:** Using Claude's Artifacts feature to build interactive, functional tools with zero coding experience.
+**Core Concept:** Using Microsoft 365 Copilot's Agent Builder to create interactive, reusable AI tools with zero coding experience -- described entirely in plain language.
 
 **Demo (20 min): Building a Research Management Tool**
-Live in Claude Desktop, create an Artifact:
-- "Build me an interactive grant proposal readiness checklist. It should have sections for: administrative requirements, consortium, scientific excellence, impact, and implementation. Each item should be checkable with a progress bar at the top. Include a section where I can add notes per item. Make it visually clean and professional."
-- Show iterations: "Add a color-coded risk indicator per section", "Add an export-to-text button"
-- Key message: you just described what you wanted in plain language and got a functional tool
+Live in Microsoft 365 Copilot, open Agent Builder and create a custom agent:
+- **Name:** "Grant Proposal Readiness Checker"
+- **Instructions:** "Walk the user through a grant proposal readiness checklist covering five sections: administrative requirements, consortium, scientific excellence, impact, and implementation. Ask about each item one section at a time, track what is complete versus outstanding, and finish with a readiness summary. Keep the tone professional and clear."
+- Turn on the **"Create documents, charts, and code"** capability so the agent can calculate scores and produce an export-ready summary
+- Show iterations: "Add a color-coded risk rating per section", "End with an export-ready checklist I can paste into a report"
+- **Test it** in the "Try it" pane, then **share it** with colleagues
+- Key message: you just described what you wanted in plain language and got a functional, reusable tool you can hand to the whole office
 
 **Team Exercise 3.2: "Build Your Tool" (40 min)**
-Each team describes and builds ONE interactive Artifact in Claude:
+Each team describes and builds ONE interactive custom agent with Agent Builder:
 
-| Team | Artifact to Build |
+| Team | Agent to Build |
 |------|------------------|
-| A | A proposal budget calculator with cost categories, overhead rates, and partner allocation |
-| B | An ethics screening questionnaire that recommends the type of review needed based on answers |
-| C | A project milestone tracker with status indicators and deadline warnings |
-| D | A dissemination activity planner with audience, channel, and timeline fields |
-| E | A data management plan builder that asks questions and generates DMP sections |
+| A | A proposal budget assistant that collects cost categories, an overhead rate, and partner allocations, then calculates and returns a structured budget breakdown (enable "create documents, charts, and code") |
+| B | An ethics screening agent that asks about a project and recommends the type of review needed based on the answers |
+| C | A project milestone assistant that takes a milestone list and flags status and approaching deadlines |
+| D | A dissemination activity planner that gathers audience, channel, and timeline and returns a structured plan |
+| E | A data management plan builder that interviews the user and generates funder-ready DMP sections |
 
 Workflow:
-1. Describe the tool to Claude (use ICC structure)
-2. Test the first version
+1. Describe the agent to Agent Builder in plain language (use ICC structure for the instructions)
+2. Test the first version in the "Try it" pane
 3. Request 2-3 iterations/improvements
-4. Save the final Artifact
-5. Document the creation process in Obsidian (prompts used, iterations needed)
+4. Save and share the final agent
+5. Document the creation process in Obsidian (instructions used, iterations needed)
 
 ---
 
@@ -619,19 +625,19 @@ Each team builds and documents a complete multi-tool AI workflow for a realistic
 *"A new Horizon Europe call has been published in your cluster. Walk through the complete workflow from call discovery to internal go/no-go decision to proposal outline."*
 - Horizon Dashboard: pull official success rates, country participation stats, and funding data for the relevant cluster; export CSV
 - Perplexity: landscape research, competing projects, evaluator feedback trends
-- Claude Project: upload Dashboard CSV export, analyze success patterns, draft go/no-go memo + proposal outline with data-backed justification
+- Copilot Notebook: add Dashboard CSV export, analyze success patterns, draft go/no-go memo + proposal outline with data-backed justification
 - NotebookLM: call document analysis
 - Canva: visual opportunity brief for leadership (include Dashboard statistics)
-- Artifact: interactive eligibility/readiness checklist
+- Copilot agent: interactive eligibility/readiness checker
 - Obsidian: full workflow documentation
 
 **Team B -- Research Compliance & Ethics:**
 *"A new project involving human participants, AI systems, and cross-border data transfer has been approved. Build the complete compliance assessment and documentation package."*
 - Perplexity: current regulatory landscape research
 - NotebookLM: policy document analysis (GDPR, AI Act, ethics guidelines)
-- Claude Project: compliance assessment report + documentation templates
+- Copilot Notebook: compliance assessment report + documentation templates
 - Canva: ethics review process infographic
-- Artifact: interactive ethics screening tool
+- Copilot agent: interactive ethics screening tool
 - Obsidian: full workflow documentation
 
 **Team C -- Research Reporting & Impact Assessment:**
@@ -639,14 +645,14 @@ Each team builds and documents a complete multi-tool AI workflow for a realistic
 - Perplexity: benchmarking against similar projects' reported impacts
 - NotebookLM: analysis of project DoA and previous reports
 - Gemini: cross-reference long MGA with reporting requirements
-- Claude Project: draft report sections + quality review
+- Copilot Notebook: draft report sections + quality review
 - Canva: visual KPI dashboard
 - Obsidian: full workflow documentation
 
 **Team D -- Stakeholder Communication & Dissemination:**
 *"A major research project has produced breakthrough results. Build the communication workflow from scientific output to public-facing content across multiple channels."*
 - NotebookLM: analysis of the scientific publication/deliverable
-- Claude Project: adapted content for different audiences (press, policy, public, social media)
+- Copilot Notebook: adapted content for different audiences (press, policy, public, social media)
 - ChatGPT Canvas: draft a blog post with editorial refinement
 - Canva: social media cards + one-page policy brief layout
 - Perplexity: identify relevant media contacts and communication channels
@@ -656,9 +662,9 @@ Each team builds and documents a complete multi-tool AI workflow for a realistic
 *"A new research consortium needs a comprehensive data management plan that satisfies funder requirements, FAIR principles, and institutional policy. Build the complete DMP workflow."*
 - Perplexity: latest FAIR implementation standards and repository options
 - NotebookLM: cross-analysis of funder data policy + institutional policy
-- Claude Project: DMP section drafting with policy-aligned language
+- Copilot Notebook: DMP section drafting with policy-aligned language
 - Gemini: process the full funder data policy document for specific requirements
-- Artifact: interactive DMP builder tool
+- Copilot agent: interactive DMP builder
 - Obsidian: full workflow documentation
 
 **Work Session Rules:**
@@ -686,7 +692,7 @@ Each team presents:
 1. **The Scenario** (1 min): What research management challenge they addressed
 2. **The Workflow** (3 min): Step-by-step walk-through of their multi-tool workflow, showing tool selection rationale and handoff points
 3. **Live Demo** (5 min): Execute at least 2 steps of the workflow live, showing real outputs
-4. **The Artifact** (2 min): Demo the interactive tool they built
+4. **The Agent** (2 min): Demo the interactive agent they built
 5. **Lessons Learned** (1 min): What worked, what surprised them, what they would do differently
 
 **Peer Evaluation:**
@@ -724,7 +730,7 @@ Other teams rate each presentation on:
 
 ### Day 3 Deliverables Checklist
 - [ ] Canva visual asset created for team domain
-- [ ] Interactive Claude Artifact built and tested
+- [ ] Interactive Copilot agent built and tested
 - [ ] Complete multi-tool workflow executed and documented
 - [ ] Capstone presentation delivered
 - [ ] All prompts saved in Obsidian prompt library
@@ -740,11 +746,11 @@ Each team leaves the course with the following transferable assets:
 | Deliverable | Format | Location |
 |------------|--------|----------|
 | **Prompt Library** | 10+ refined, tested prompts for their domain | Obsidian `/00-Prompts/` |
-| **Claude Project** | Configured workspace with custom instructions + reference files | Claude Desktop |
+| **Copilot Notebook** | Configured workspace with a working brief + reference sources | Microsoft 365 Copilot |
 | **NotebookLM Notebook** | Source-grounded research workspace with analyzed documents | NotebookLM |
 | **Intelligence Briefing** | Citation-backed research briefing for their domain | Obsidian `/04-Team-Project/` |
 | **AI Tool Comparison Matrix** | Evaluation of tools for specific task types | Obsidian `/02-Tool-Notes/` |
-| **Interactive Artifact** | Functional prototype tool for their domain | Claude Artifact (shareable link) |
+| **Interactive Agent** | Functional custom agent for their domain | Microsoft 365 Copilot (shareable) |
 | **Visual Asset** | Professional one-pager, infographic, or presentation | Canva (shareable/downloadable) |
 | **Documented Workflow** | Complete multi-tool workflow with steps, tools, prompts, quality gates | Obsidian `/03-Workflows/` |
 | **Obsidian Knowledge Vault** | Linked, searchable knowledge base with all course outputs | Local Obsidian vault |
@@ -758,9 +764,9 @@ Each team leaves the course with the following transferable assets:
 | Block | Day 1 | Day 2 | Day 3 |
 |-------|-------|-------|-------|
 | 09:00-09:30 | Opening & Orientation | Recap & Level 3 Intro | Level 4 Intro & Workflow Design |
-| 09:30-10:00 | Orientation (cont.) | Claude Projects Demo | Workflow Design (cont.) |
-| 10:00-11:00 | Level 1: The Question Asker | Claude Projects Exercise | Canva AI Workshop |
-| 11:15-12:30 | Level 2: Prompt Structure (ICC) | NotebookLM Workshop | Artifacts Workshop |
+| 09:30-10:00 | Orientation (cont.) | Copilot Notebooks Demo | Workflow Design (cont.) |
+| 10:00-11:00 | Level 1: The Question Asker | Copilot Notebooks Exercise | Canva AI Workshop |
+| 11:15-12:30 | Level 2: Prompt Structure (ICC) | NotebookLM Workshop | Copilot Agents Workshop |
 | 13:30-15:00 | Level 2: Meta-Prompting & Iteration | Gemini + Perplexity | Capstone Work Session |
 | 15:15-16:15 | Tool Comparison Exercise | Obsidian Deep Dive | Capstone Presentations |
 | 16:15-17:00 | Obsidian Setup + Day 1 Wrap | Day 2 Wrap + Day 3 Brief | Synthesis + Wrap-Up |
@@ -780,16 +786,16 @@ Day 3 PM   -->  Level 4: "I build, document, and present complete AI workflows"
 
 # Appendix B: Infrastructure Checklist
 
-### Venue Requirements
-- Stable Wi-Fi for 15+ simultaneous AI tool users
-- Each participant needs a laptop with a modern browser
-- Projector/screen for instructor demos and team presentations
-- Power strips at every table (5 team tables)
+### Technical Requirements (Online Delivery via Microsoft Teams)
+- Each participant needs a laptop with a modern browser, a stable internet connection, and a working microphone and camera (headset recommended)
+- Microsoft Teams installed, with the course meeting link and per-team breakout rooms set up in advance
+- Everyone signed in to Microsoft 365 so Copilot, Notebooks, Pages, and Agents are available
+- Facilitator: reliable upstream bandwidth for screen sharing; a second screen helps (share one, monitor the chat and roster on the other)
 
 ### Account Setup (Pre-Course)
 | Tool | Account Type | Setup Notes |
 |------|-------------|-------------|
-| Claude.ai | Free (or Pro if budget allows) | Cowork for team collaboration |
+| Microsoft 365 Copilot | Work/school account (Copilot Chat included; a Copilot licence adds work-data grounding) | microsoft365.com -- Notebooks, Pages, and Agent Builder |
 | ChatGPT | Free | Canvas feature available on free tier |
 | NotebookLM | Free (Google account) | notebooklm.google.com |
 | Perplexity AI | Free | perplexity.ai |
@@ -800,7 +806,7 @@ Day 3 PM   -->  Level 4: "I build, document, and present complete AI workflows"
 
 ### Instructor Materials to Prepare
 - Sample documents per team domain (call texts, reports, policies, templates)
-- Obsidian vault template (ZIP file for distribution)
+- Obsidian vault template (ZIP hosted at a download link and posted in the course Teams)
 - Scenario Bank document with detailed capstone briefs
 - Evaluation forms (daily + final)
 - Resource and reading list document
@@ -812,10 +818,10 @@ Day 3 PM   -->  Level 4: "I build, document, and present complete AI workflows"
 
 | Risk | Mitigation |
 |------|-----------|
-| Free-tier rate limits during class | Stagger exercises; have backup prompts ready; teams work sequentially not simultaneously on same tool |
+| Copilot or free-tier usage limits during class | Stagger exercises; have backup prompts ready; teams work sequentially not simultaneously on the same tool |
 | Participant falls behind | Team-of-3 structure provides peer support; exercises have minimum + stretch goals |
-| Wi-Fi instability | Have mobile hotspot as backup; some exercises can be done offline in Obsidian |
+| Participant connectivity drops (Teams) | Advise a phone/hotspot backup and the Teams dial-in number; buddy them into a teammate's breakout room; some exercises can continue offline in Obsidian |
 | Tool interface changes | Brief instructor check 1 week before course; prepare screenshots of current UI |
 | Participants bring sensitive documents | Emphasize anonymization in pre-course instructions; provide sample documents as alternatives |
 | Uneven team skill levels | Mix experienced and novice users; rotating team roles ensure everyone practices |
-| Claude Cowork availability | Fall back to individual Claude Projects + screen sharing for collaboration |
+| Copilot licence/feature availability | Fall back to Copilot Chat (free tier) + a shared Copilot Page or screen sharing for collaboration |

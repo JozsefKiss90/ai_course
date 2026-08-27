@@ -8,10 +8,10 @@
 # Exercise 1.1 | "First Contact"
 ## Module 1.2 -- Level 1: The Question Asker
 
-**Objective:** Ask Claude Desktop a work-related question using your natural instinct, then analyze what happened.
+**Objective:** Ask Microsoft 365 Copilot a work-related question using your natural instinct, then analyze what happened.
 
 ### Step 1: Write Your Prompt
-Think of a real task from your daily research management work. Ask Claude to help you, using whatever words feel natural.
+Think of a real task from your daily research management work. Ask Copilot to help you, using whatever words feel natural.
 
 **My prompt (copy it here exactly as you typed it):**
 
@@ -164,7 +164,7 @@ _____________________________________________________________________________
 # Exercise 1.3 | "The Prompt Factory"
 ## Module 1.4 -- Level 2: Meta-Prompting & Iteration
 
-**Objective:** Use ChatGPT to write optimized prompts for Claude, then capture the best prompts using the reverse prompt technique.
+**Objective:** Use ChatGPT to write optimized prompts for Copilot, then capture the best prompts using the reverse prompt technique.
 
 ### Task 1
 
@@ -189,19 +189,19 @@ Key elements ChatGPT included that you wouldn't have thought of:
 2. ________________________________________________________________________
 3. ________________________________________________________________________
 
-Things you ADDED to the meta-prompt before pasting into Claude:
+Things you ADDED to the meta-prompt before pasting into Copilot:
 
 _____________________________________________________________________________
 
 _____________________________________________________________________________
 
-**Step 3: Execute in Claude**
+**Step 3: Execute in Copilot**
 
 **Output quality:** /5
 
 **Iterations needed:** 0 / 1 / 2 / 3+
 
-What did you ask Claude to fix or adjust?
+What did you ask Copilot to fix or adjust?
 
 _____________________________________________________________________________
 
@@ -209,7 +209,7 @@ _____________________________________________________________________________
 
 Paste the reverse prompt (the reusable one-shot prompt) here:
 ```
-[Paste the reverse prompt Claude generated here]
+[Paste the reverse prompt Copilot generated here]
 
 
 
@@ -249,7 +249,7 @@ Things you ADDED:
 
 _____________________________________________________________________________
 
-**Step 3: Execute in Claude**
+**Step 3: Execute in Copilot**
 
 **Output quality:** /5
 
@@ -291,7 +291,7 @@ _____________________________________________________________________________
 
 Rate each criterion from 1 (poor) to 5 (excellent).
 
-| Criterion | Claude | ChatGPT | Gemini | Perplexity |
+| Criterion | Copilot | ChatGPT | Gemini | Perplexity |
 |-----------|--------|---------|--------|------------|
 | **Accuracy** -- Are facts and claims correct? | /5 | /5 | /5 | /5 |
 | **Completeness** -- Are all aspects covered? | /5 | /5 | /5 | /5 |
@@ -316,7 +316,7 @@ _____________________________________________________________________________
 
 ### Tool Notes
 
-**Claude's strengths for this task:**
+**Copilot's strengths for this task:**
 
 _____________________________________________________________________________
 

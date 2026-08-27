@@ -5,20 +5,20 @@
 
 ---
 
-# Exercise 2.1 | "Build Your Domain Project"
-## Module 2.2 -- Claude Projects for Research Management
+# Exercise 2.1 | "Build Your Domain Notebook"
+## Module 2.2 -- Copilot Notebooks for Research Management
 
-**Objective:** Build a Claude Project with custom instructions and reference files tailored to your team's research management domain.
+**Objective:** Build a Copilot Notebook with a working brief and reference sources tailored to your team's research management domain.
 
-### Project Planning
+### Notebook Planning
 
-**Project Name:** ___________________________________________________________
+**Notebook Name:** ___________________________________________________________
 
 **Domain Focus:** ___________________________________________________________
 
-### Step 1: Draft Custom Instructions
+### Step 1: Draft Your Working Brief
 
-Use ChatGPT to help. Describe your role and domain to ChatGPT and ask it to write Claude Project custom instructions.
+Use ChatGPT to help. Describe your role and domain to ChatGPT and ask it to write a working brief for your Copilot Notebook.
 
 **Prompt you gave ChatGPT:**
 ```
@@ -29,10 +29,10 @@ Use ChatGPT to help. Describe your role and domain to ChatGPT and ask it to writ
 
 ```
 
-**Draft custom instructions (refine as a team, then paste into Claude):**
+**Draft working brief (refine as a team, then add to your Notebook):**
 
 ```
-[Write or paste your custom instructions here]
+[Write or paste your working brief here]
 
 
 
@@ -49,9 +49,9 @@ Use ChatGPT to help. Describe your role and domain to ChatGPT and ask it to writ
 
 ```
 
-### Step 2: Reference Files
+### Step 2: Reference Sources
 
-List the files you uploaded to the Project:
+List the sources you added to the Notebook:
 
 | # | File Name | Type | Why This File? |
 |---|----------|------|---------------|
@@ -59,7 +59,7 @@ List the files you uploaded to the Project:
 | 2 | | | |
 | 3 | | | |
 
-### Step 3: Test Conversations
+### Step 3: Test Chats
 
 **Test 1 -- Drafting task:**
 ```
@@ -93,7 +93,7 @@ What needs fixing? __________________________________________________________
 
 ### Step 4: Iterate
 
-**What did you change in the custom instructions based on testing?**
+**What did you change in the working brief based on testing?**
 
 _____________________________________________________________________________
 
@@ -254,9 +254,9 @@ If yes, what? _______________________________________________________________
 
 ### Task 3: Tool Comparison
 
-**Same question asked in:** Claude / NotebookLM (circle one)
+**Same question asked in:** Copilot / NotebookLM (circle one)
 
-| Criterion | Gemini | Claude / NotebookLM |
+| Criterion | Gemini | Copilot / NotebookLM |
 |-----------|--------|---------------------|
 | Completeness | /5 | /5 |
 | Accuracy | /5 | /5 |
@@ -277,7 +277,7 @@ _____________________________________________________________________________
 # Exercise 2.4 | "Intelligence Briefing"
 ## Module 2.5 -- Perplexity AI Research Discovery
 
-**Objective:** Produce a 1-page intelligence briefing with citations using Perplexity, cross-referenced with the Horizon Dashboard, and structured in Claude.
+**Objective:** Produce a 1-page intelligence briefing with citations using Perplexity, cross-referenced with the Horizon Dashboard, and structured in Copilot.
 
 ### Your Research Question
 
@@ -328,13 +328,13 @@ Citations verified? Y / N
 
 **CSV exported from Dashboard?** Y / N
 
-**If yes, what did you ask Claude to do with the CSV?**
+**If yes, what did you ask Copilot to do with the CSV?**
 
 _____________________________________________________________________________
 
 ### Structured Briefing
 
-**Prompt used in Claude to structure the briefing:**
+**Prompt used in Copilot to structure the briefing:**
 ```
 [Write the prompt here]
 
@@ -390,13 +390,13 @@ Check each item as you complete it:
 - [ ] Day 1 prompts moved to `/00-Prompts/`
 - [ ] Tool comparison matrix in `/02-Tool-Notes/`
 - [ ] Intelligence briefing in `/04-Team-Project/`
-- [ ] Claude Project instructions documented in `/02-Tool-Notes/Claude-Project.md`
+- [ ] Copilot Notebook brief documented in `/02-Tool-Notes/Copilot-Notebook.md`
 - [ ] NotebookLM findings documented in `/02-Tool-Notes/NotebookLM.md`
 - [ ] Gemini notes in `/02-Tool-Notes/Gemini.md`
 - [ ] Any other outputs from today
 
 **Create internal links (5 min):**
-- [ ] In each prompt note, link to the tool used: e.g., [[Claude]], [[Perplexity]]
+- [ ] In each prompt note, link to the tool used: e.g., [[Copilot]], [[Perplexity]]
 - [ ] In the intelligence briefing, link to prompts that produced it
 - [ ] In tool notes, link to relevant prompts and outputs
 - [ ] Total links created: _______

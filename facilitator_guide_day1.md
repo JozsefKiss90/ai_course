@@ -5,18 +5,18 @@
 
 # Pre-Day Checklist
 
-Complete these before participants arrive:
+Complete these before participants join the Teams meeting:
 
-- [ ] Room setup: 5 tables of 3 chairs, each table labeled (Team A-E) with domain name cards
-- [ ] Projector connected, screen visible from all tables
-- [ ] Test Wi-Fi with 3+ simultaneous AI tool connections
-- [ ] Open on your facilitator laptop: Claude Desktop, ChatGPT, Gemini, Perplexity (all logged in)
+- [ ] Teams meeting set up with 5 team breakout rooms (3 per room), each named for its team (A-E) and domain
+- [ ] Screen sharing tested in Teams; your camera and microphone working
+- [ ] Test your internet connection and screen share with 3+ AI tools open at once
+- [ ] Open on your facilitator machine: Microsoft 365 Copilot, ChatGPT, Gemini, Perplexity (all logged in)
 - [ ] Load the "before and after" demo prompts (see Module 1.1 script below)
-- [ ] Print team domain cards with assigned tasks for Exercises 1.3 and 1.4
-- [ ] USB drives or download link ready for Obsidian vault template
-- [ ] Shared Google Drive folders created (one per team) with sample documents
-- [ ] Anonymous prompt collection method ready (shared Google Doc, Mentimeter, or sticky notes)
-- [ ] Whiteboard or flip chart available for collective notes
+- [ ] Prepare team domain / task-assignment cards to share in Teams for Exercises 1.3 and 1.4
+- [ ] Download link ready (to post in Teams) for the Obsidian vault template
+- [ ] Shared Teams channel with a Files folder created (one per team) with sample documents
+- [ ] Anonymous prompt collection method ready (shared Google Doc, Mentimeter, or the Teams meeting chat)
+- [ ] A shared digital whiteboard (Microsoft Whiteboard) available for collective notes
 - [ ] Have backup sample prompts prepared in case participants struggle to generate their own
 - [ ] Pre-course survey results reviewed -- note any participants with zero AI experience
 
@@ -36,7 +36,7 @@ Complete these before participants arrive:
 
 ### Setup
 - Have slide 1 ready: course title, your name, the 3-day arc visual
-- Stand at the front, projector on
+- Share your screen; camera on
 
 ### Facilitation Script
 
@@ -46,10 +46,10 @@ Complete these before participants arrive:
 **The 7 Levels Framework (8 min):**
 > "This course follows a framework called the 7 Levels of AI User. Let me walk you through all seven, and then I'll tell you where we're going."
 
-Present each level briefly (use a single slide or whiteboard list):
+Present each level briefly (use a single slide or shared list):
 1. The Question Asker -- using AI like Google
 2. The Prompt Crafter -- how you ask changes what you get
-3. The Power User -- persistent context, projects, multiple tools
+3. The Power User -- persistent context, workspaces, multiple tools
 4. The Workflow Weaver -- chaining tools, building prototypes, multi-tool workflows
 5. The Builder -- automations that run without you
 6. The Systems Architect -- building complex software and agent systems
@@ -60,7 +60,7 @@ Present each level briefly (use a single slide or whiteboard list):
 **Before and After Demo (5 min):**
 Show a concrete example -- the same research management task at Level 1 vs. Level 4.
 
-Open Claude Desktop. Type this Level 1 prompt live:
+Open Microsoft 365 Copilot. Type this Level 1 prompt live:
 ```
 How do I respond to a Horizon Europe call?
 ```
@@ -69,7 +69,7 @@ Show the generic, high-level response.
 Then say:
 > "Now let me show you what this looks like at Level 4."
 
-Switch to a pre-prepared screenshot or second browser tab showing a Level 4 workflow output: a go/no-go memo produced by a Claude Project fed with a call document analyzed in NotebookLM, with a Canva one-pager and an interactive readiness checklist Artifact. Don't explain the tools yet -- just show the quality and specificity of the output.
+Switch to a pre-prepared screenshot or second browser tab showing a Level 4 workflow output: a go/no-go memo produced by a Copilot Notebook fed with a call document analyzed in NotebookLM, with a Canva one-pager and an interactive readiness checklist agent. Don't explain the tools yet -- just show the quality and specificity of the output.
 
 > "Same task. Same person. The difference is knowing how to use the tools. That's what this course teaches."
 
@@ -82,30 +82,30 @@ You should be at 09:15. If you ran over, compress the next segment slightly.
 
 ### Setup
 - Open a shared Google Doc or Mentimeter board titled "Our First Prompts"
-- Ensure all participants have Claude Desktop open in their browsers
+- Ensure all participants have Microsoft 365 Copilot open in their browsers
 
 ### Facilitation Script
 
 **Instructions (3 min):**
-> "Here's your first task. Open Claude Desktop -- claude.ai in your browser. Think of a question you would normally Google that's related to your research management work. Something you've actually wondered about or needed to look up recently. Type it into Claude exactly the way you'd ask it. Don't overthink it -- I want your natural instinct."
+> "Here's your first task. Open Microsoft 365 Copilot -- microsoft365.com in your browser. Think of a question you would normally Google that's related to your research management work. Something you've actually wondered about or needed to look up recently. Type it into Copilot exactly the way you'd ask it. Don't overthink it -- I want your natural instinct."
 
 > "Once you get a response, I want you to do two things: copy your exact prompt into our shared document [show link/Mentimeter], and give the response a usefulness score from 1 to 5."
 
 **Individual Work (7 min):**
-Walk around the room. Common issues to watch for:
+Keep an eye on the meeting and the chat. Common issues to watch for:
 - Participants not knowing what to ask: suggest "Think about what you Googled last week for work"
-- Login problems: help with Claude account setup (should be done pre-course, but stragglers happen)
+- Sign-in problems: help with Microsoft 365 / Copilot sign-in (should be done pre-course, but stragglers happen)
 - Very short prompts are GOOD at this stage -- that's the point
 
 **Collective Review (10 min):**
-Pull up the shared document/Mentimeter on the projector. Read through prompts aloud (or display them). Likely patterns you'll see:
+Share the shared document/Mentimeter on your screen. Read through prompts aloud (or display them). Likely patterns you'll see:
 
 - Very short: "ERC grant deadlines", "data management plan"
 - Question-style: "What is open access?"
 - Slightly better: "How do I write an ethics section for my proposal?"
 
 Point out the patterns WITHOUT judgment:
-> "Look at these. What do they have in common? [Take 2-3 answers from the room.] Most of them are short. Most don't tell Claude anything about who you are, what you're working on, or what format you need. That's completely normal -- it's how all of us start. The AI gave you a response, and it was probably... fine. Generic. The kind of thing you could have found on a website."
+> "Look at these. What do they have in common? [Take 2-3 answers from the group.] Most of them are short. Most don't tell Copilot anything about who you are, what you're working on, or what format you need. That's completely normal -- it's how all of us start. The AI gave you a response, and it was probably... fine. Generic. The kind of thing you could have found on a website."
 
 > "Now here's the key insight that changes everything: the AI doesn't know you're a research manager at a European university working on Horizon Europe projects -- unless you tell it. And that one fact transforms what you get back."
 
@@ -133,9 +133,9 @@ Point out the patterns WITHOUT judgment:
 
 For each tool, do the same thing: briefly describe what it's for, show the interface, and run one quick action.
 
-**1. Claude Desktop (3 min) -- "Home Base"**
-> "This is Claude, made by Anthropic. It's our primary tool. Strong at nuanced writing, careful analysis, and following complex instructions. It has a feature called Projects where you can give it persistent context -- we'll set this up tomorrow. And it has Artifacts, which let you build interactive tools -- we'll do that on Day 3."
-- Show: the chat interface, the Projects sidebar, the Artifact panel
+**1. Microsoft 365 Copilot (3 min) -- "Home Base"**
+> "This is Microsoft 365 Copilot. It's our primary tool -- it works across your Microsoft 365 apps and can ground its answers in your own files and work data. It has a feature called Notebooks, where you can give it persistent context -- we'll set this up tomorrow. And you can build your own Agents -- custom AI tools -- with no coding; we'll do that on Day 3."
+- Show: the chat interface, Notebooks, and where you create Agents
 
 **2. ChatGPT Free (3 min) -- "The Meta-Prompter"**
 > "ChatGPT by OpenAI. You probably know this one. We'll mainly use it for meta-prompting -- using AI to write better prompts for other AI tools. It also has Canvas, which is useful for collaborative document editing."
@@ -167,10 +167,10 @@ For each tool, do the same thing: briefly describe what it's for, show the inter
 - Show: a screenshot or quick flash of the vault -- don't demo fully yet
 
 **Closing (3 min):**
-> "Here's the key mental model: Claude Desktop is your home base -- it's where you do most of your thinking and writing. The other tools are specialists you bring in when you need something specific. Over three days, you'll learn when to reach for which tool. Any questions about the tools before we move on?"
+> "Here's the key mental model: Microsoft 365 Copilot is your home base -- it's where you do most of your thinking and writing. The other tools are specialists you bring in when you need something specific. Over three days, you'll learn when to reach for which tool. Any questions about the tools before we move on?"
 
 Take 2-3 questions. Common ones:
-- "Do I need paid versions?" -- No, everything in this course works on free tiers.
+- "Do I need paid versions?" -- Mostly no: the supporting tools all work on free tiers, and Microsoft 365 Copilot Chat is included with your Microsoft 365 account. A paid Copilot licence adds grounding in your organisation's work data, but it isn't required for this course.
 - "Is my data safe?" -- Good question. Don't upload truly sensitive data to any of these. We'll discuss anonymization practices.
 - "Which one is best?" -- That's exactly what we'll figure out today in Module 1.5.
 
@@ -192,12 +192,12 @@ You should be at 10:00. If running late, cut the Q&A short -- you can address to
 ## Segment 1: Demo -- The Same Question, Three Ways (10:00 - 10:15, 15 min)
 
 ### Setup
-- Claude Desktop open, new conversation
-- Projector showing your screen
+- Microsoft 365 Copilot open, new conversation
+- Screen sharing on in Teams
 
 ### Facilitation Script
 
-> "Let me show you something. I'm going to ask Claude the same question three different ways, and I want you to watch what happens to the answer."
+> "Let me show you something. I'm going to ask Copilot the same question three different ways, and I want you to watch what happens to the answer."
 
 **Version 1 -- Google-style (type live):**
 ```
@@ -236,15 +236,15 @@ Let the response generate. It will be substantially more useful -- specific cost
 ## Segment 2: Team Exercise 1.1 -- "First Contact" (10:15 - 10:45, 30 min)
 
 ### Setup
-- Ensure all participants are at their team tables
-- Each person has Claude Desktop open
+- Ensure all participants are in their team breakout rooms
+- Each person has Microsoft 365 Copilot open
 
 ### Instructions to Give (3 min)
 
-> "Now it's your turn. Each of you, individually: think of a real task from your daily work. Not a question you'd Google -- a task you actually need to do. Maybe you need to draft an email to a PI about a budget revision. Maybe you need to summarize a policy document. Maybe you need to explain a compliance requirement to a colleague. Whatever it is, ask Claude to help you, using whatever words feel natural."
+> "Now it's your turn. Each of you, individually: think of a real task from your daily work. Not a question you'd Google -- a task you actually need to do. Maybe you need to draft an email to a PI about a budget revision. Maybe you need to summarize a policy document. Maybe you need to explain a compliance requirement to a colleague. Whatever it is, ask Copilot to help you, using whatever words feel natural."
 
 > "After you get a response, do four things:"
-Write on the whiteboard:
+Post in the meeting chat:
 1. Screenshot your prompt and response
 2. Rate the usefulness: 1 = useless, 5 = I could use this as-is
 3. Write down what's missing or wrong in the response
@@ -253,7 +253,7 @@ Write on the whiteboard:
 > "You have 20 minutes for this. About 10 minutes individual, 10 minutes team discussion."
 
 ### During the Exercise (20 min)
-Walk between tables. What to watch for:
+Drop into the team breakout rooms. What to watch for:
 
 **Common struggles:**
 - "I don't know what to ask" -- suggest: "What did you work on yesterday? What task took the longest?"
@@ -283,18 +283,18 @@ At 10:40, give a 5-minute warning: "Start wrapping up your team discussions."
 Call on 2-3 teams. Guide the discussion toward these key takeaways:
 
 **Takeaway 1: No context = generic output**
-> "Most of us didn't tell Claude who we are, what institution we're at, what programme we're working with, or what we've already tried. So it gave us the answer it would give anyone."
+> "Most of us didn't tell Copilot who we are, what institution we're at, what programme we're working with, or what we've already tried. So it gave us the answer it would give anyone."
 
 **Takeaway 2: No format specification = AI chooses for you**
 > "If you don't say 'give me bullet points' or 'write this as an email' or 'format this as a checklist,' the AI picks whatever format it wants. Usually long paragraphs."
 
 **Takeaway 3: The AI doesn't know your job**
-> "Here's the big one: Claude doesn't know you're a research manager at a university. It doesn't know you deal with Horizon Europe, or ethics reviews, or that you report to a Vice-Rector for Research. Unless you tell it. And when you tell it, the outputs transform."
+> "Here's the big one: Copilot doesn't know you're a research manager at a university. It doesn't know you deal with Horizon Europe, or ethics reviews, or that you report to a Vice-Rector for Research. Unless you tell it. And when you tell it, the outputs transform."
 
 > "That's Level 1. You're using AI, and it's helpful. But you're leaving 80% of the value on the table. Level 2 is about getting that other 80%. Let's take a break and come back ready to learn the structure."
 
 ### Facilitator Notes
-- Write the three takeaways on the whiteboard/flip chart -- they stay up all day
+- Post the three takeaways in the meeting chat (or a shared Microsoft Whiteboard) -- keep them visible all day
 - Don't spend time on individual prompts here -- the deep work happens in Module 1.3
 
 ---
@@ -303,7 +303,7 @@ Call on 2-3 teams. Guide the discussion toward these key takeaways:
 
 During break:
 - Check that the shared Google Doc has everyone's prompts from the diagnostic
-- Prepare the ICC framework slide or whiteboard layout
+- Prepare the ICC framework slide or shared whiteboard layout
 - Have the partner search announcement demo prompt ready to type
 
 ---
@@ -321,8 +321,8 @@ During break:
 ## Segment 1: Demo -- The ICC Framework in Research Management (11:15 - 11:35, 20 min)
 
 ### Setup
-- Claude Desktop open, new conversation
-- Whiteboard or slide with the ICC framework:
+- Microsoft 365 Copilot open, new conversation
+- Microsoft Whiteboard or a slide with the ICC framework:
   ```
   I = Instruction (What do you want?)
   C = Context (Who are you? What's the situation?)
@@ -344,7 +344,7 @@ Write or display:
 **Live Demo (10 min):**
 > "Let me show you this in action. Let's say I need to write a partner search announcement for the Funding & Tenders portal."
 
-Type in Claude Desktop -- deliberately, so participants can follow:
+Type in Microsoft 365 Copilot -- deliberately, so participants can follow:
 
 ```
 [Instruction] Write a partner search announcement for posting on the
@@ -374,7 +374,7 @@ Funding & Tenders portal. Before writing anything, ask me all the
 questions you need to produce the best possible announcement.
 ```
 
-Show the questions Claude asks. Answer 3-4 of them briefly (type short answers). Then show the output.
+Show the questions Copilot asks. Answer 3-4 of them briefly (type short answers). Then show the output.
 
 > "See what happened? Instead of me trying to think of all the context and constraints upfront, I let the AI figure out what it needs. It asked about things I wouldn't have thought to include -- like whether we have a project acronym yet, or whether there's a specific TRL range. This technique is especially powerful when you're not sure what context matters."
 
@@ -388,10 +388,10 @@ Show the questions Claude asks. Answer 3-4 of them briefly (type short answers).
 
 ### Instructions to Give (5 min)
 
-> "Go back to the prompts you wrote in Exercise 1.1 -- the ones where you asked Claude something the natural way. Each team member is going to rebuild their prompt using ICC structure, and then try the 'ask me questions first' approach for the same task."
+> "Go back to the prompts you wrote in Exercise 1.1 -- the ones where you asked Copilot something the natural way. Each team member is going to rebuild their prompt using ICC structure, and then try the 'ask me questions first' approach for the same task."
 
 > "So for each person's task, you'll have three versions:"
-Write on whiteboard:
+Post in the meeting chat:
 ```
 Version A: Original prompt (from Exercise 1.1)
 Version B: Rebuilt with ICC structure
@@ -404,7 +404,7 @@ Version C: "Ask me questions first" approach
 
 ### During the Exercise (25 min)
 
-**Table visits -- spend ~4-5 min per team:**
+**Breakout-room visits -- spend ~4-5 min per team:**
 
 **What to look for and coach:**
 
@@ -467,8 +467,8 @@ If a team member's original prompt was already quite good:
 
 During lunch:
 - Review team prompts from the shared docs -- identify the strongest examples for afternoon reference
-- Prepare the meta-prompting demo (have ChatGPT and Claude open side by side)
-- Set up the Exercise 1.3 task cards (print or display the team-specific tasks table)
+- Prepare the meta-prompting demo (have ChatGPT and Copilot open side by side)
+- Set up the Exercise 1.3 task assignments (post or share the team-specific tasks table)
 
 ---
 
@@ -482,11 +482,11 @@ During lunch:
 
 ---
 
-## Segment 1: Demo -- Meta-Prompting with ChatGPT + Claude (13:30 - 13:50, 20 min)
+## Segment 1: Demo -- Meta-Prompting with ChatGPT + Copilot (13:30 - 13:50, 20 min)
 
 ### Setup
 - ChatGPT Free open in one browser window
-- Claude Desktop open in another
+- Microsoft 365 Copilot open in another
 - Arrange side-by-side on your screen if possible
 
 ### Facilitation Script
@@ -515,17 +515,17 @@ Let ChatGPT generate the meta-prompt. Read through it with the group.
 
 > "Look at what it included. [Point out specific elements.] It added things like 'reference the Description of Action,' 'align with expected impacts listed in the work programme,' 'use quantitative indicators where possible.' These are things an experienced grant writer would know to include, and the AI just gave them to us for free."
 
-Now copy the generated prompt. Switch to Claude Desktop. Paste it in. Let Claude generate the response.
+Now copy the generated prompt. Switch to Microsoft 365 Copilot. Paste it in. Let Copilot generate the response.
 
-> "So ChatGPT wrote the prompt, Claude executed it. We used one AI's strength -- ChatGPT is excellent at structured prompt generation -- to get the best out of another AI's strength -- Claude is excellent at nuanced, contextual writing."
+> "So ChatGPT wrote the prompt, Copilot executed it. We used one AI's strength -- ChatGPT is excellent at structured prompt generation -- to get the best out of another AI's strength -- Copilot is excellent at grounded, contextual writing and can draw on your Microsoft 365 content."
 
 **Live Demo Part 2 -- The Reverse Prompt (7 min):**
 
-> "Now let me show you the second technique. Sometimes you have a long conversation with Claude -- back and forth, refining, adding details -- and you finally get a great result. But it took 15 messages to get there. You don't want to repeat that process next time."
+> "Now let me show you the second technique. Sometimes you have a long conversation with Copilot -- back and forth, refining, adding details -- and you finally get a great result. But it took 15 messages to get there. You don't want to repeat that process next time."
 
 If you have a pre-prepared long conversation, open it. If not, simulate briefly:
 
-Open a new Claude conversation. Have a brief exchange (3-4 messages) about drafting a project summary, where you iteratively add context. Then type:
+Open a new Copilot conversation. Have a brief exchange (3-4 messages) about drafting a project summary, where you iteratively add context. Then type:
 
 ```
 This final output is exactly what I needed. Write the single prompt
@@ -541,7 +541,7 @@ Show the result.
 **Handling questions (2 min):**
 
 Common questions:
-- "Can I use Claude for meta-prompting too?" -- Yes, but using a different AI helps because it won't have the same biases or blind spots. It's also a good practice run with multiple tools.
+- "Can I use Copilot for meta-prompting too?" -- Yes, but using a different AI helps because it won't have the same biases or blind spots. It's also a good practice run with multiple tools.
 - "What if the meta-prompt is too long?" -- You can ask it to be more concise. But longer, more specific prompts usually produce better results.
 
 ---
@@ -549,8 +549,8 @@ Common questions:
 ## Segment 2: Team Exercise 1.3 -- "The Prompt Factory" (13:50 - 14:30, 40 min)
 
 ### Setup
-- Display the task assignment table on projector
-- Each team should have both ChatGPT and Claude open
+- Share the task assignment table on your screen
+- Each team should have both ChatGPT and Copilot open
 
 ### Instructions to Give (5 min)
 
@@ -567,35 +567,35 @@ Display or read:
 | E - Data Mgmt | Draft a data management plan outline | Write a data sharing agreement summary |
 
 > "For EACH task, follow this workflow:"
-Write on whiteboard:
+Post in the meeting chat:
 ```
 1. Go to ChatGPT --> ask it to write the optimal prompt for this task
 2. Review the meta-prompt as a team --> refine it (add missing context)
-3. Paste the refined prompt into Claude --> execute it
-4. Read the output --> iterate if needed (ask Claude to adjust)
+3. Paste the refined prompt into Copilot --> execute it
+4. Read the output --> iterate if needed (ask Copilot to adjust)
 5. When satisfied, use the reverse prompt technique to capture the final prompt
 6. Save the final prompt -- this goes in your prompt library
 ```
 
-> "Each team member should lead on different steps. One person drives ChatGPT, another drives Claude, the third reviews and takes notes. Switch roles for Task 2."
+> "Each team member should lead on different steps. One person drives ChatGPT, another drives Copilot, the third reviews and takes notes. Switch roles for Task 2."
 
 > "You have 35 minutes. Try to complete both tasks."
 
 ### During the Exercise (35 min)
 
-**Table visit priorities:**
+**Breakout-room visit priorities:**
 
 **Minutes 0-10: Ensure teams get started correctly**
 - Check that teams are using ChatGPT for the meta-prompt, not writing the prompt themselves
-- If a team skips straight to Claude: "Pause -- let's try the meta-prompting approach first. Go to ChatGPT and describe the task you need done."
+- If a team skips straight to Copilot: "Pause -- let's try the meta-prompting approach first. Go to ChatGPT and describe the task you need done."
 
 **Minutes 10-20: Coach on refinement**
 - Look at the meta-prompts ChatGPT generated. Are teams just blindly copying them?
-- Coach: "Read through the meta-prompt before pasting it into Claude. Is anything missing? Does it know what kind of institution you're at? Does it know the specific programme or funder?"
-- If a team's Claude output is mediocre: "What context could you add? Look at the output -- what's wrong with it? Tell Claude specifically what to fix."
+- Coach: "Read through the meta-prompt before pasting it into Copilot. Is anything missing? Does it know what kind of institution you're at? Does it know the specific programme or funder?"
+- If a team's Copilot output is mediocre: "What context could you add? Look at the output -- what's wrong with it? Tell Copilot specifically what to fix."
 
 **Minutes 20-30: Ensure reverse prompt technique is being used**
-- Check that teams are asking Claude to write the reusable prompt
+- Check that teams are asking Copilot to write the reusable prompt
 - Common mistake: teams just save the output, not the prompt. Remind them: "The output is for today. The prompt is forever."
 
 **Minutes 30-35: Wrap up**
@@ -606,9 +606,9 @@ Write on whiteboard:
 
 | Problem | Solution |
 |---------|----------|
-| ChatGPT is slow or rate-limited | Have another team member try on their account; or use Claude itself for meta-prompting this time |
+| ChatGPT is slow or rate-limited | Have another team member try on their account; or use Copilot itself for meta-prompting this time |
 | Team can't think of context for their task | Ask: "If you were training a new colleague on this task, what would you tell them? What documents would you show them?" |
-| Claude's output is too generic despite good prompt | Add an example: "Here's an example of a good [output type]..." or add the constraint "Do not be generic. Be specific to [their context]." |
+| Copilot's output is too generic despite good prompt | Add an example: "Here's an example of a good [output type]..." or add the constraint "Do not be generic. Be specific to [their context]." |
 | Team finishes both tasks early | Challenge: "Now try running your best prompt in Gemini or Perplexity. How does the output compare?" |
 
 ---
@@ -623,7 +623,7 @@ Write on whiteboard:
 Call on each team briefly (2 min each). Listen for:
 - Teams that were surprised by what ChatGPT included in the meta-prompt
 - Teams that found the reverse prompt technique particularly useful
-- Teams that noticed different output quality between ChatGPT and Claude
+- Teams that noticed different output quality between ChatGPT and Copilot
 
 **Prompt Library concept (5 min):**
 > "You now have at least 4 refined prompts -- 2 from this exercise, and 2 from the ICC exercise this morning. Tomorrow, these go into Obsidian as your team's Prompt Library. A prompt library is exactly what it sounds like: a collection of tested, refined prompts organized by task type."
@@ -646,9 +646,9 @@ Guide toward:
 # BREAK (15:00 - 15:15)
 
 During break:
-- Prepare the 4-tool comparison demo (have Claude, ChatGPT, Gemini, Perplexity ready)
+- Prepare the 4-tool comparison demo (have Copilot, ChatGPT, Gemini, Perplexity ready)
 - Select one prompt from the afternoon exercises that will work well across all tools
-- Print or display the comparison matrix template
+- Share the comparison matrix template on your screen
 
 ---
 
@@ -665,7 +665,7 @@ During break:
 ## Segment 1: Demo -- The Same Prompt, Four Tools (15:15 - 15:30, 15 min)
 
 ### Setup
-- Four browser tabs open: Claude, ChatGPT, Gemini, Perplexity
+- Four browser tabs open: Copilot, ChatGPT, Gemini, Perplexity
 - Select a mid-complexity research management prompt. Recommended:
 ```
 What are the key differences between Research and Innovation Actions
@@ -676,7 +676,7 @@ criteria differences. Format as a comparison table.
 
 ### Facilitation Script
 
-> "We've been primarily using Claude today, with ChatGPT as our meta-prompter. But here's a Level 4 insight coming early: different AI tools give you different results for the same prompt. Let me show you."
+> "We've been primarily using Copilot today, with ChatGPT as our meta-prompter. But here's a Level 4 insight coming early: different AI tools give you different results for the same prompt. Let me show you."
 
 Paste the same prompt into all four tools simultaneously (or as fast as you can). While they generate:
 
@@ -684,8 +684,8 @@ Paste the same prompt into all four tools simultaneously (or as fast as you can)
 
 Once all four have responded, walk through the comparison:
 
-**Claude:**
-> "Look at Claude's response. [Point out specifics.] Typically strong on nuance -- it might flag edge cases or caveats. The table is well-structured. It tends to be thorough and careful."
+**Copilot:**
+> "Look at Copilot's response. [Point out specifics.] Typically strong on grounded, careful drafting -- it can weave in your Microsoft 365 content and flags caveats. The table is well-structured and thorough."
 
 **ChatGPT:**
 > "ChatGPT's version. [Point out specifics.] Often gives a clean, well-formatted table quickly. May include a helpful summary paragraph. Sometimes more concise."
@@ -704,7 +704,7 @@ Once all four have responded, walk through the comparison:
 
 Open the Horizon Dashboard (dashboard.tech.ec.europa.eu). Navigate to the statistics section that shows success rates or funding rates for the topic area in your prompt.
 
-> "Look at this number. This is from the EU's official Horizon Dashboard -- the authoritative source. Now let's compare: did any of our four AI tools get this number right? [Check each tool's response.] Did Perplexity cite this source? Did Claude or ChatGPT give the right figure, or an approximation?"
+> "Look at this number. This is from the EU's official Horizon Dashboard -- the authoritative source. Now let's compare: did any of our four AI tools get this number right? [Check each tool's response.] Did Perplexity cite this source? Did Copilot or ChatGPT give the right figure, or an approximation?"
 
 If any tool got the number wrong:
 > "This is exactly why we verify. An AI told you a number with total confidence, and it was [wrong / outdated / approximated]. The Horizon Dashboard is your ground truth for EU funding statistics. Always check."
@@ -727,7 +727,7 @@ If all tools got it right:
 
 Display the matrix template:
 
-| Criterion | Claude | ChatGPT | Gemini | Perplexity |
+| Criterion | Copilot | ChatGPT | Gemini | Perplexity |
 |-----------|--------|---------|--------|------------|
 | Accuracy (factually correct?) | /5 | /5 | /5 | /5 |
 | Completeness (all aspects covered?) | /5 | /5 | /5 | /5 |
@@ -741,11 +741,11 @@ Display the matrix template:
 
 | Verified against Dashboard? | Y/N | Y/N | Y/N | Y/N |
 
-> "Divide the work: one person runs Claude and ChatGPT, another runs Gemini and Perplexity, the third reviews all four outputs, checks the Dashboard, and fills in the matrix. You have 25 minutes."
+> "Divide the work: one person runs Copilot and ChatGPT, another runs Gemini and Perplexity, the third reviews all four outputs, checks the Dashboard, and fills in the matrix. You have 25 minutes."
 
 ### During the Exercise (25 min)
 
-**Table visits:**
+**Breakout-room visits:**
 
 **What to watch for:**
 - Teams just filling in numbers without actually reading the outputs: "Tell me WHY you gave this a 3 for accuracy. What specifically was wrong or missing?"
@@ -755,7 +755,7 @@ Display the matrix template:
 **Key coaching moments:**
 
 On accuracy:
-> "If Claude says the overhead rate is 25% and Perplexity cites a source saying it's 25%, that's corroboration. If they disagree, that's a red flag -- check the source."
+> "If Copilot says the overhead rate is 25% and Perplexity cites a source saying it's 25%, that's corroboration. If they disagree, that's a red flag -- check the source."
 
 On actionability:
 > "Could you paste this output into an email or document and send it with minor edits? Or would you need to rewrite it significantly?"
@@ -774,7 +774,7 @@ On critical evaluation:
 
 > "Let's build a collective reference. Each team: which tool won for your task, and why?"
 
-Go around the room. After each team shares, jot the result on the whiteboard:
+Go around the teams in the main meeting. After each team shares, jot the result on the shared whiteboard:
 
 ```
 Task Type                    | Best Tool  | Why
@@ -786,11 +786,11 @@ Task Type                    | Best Tool  | Why
 
 After all teams have shared:
 
-> "See the pattern? [Identify any patterns -- e.g., Perplexity tends to win for factual/regulatory questions, Claude tends to win for drafting, etc.] This is a living reference. As you use these tools more, you'll refine your own sense of which tool to grab for which job."
+> "See the pattern? [Identify any patterns -- e.g., Perplexity tends to win for factual/regulatory questions, Copilot tends to win for drafting, etc.] This is a living reference. As you use these tools more, you'll refine your own sense of which tool to grab for which job."
 
-> "One more thing: you can also combine tools. Use Perplexity to get the facts with citations, then feed those facts into Claude to draft the document. That's the workflow approach we'll build on Day 3."
+> "One more thing: you can also combine tools. Use Perplexity to get the facts with citations, then feed those facts into Copilot to draft the document. That's the workflow approach we'll build on Day 3."
 
-**Photograph the whiteboard or save the collective reference -- it will be useful on Day 3.**
+**Save the shared whiteboard or the collective reference -- it will be useful on Day 3.**
 
 ---
 
@@ -807,16 +807,16 @@ After all teams have shared:
 ## Segment 1: Obsidian Setup (16:15 - 16:45, 30 min)
 
 ### Setup
-- USB drives with the vault template ZIP, or a download link on the projector
+- The vault template ZIP at a download link posted in Teams
 - Your own Obsidian open with the template vault loaded
-- Step-by-step setup slides or checklist on projector
+- Step-by-step setup slides or checklist to share on screen
 
 ### Facilitation Script
 
 **Distribution (5 min):**
 > "Last activity for today: setting up your knowledge management tool. This is Obsidian -- it's a free app that stores your notes locally as simple text files. Unlike Google Docs or Notion, your data stays on YOUR computer. And it has a powerful feature: you can link notes to each other, creating a web of connected knowledge."
 
-> "Grab the vault template from [USB/download link]. If you haven't installed Obsidian yet, do that first -- obsidian.md, download, install."
+> "Grab the vault template from the download link in Teams. If you haven't installed Obsidian yet, do that first -- obsidian.md, download, install."
 
 Walk them through:
 1. Download/copy the ZIP file
@@ -829,7 +829,7 @@ Once everyone has the vault open (help stragglers -- this is where the team-of-3
 
 > "Let me walk you through the structure."
 
-Show on projector, have them follow along:
+Share your screen, have them follow along:
 
 ```
 /00-Prompts          -- your prompt library lives here
@@ -848,7 +848,7 @@ Show on projector, have them follow along:
 **Demo 2: Linking (3 min)**
 > "Now, the magic of Obsidian. In your prompt note, type two square brackets: [[ -- see the dropdown? You can link to any other note. Link to your tool notes or to related prompts."
 
-Show how to create a link: [[Claude]] or [[Tool Comparison Matrix]]
+Show how to create a link: [[Copilot]] or [[Tool Comparison Matrix]]
 
 > "These links build a web of knowledge. The more you link, the more useful it becomes."
 
@@ -860,14 +860,14 @@ Show the graph view briefly.
 **Plugin check (2 min):**
 > "The vault template comes with three plugins pre-installed: Templates, Dataview, and Kanban. We'll use these tomorrow. For now, just confirm they're enabled: go to Settings --> Community Plugins --> check that all three are turned on."
 
-Walk the room and verify. Common issues:
+Check in with each team and verify. Common issues:
 - "Community plugins aren't enabled" --> Settings --> Community Plugins --> Turn on community plugins --> Enable each plugin
 - "I can't find the plugins" --> They may need to be installed if the vault template didn't include them. Show the Community Plugins browse/search feature.
 
 **Quick practice (5 min):**
 > "Take 5 minutes now. Transfer at least one prompt from your shared team document into your Obsidian vault. Create a note in /00-Prompts. If you finish quickly, start a note in /02-Tool-Notes for one of the AI tools you used today."
 
-Walk around and help. This is just about getting comfortable with the basic mechanics.
+Drop into breakout rooms and help. This is just about getting comfortable with the basic mechanics.
 
 ---
 
@@ -877,7 +877,7 @@ Walk around and help. This is just about getting comfortable with the basic mech
 
 > "Final task for Day 1. Create a new note in /05-Daily-Reflections/ called 'Day1'. Answer three questions -- just a few sentences each:"
 
-Display on projector:
+Share on your screen:
 ```
 1. What surprised you most today about AI?
 2. What is your most useful prompt so far? (link to it!)
@@ -892,17 +892,17 @@ Let them write quietly for 10 minutes.
 **Closing (5 min):**
 > "Great first day. You started at Level 1 -- asking AI questions like Google. You're now solidly at Level 2 -- you understand prompt structure, you've used meta-prompting, you've compared tools, and you've started building a prompt library."
 
-> "Tomorrow, we go to Level 3: you'll build persistent AI workspaces in Claude Projects, learn to analyze complex documents with NotebookLM and Gemini, do research intelligence gathering with Perplexity, and connect everything in Obsidian. See you at 9 AM."
+> "Tomorrow, we go to Level 3: you'll build persistent AI workspaces as Copilot Notebooks, learn to analyze complex documents with NotebookLM and Gemini, do research intelligence gathering with Perplexity, and connect everything in Obsidian. See you at 9 AM."
 
 ---
 
-## End-of-Day Facilitator Debrief (do this after participants leave)
+## End-of-Day Facilitator Debrief (do this after participants log off)
 
 - [ ] Review all teams' shared documents -- note quality of prompts, any teams that struggled
 - [ ] Identify 1-2 prompts per team that could be highlighted tomorrow
 - [ ] Check that all participants have Obsidian working (follow up via email with anyone who had issues)
 - [ ] Review the collective tool-task fit reference from the whiteboard -- you'll build on this Day 3
-- [ ] Pre-load your Claude Project demo for Module 2.2 (custom instructions, sample files uploaded)
+- [ ] Pre-load your Copilot Notebook demo for Module 2.2 (working brief, sample sources added)
 - [ ] Pre-load your NotebookLM demo notebook for Module 2.3 (3 sample documents uploaded, some questions already asked)
 - [ ] Prepare the Day 2 quiz questions:
   - What does ICC stand for?

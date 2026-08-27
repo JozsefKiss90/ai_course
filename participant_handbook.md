@@ -20,11 +20,23 @@
 
 ---
 
+## How This Course Runs (Microsoft Teams)
+
+This is a live, online course delivered over three days via **Microsoft Teams**.
+
+- **Plenary sessions** (demos, framing, share-outs) run in the main Teams meeting -- keep your camera on when you can.
+- **Team exercises** run in your team's **breakout room**; the facilitator drops in to help.
+- **Ask questions any time** in the meeting chat -- the facilitator watches it throughout.
+- **Screen sharing:** you'll share your screen during share-outs and your capstone demo, so keep your tools pre-loaded.
+- **Files and links** (vault template, scenario briefs, forms) are posted in the course Teams channel.
+
+---
+
 ## Your Tool Ecosystem
 
 | Tool | What It Does Best | URL | Login? |
 |------|------------------|-----|--------|
-| **Claude Desktop** | Writing, analysis, Projects (persistent context), Artifacts (interactive tools) | claude.ai | Yes |
+| **Microsoft 365 Copilot** | Writing, analysis, Notebooks (persistent context), Agents (custom tools) | microsoft365.com | Work account |
 | **ChatGPT Free** | Meta-prompting, Canvas, structured outputs | chatgpt.com | Yes |
 | **Google Gemini** | Processing very long documents (100+ pages) | gemini.google.com | Google acct |
 | **Perplexity AI** | Cited research, live web data, fact verification | perplexity.ai | Yes |
@@ -36,7 +48,7 @@
 ### When to Use Which Tool
 
 ```
-Need to WRITE or DRAFT something?          --> Claude Project
+Need to WRITE or DRAFT something?          --> Microsoft 365 Copilot
 Need to ANALYZE your own documents?        --> NotebookLM
 Need to process a VERY LONG document?      --> Google Gemini
 Need CURRENT facts with citations?         --> Perplexity AI
@@ -44,7 +56,7 @@ Need OFFICIAL EU funding statistics?       --> Horizon Dashboard
 Need to VERIFY a number from an AI?        --> Horizon Dashboard
 Need AI to WRITE a better PROMPT?          --> ChatGPT (meta-prompting)
 Need a VISUAL deliverable?                 --> Canva AI
-Need to BUILD an interactive tool?         --> Claude Artifacts
+Need to BUILD an interactive tool?         --> Copilot Agent (Agent Builder)
 Need to ORGANIZE and CONNECT everything?   --> Obsidian
 ```
 
@@ -104,7 +116,7 @@ I need to [task]. Before doing anything, ask me all the
 questions you need to produce the best possible result.
 ```
 
-### 2. Meta-Prompting (ChatGPT --> Claude)
+### 2. Meta-Prompting (ChatGPT --> Copilot)
 Use one AI to write optimized prompts for another:
 
 ```
@@ -113,7 +125,7 @@ prompt I should use, including all the context and constraints
 that would produce the best result.
 ```
 
-Then copy the generated prompt into Claude.
+Then copy the generated prompt into Copilot.
 
 ### 3. Reverse Prompt
 After a long conversation produces a great result:
@@ -136,16 +148,16 @@ Always verify quantitative claims from AI against official sources:
 
 ---
 
-## Claude Projects Quick Reference
+## Copilot Notebooks Quick Reference
 
-### Setting Up a Project
-1. Go to claude.ai --> Projects --> New Project
+### Setting Up a Notebook
+1. Go to microsoft365.com --> Copilot --> Notebooks --> New notebook
 2. Give it a clear, specific name (e.g., "Horizon Europe Grant Assistant")
-3. Write custom instructions (see template below)
-4. Upload reference files (PDFs, text files)
-5. Every new conversation in the Project inherits your instructions and files
+3. Add a working brief as the first note (see template below)
+4. Add reference sources (PDFs, Word/Excel files, Copilot Pages, meeting notes)
+5. Every chat in the Notebook stays grounded in your brief and sources -- and your team can co-work in it in real time
 
-### Custom Instructions Template
+### Working Brief Template
 
 ```
 You are a [role] working with [institution type].
@@ -167,9 +179,26 @@ Output formatting:
 
 ---
 
+## Copilot Agents Quick Reference
+
+A **custom agent** (built with Agent Builder) packages a task into a reusable, shareable tool -- described in plain language, no coding.
+
+### Building an Agent
+1. Go to microsoft365.com --> Copilot --> **Create agent** (Agent Builder)
+2. Give it a clear name (e.g., "Ethics Screening Assistant")
+3. Write its **instructions**: what it should ask the user, in what order, and what it should produce (your Notebook working brief is a great starting point)
+4. Optional: add **knowledge** sources, and turn on **"Create documents, charts, and code"** for calculations or charts
+5. Test it in the **"Try it"** pane, then **share** it with colleagues
+
+### Notebook vs. Agent
+- **Notebook** = a persistent workspace *you* work in, grounded in your sources.
+- **Agent** = a reusable tool *others* can use, that interviews the user and produces a specific output.
+
+---
+
 ## NotebookLM Quick Reference
 
-### Key Differences from Claude
+### Key Differences from Copilot
 - Only uses YOUR uploaded documents (no training data)
 - Every claim has a clickable citation to the source passage
 - Cannot make things up -- tells you when information isn't in your sources
@@ -197,7 +226,7 @@ Output formatting:
 1. Navigate to dashboard.tech.ec.europa.eu
 2. Find the relevant statistics (e.g., success rates for your cluster)
 3. Export as CSV
-4. Upload the CSV to Claude or Gemini
+4. Upload the CSV to Copilot or Gemini
 5. Ask for trend analysis, comparisons, or strategic insights
 
 ### Key Principle
@@ -221,8 +250,8 @@ Use this framework when designing AI-assisted workflows:
 
 ### Handoff Mechanics
 - **Text outputs:** Copy from Tool A, paste into Tool B with an instruction like: "Based on the following [analysis/findings]: [paste]"
-- **CSV data (Dashboard):** Export CSV, upload directly to Claude or Gemini
-- **Document analysis (NotebookLM):** Copy the structured output, paste as context into Claude
+- **CSV data (Dashboard):** Export CSV, upload directly to Copilot or Gemini
+- **Document analysis (NotebookLM):** Copy the structured output, paste as context into Copilot
 - **All outputs:** Save to Obsidian with links to related notes
 
 ---
@@ -255,12 +284,12 @@ Ask yourself: "If I were reading this note and wanted more information about som
 By the end of the course, your team should have:
 
 - [ ] **Prompt Library** -- 10+ refined prompts in Obsidian `/00-Prompts/`
-- [ ] **Claude Project** -- Configured workspace with custom instructions and reference files
+- [ ] **Copilot Notebook** -- Configured workspace with a working brief and reference sources
 - [ ] **NotebookLM Notebook** -- Source-grounded analysis of your domain documents
 - [ ] **Intelligence Briefing** -- Citation-backed research briefing in Obsidian
 - [ ] **Tool Comparison Matrix** -- Evaluation of tools for your task types
 - [ ] **Horizon Dashboard Analysis** -- Official data exported and analyzed
-- [ ] **Interactive Artifact** -- Working prototype tool built in Claude
+- [ ] **Interactive Agent** -- Working custom agent built with Agent Builder
 - [ ] **Visual Asset** -- Professional one-pager or infographic from Canva
 - [ ] **Documented Workflow** -- Complete multi-tool workflow in Obsidian
 - [ ] **Obsidian Knowledge Vault** -- Linked notes, session logs, Kanban board

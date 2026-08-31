@@ -12,7 +12,7 @@ Requires Python 3.11+ and `python-pptx`. Tests: `python -m pytest tests/test_dec
 ## Where slides come from
 
 - `build.py` — session order: title slide, then per segment a divider + that segment's slides. Segment names/durations/modes mirror the Timing Overview in `lesson_1.md`.
-- `template.py` — the single source of visual truth: fonts, colors, footer, and the slide builders (`add_content_slide`, `add_section_divider`, `add_placeholder_slide`). The content area for custom shapes is `CONTENT_LEFT/TOP/WIDTH/HEIGHT`.
+- `template.py` — the single source of visual truth: fonts, colors, footer, and the slide builders (`add_content_slide`, `add_section_divider`, `add_placeholder_slide`, `add_demo_cue`). Segment modules style their custom shapes with `template.solid(shape, color)` and `template.style(run, ...)` plus the color constants. The content area for custom shapes is `CONTENT_LEFT/TOP/WIDTH/HEIGHT`.
 - `segments/` — one module per segment, each exposing `add_slides(prs)`. Tickets 02–07 each replace the placeholders in exactly one module:
 
 | Module | Ticket |

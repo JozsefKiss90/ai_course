@@ -26,6 +26,8 @@ HIGHLIGHT = RGBColor(0xC5, 0x5A, 0x11)  # warm orange — demo cues, emphasis
 TEXT = RGBColor(0x26, 0x26, 0x26)
 MUTED = RGBColor(0x59, 0x59, 0x59)
 PALE = RGBColor(0xDE, 0xEB, 0xF7)  # pale blue — placeholder cards, fills
+PALE_WARM = RGBColor(0xFB, 0xE5, 0xD6)  # pale orange — alternating chips, soft emphasis
+WHITE = RGBColor(0xFF, 0xFF, 0xFF)
 
 FOOTER_TEXT = "AI for Research Management · Lesson 1 · Week 1"
 
@@ -72,7 +74,7 @@ def _apply_theme(prs):
     )
 
 
-def _solid(shape, color):
+def solid(shape, color):
     """Flat fill with no outline or shadow — the deck's shape style."""
     shape.fill.solid()
     shape.fill.fore_color.rgb = color
@@ -111,7 +113,7 @@ def _add_master_footer(prs):
         Inches(0.6), Inches(7.08), Inches(12.13), Pt(1.2),
     )
     line = _master_add_shape(master, sp)
-    _solid(line, ACCENT)
+    solid(line, ACCENT)
 
     sp = CT_Shape.new_textbox_sp(
         master_next_id(master), "Footer Text",
@@ -126,10 +128,10 @@ def _add_master_footer(prs):
     para = tf.paragraphs[0]
     run = para.add_run()
     run.text = FOOTER_TEXT
-    _style(run, size=10, color=MUTED)
+    style(run, size=10, color=MUTED)
 
 
-def _style(run, size, color, font=BODY_FONT, bold=False, italic=False):
+def style(run, size, color, font=BODY_FONT, bold=False, italic=False):
     run.font.name = font
     run.font.size = Pt(size)
     run.font.color.rgb = color
@@ -165,12 +167,12 @@ def add_title_slide(prs, title, course_name, session_line):
     tf = _add_text(slide, Inches(0.9), Inches(1.55), Inches(11.5), Inches(0.5))
     run = tf.paragraphs[0].add_run()
     run.text = course_name.upper()
-    _style(run, size=16, color=ACCENT, font=HEADING_FONT)
+    style(run, size=16, color=ACCENT, font=HEADING_FONT)
 
     band = slide.shapes.add_shape(
         MSO_SHAPE.RECTANGLE, 0, Inches(2.2), SLIDE_WIDTH, Inches(2.3)
     )
-    _solid(band, PRIMARY)
+    solid(band, PRIMARY)
     tf = band.text_frame
     tf.word_wrap = True
     tf.margin_left = Inches(0.9)
@@ -178,12 +180,12 @@ def add_title_slide(prs, title, course_name, session_line):
     tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     run = tf.paragraphs[0].add_run()
     run.text = title
-    _style(run, size=36, color=RGBColor(0xFF, 0xFF, 0xFF), font=HEADING_FONT, bold=True)
+    style(run, size=36, color=WHITE, font=HEADING_FONT, bold=True)
 
     tf = _add_text(slide, Inches(0.9), Inches(4.8), Inches(11.5), Inches(0.5))
     run = tf.paragraphs[0].add_run()
     run.text = session_line
-    _style(run, size=16, color=MUTED)
+    style(run, size=16, color=MUTED)
     return slide
 
 
@@ -195,13 +197,13 @@ def add_section_divider(prs, number, total, title, duration, mode):
     band = slide.shapes.add_shape(
         MSO_SHAPE.RECTANGLE, 0, 0, Inches(2.6), Inches(7.08)
     )
-    _solid(band, PRIMARY)
+    solid(band, PRIMARY)
     tf = band.text_frame
     tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     tf.paragraphs[0].alignment = PP_ALIGN.CENTER
     run = tf.paragraphs[0].add_run()
     run.text = str(number)
-    _style(run, size=96, color=RGBColor(0xFF, 0xFF, 0xFF), font=HEADING_FONT, bold=True)
+    style(run, size=96, color=WHITE, font=HEADING_FONT, bold=True)
 
     tf = _add_text(
         slide, Inches(3.1), Inches(2.35), Inches(9.4), Inches(1.6),
@@ -209,17 +211,17 @@ def add_section_divider(prs, number, total, title, duration, mode):
     )
     run = tf.paragraphs[0].add_run()
     run.text = title
-    _style(run, size=32, color=PRIMARY, font=HEADING_FONT, bold=True)
+    style(run, size=32, color=PRIMARY, font=HEADING_FONT, bold=True)
 
     tf = _add_text(slide, Inches(3.1), Inches(4.1), Inches(9.4), Inches(0.5))
     run = tf.paragraphs[0].add_run()
     run.text = f"{duration} · {mode}"
-    _style(run, size=18, color=ACCENT)
+    style(run, size=18, color=ACCENT)
 
     tf = _add_text(slide, Inches(3.1), Inches(4.65), Inches(9.4), Inches(0.4))
     run = tf.paragraphs[0].add_run()
     run.text = f"Segment {number} of {total}"
-    _style(run, size=12, color=MUTED)
+    style(run, size=12, color=MUTED)
     return slide
 
 
@@ -235,12 +237,12 @@ def add_content_slide(prs, title, body_lines=None, notes=None):
     tf = _add_text(slide, Inches(0.6), Inches(0.45), Inches(12.13), Inches(0.7))
     run = tf.paragraphs[0].add_run()
     run.text = title
-    _style(run, size=28, color=PRIMARY, font=HEADING_FONT, bold=True)
+    style(run, size=28, color=PRIMARY, font=HEADING_FONT, bold=True)
 
     rule = slide.shapes.add_shape(
         MSO_SHAPE.RECTANGLE, Inches(0.6), Inches(1.2), Inches(1.6), Pt(3)
     )
-    _solid(rule, ACCENT)
+    solid(rule, ACCENT)
 
     if body_lines:
         tf = _add_text(slide, CONTENT_LEFT, CONTENT_TOP, CONTENT_WIDTH, CONTENT_HEIGHT)
@@ -252,12 +254,33 @@ def add_content_slide(prs, title, body_lines=None, notes=None):
             para.level = level
             run = para.add_run()
             run.text = text
-            _style(run, size=18 if level == 0 else 15, color=TEXT if level == 0 else MUTED)
+            style(run, size=18 if level == 0 else 15, color=TEXT if level == 0 else MUTED)
             para.space_after = Pt(8)
 
     if notes:
         set_notes(slide, notes)
     return slide
+
+
+def add_demo_cue(slide, text, top, left=CONTENT_LEFT, width=CONTENT_WIDTH):
+    """Orange live-demo marker: the facilitator switches to a live tool here.
+
+    Renders as a filled band reading "▶ LIVE DEMO — <text>". Callers must
+    also mention the demo in the slide's speaker notes.
+    """
+    band = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, Inches(0.55)
+    )
+    solid(band, HIGHLIGHT)
+    tf = band.text_frame
+    tf.word_wrap = True
+    tf.margin_left = Inches(0.25)
+    tf.margin_right = Inches(0.25)
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    run = tf.paragraphs[0].add_run()
+    run.text = f"▶ LIVE DEMO — {text}"
+    style(run, size=16, color=WHITE, font=HEADING_FONT, bold=True)
+    return band
 
 
 def add_placeholder_slide(prs, segment_label, planned_title, gist, ticket):
@@ -280,12 +303,12 @@ def add_placeholder_slide(prs, segment_label, planned_title, gist, ticket):
     para.alignment = PP_ALIGN.CENTER
     run = para.add_run()
     run.text = f"[PLACEHOLDER] {segment_label}"
-    _style(run, size=20, color=PRIMARY, font=HEADING_FONT, bold=True)
+    style(run, size=20, color=PRIMARY, font=HEADING_FONT, bold=True)
     para = tf.add_paragraph()
     para.alignment = PP_ALIGN.CENTER
     run = para.add_run()
     run.text = gist
-    _style(run, size=14, color=MUTED)
+    style(run, size=14, color=MUTED)
 
     set_notes(
         slide,

@@ -283,6 +283,68 @@ def add_demo_cue(slide, text, top, left=CONTENT_LEFT, width=CONTENT_WIDTH):
     return band
 
 
+def add_band(slide, top, height, text, size=20, fill=PRIMARY, sub=None):
+    """Full-width emphasis band: centered bold white text on a filled
+    rounded rectangle spanning the content area; optional sub-line."""
+    band = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE, CONTENT_LEFT, top, CONTENT_WIDTH, height
+    )
+    solid(band, fill)
+    tf = band.text_frame
+    tf.word_wrap = True
+    tf.margin_left = Inches(0.4)
+    tf.margin_right = Inches(0.4)
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+    run = tf.paragraphs[0].add_run()
+    run.text = text
+    style(run, size=size, color=WHITE, font=HEADING_FONT, bold=True)
+    if sub:
+        para = tf.add_paragraph()
+        para.alignment = PP_ALIGN.CENTER
+        para.space_before = Pt(6)
+        run = para.add_run()
+        run.text = sub
+        style(run, size=13, color=PALE)
+    return band
+
+
+def add_card(slide, left, top, width, height, fill, heading, heading_color,
+             body=None):
+    """Rounded card with a bold heading and an optional body paragraph."""
+    card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width,
+                                  height)
+    solid(card, fill)
+    tf = card.text_frame
+    tf.word_wrap = True
+    tf.margin_left = Inches(0.25)
+    tf.margin_right = Inches(0.25)
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    run = tf.paragraphs[0].add_run()
+    run.text = heading
+    style(run, size=18, color=heading_color, font=HEADING_FONT, bold=True)
+    if body:
+        para = tf.add_paragraph()
+        para.space_before = Pt(4)
+        run = para.add_run()
+        run.text = body
+        style(run, size=14, color=TEXT)
+    return card
+
+
+def add_label(slide, left, top, width, text, size=14, color=MUTED, italic=False,
+              align=PP_ALIGN.LEFT):
+    """Small free-standing caption/label text."""
+    box = slide.shapes.add_textbox(left, top, width, Inches(0.4))
+    tf = box.text_frame
+    tf.word_wrap = True
+    tf.paragraphs[0].alignment = align
+    run = tf.paragraphs[0].add_run()
+    style(run, size=size, color=color, italic=italic)
+    run.text = text
+    return box
+
+
 def add_placeholder_slide(prs, segment_label, planned_title, gist, ticket):
     """A visibly-unfinished slide standing in for one planned content slide."""
     slide = add_content_slide(prs, planned_title)

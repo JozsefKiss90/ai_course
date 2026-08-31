@@ -71,7 +71,7 @@ def test_dividers_appear_in_session_order(reopened):
 # Placeholder slides each segment carries until tickets 02–07 land, sized
 # from the slide inventory implied by lesson_1.md's segment plans.
 EXPECTED_PLACEHOLDERS = {
-    "Opening: why this matters": 4,
+    "Opening: why this matters": 0,  # ticket 02 landed
     "The map: LLM fundamentals + 7 Levels tour": 2,  # 2B only; 2A landed (ticket 03)
     "Prompt engineering: ICC, meta-prompting, patterns": 6,
     "Assignment briefing + close": 4,
@@ -111,6 +111,65 @@ def test_placeholder_slides_carry_notes_naming_their_ticket(reopened):
         if "[PLACEHOLDER]" in _slide_text(slide):
             notes = slide.notes_slide.notes_text_frame.text
             assert "ticket" in notes.lower()
+
+
+# --- Segment 1: Why this matters (ticket 02) --------------------------------
+
+SEG1_TITLES = [
+    "AI and the geography of job risk",
+    "The risk is concentrated in knowledge work",
+    "The augmentation–displacement pipeline",
+    "The turn: skill, not job title",
+]
+
+
+def test_seg1_slides_present_in_order_and_not_placeholders(reopened):
+    all_slides = [_slide_text(s) for s in reopened.slides]
+    positions = []
+    for title in SEG1_TITLES:
+        matches = [i for i, t in enumerate(all_slides) if title in t]
+        assert matches, f"no slide titled {title!r}"
+        assert "[PLACEHOLDER]" not in all_slides[matches[0]]
+        positions.append(matches[0])
+    assert positions == sorted(positions)
+
+
+def test_headline_figures_slide_shows_stats_and_credits_tufts(reopened):
+    text = _slide_text(_slide_by_title(reopened, "AI and the geography of job risk"))
+    assert "9.3" in text
+    assert "757" in text
+    assert "2.7" in text and "19.5" in text
+    assert "Tufts Digital Planet" in text
+
+
+def test_concentration_slide_shows_the_vulnerability_figures(reopened):
+    text = _slide_text(
+        _slide_by_title(reopened, "The risk is concentrated in knowledge work")
+    )
+    for figure in ("18%", "16%", "6%"):
+        assert figure in text, f"{figure} missing"
+
+
+def test_pipeline_slide_carries_the_verbatim_quote(reopened):
+    text = _slide_text(
+        _slide_by_title(reopened, "The augmentation–displacement pipeline")
+    )
+    assert "The more AI helps you do your job, the more expendable you become." in text
+
+
+def test_turn_slide_lands_the_not_fear_skill_framing(reopened):
+    text = _slide_text(_slide_by_title(reopened, "The turn: skill, not job title"))
+    assert "not fear" in text.lower()
+    assert "research management" in text.lower()
+
+
+def test_every_seg1_slide_has_speaker_notes(reopened):
+    for title in SEG1_TITLES:
+        slide = _slide_by_title(reopened, title)
+        assert slide.has_notes_slide, f"{title!r} has no notes slide"
+        assert slide.notes_slide.notes_text_frame.text.strip(), (
+            f"{title!r} has empty speaker notes"
+        )
 
 
 # --- Segment 2A: How LLMs actually work (ticket 03) -------------------------

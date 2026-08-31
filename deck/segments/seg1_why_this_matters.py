@@ -1,30 +1,227 @@
 """Segment 1 — Opening: why this matters (10 min, Presentation).
 
-Ticket 02 replaces these placeholders with the real slides. Edit only
-this module; the divider is added by deck/build.py.
+Four slides per lesson_1.md Segment 1: the Tufts Digital Planet headline
+figures, the concentration of risk in knowledge work, the augmentation–
+displacement pipeline with its verbatim quote, and the turn — the course
+thesis, framed for research management administrators. Not fear — skill.
 """
 
+from pptx.enum.shapes import MSO_SHAPE
+from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
+from pptx.util import Inches, Pt
+
 from deck import template
+from deck.template import (
+    ACCENT, HEADING_FONT, MUTED, PALE, PALE_WARM, PRIMARY, TEXT,
+)
 
-SEGMENT_LABEL = "Segment 1"
-TICKET = "02"
+TUFTS_CREDIT = (
+    "Source: Tufts Digital Planet — AI and the Emerging Geography of "
+    "American Job Risk"
+)
 
-PLANNED_SLIDES = [
-    ("AI and the geography of job risk",
-     "Tufts headline figures: 9.3M US jobs at risk (range 2.7–19.5M), "
-     "$757B in annual income — numbers large, Tufts Digital Planet credited"),
-    ("The risk is concentrated in knowledge work",
-     "Information 18%, Finance/Insurance 16%, Professional Services 16% "
-     "vs. 6% industry average; 'safe' analytical office jobs most exposed"),
-    ("The augmentation–displacement pipeline",
-     "Highest augmentation potential = highest displacement risk, with the "
-     "verbatim quote: 'The more AI helps you do your job, the more expendable you become.'"),
-    ("The turn: skill, not job title",
-     "The course thesis — direct AI, verify it, build systems with it — "
-     "framed for research management administrators (not fear, skill)"),
+
+def _stat_tile(slide, left, width, number, caption, detail=None):
+    """Big-number tile: the figure dominates, the caption explains it."""
+    tile = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE, left, Inches(2.1), width, Inches(3.1)
+    )
+    template.solid(tile, PALE)
+    tf = tile.text_frame
+    tf.word_wrap = True
+    tf.margin_left = Inches(0.4)
+    tf.margin_right = Inches(0.4)
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    para = tf.paragraphs[0]
+    para.alignment = PP_ALIGN.CENTER
+    run = para.add_run()
+    run.text = number
+    template.style(run, size=54, color=PRIMARY, font=HEADING_FONT, bold=True)
+    para = tf.add_paragraph()
+    para.alignment = PP_ALIGN.CENTER
+    para.space_before = Pt(8)
+    run = para.add_run()
+    run.text = caption
+    template.style(run, size=16, color=TEXT)
+    if detail:
+        para = tf.add_paragraph()
+        para.alignment = PP_ALIGN.CENTER
+        para.space_before = Pt(6)
+        run = para.add_run()
+        run.text = detail
+        template.style(run, size=13, color=MUTED, italic=True)
+    return tile
+
+
+def _headline_figures_slide(prs):
+    slide = template.add_content_slide(
+        prs,
+        "AI and the geography of job risk",
+        ["What new research says about where AI lands in the labor market:"],
+    )
+    _stat_tile(
+        slide, template.CONTENT_LEFT, Inches(5.96),
+        "9.3 million",
+        "US jobs at risk under the median AI-adoption scenario",
+        "range across scenarios: 2.7–19.5 million",
+    )
+    _stat_tile(
+        slide, Inches(6.77), Inches(5.96),
+        "$757 billion",
+        "in annual income attached to those jobs",
+    )
+    template.add_label(slide, template.CONTENT_LEFT, Inches(5.5),
+                       template.CONTENT_WIDTH, TUFTS_CREDIT, size=11)
+    template.set_notes(slide, (
+        "~2 min. Open the session here — but set the tone in the first "
+        "sentence: the point of these numbers is not fear. The Tufts Digital "
+        "Planet research maps where AI lands in the US labor market, and it "
+        "lands exactly on administrative and knowledge work — our kind of "
+        "work. 9.3 million US jobs at risk under the median AI-adoption "
+        "scenario (the honest range across scenarios is 2.7 to 19.5 "
+        "million), representing 757 billion dollars in annual income.\n\n"
+        "Let the numbers breathe, then move on: the interesting part is not "
+        "how big the number is but where the risk concentrates — next slide."
+    ))
+
+
+# Vulnerability by sector, per the Tufts research: three knowledge-work
+# sectors against the all-industry average.
+_VULNERABILITY_ROWS = [
+    ("Information", 18, PRIMARY),
+    ("Finance / Insurance", 16, PRIMARY),
+    ("Professional Services", 16, PRIMARY),
+    ("All-industry average", 6, ACCENT),
 ]
+
+_BAR_SCALE = 0.42  # inches per percentage point
+
+
+def _concentration_slide(prs):
+    slide = template.add_content_slide(
+        prs,
+        "The risk is concentrated in knowledge work",
+        ["Share of jobs vulnerable to AI, by sector:"],
+    )
+    top = 2.15
+    for sector, pct, fill in _VULNERABILITY_ROWS:
+        template.add_label(slide, template.CONTENT_LEFT, Inches(top + 0.06),
+                           Inches(3.0), sector, size=14, color=TEXT)
+        bar = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE, Inches(3.7), Inches(top),
+            Inches(pct * _BAR_SCALE), Inches(0.5),
+        )
+        template.solid(bar, fill)
+        template.add_label(slide, Inches(3.7 + pct * _BAR_SCALE + 0.15),
+                           Inches(top + 0.04), Inches(1.0), f"{pct}%",
+                           size=16, color=PRIMARY)
+        top += 0.75
+    template.add_label(
+        slide, template.CONTENT_LEFT, Inches(5.35), template.CONTENT_WIDTH,
+        "High-skill, analytical, office-based occupations face the steepest "
+        "exposure. The jobs historically “safe” from automation are now the "
+        "most exposed.",
+        size=16, color=TEXT,
+    )
+    template.add_label(slide, template.CONTENT_LEFT, Inches(6.35),
+                       template.CONTENT_WIDTH, TUFTS_CREDIT, size=11)
+    template.set_notes(slide, (
+        "~2 min. Walk the bars top-down: Information 18%, Finance and "
+        "Insurance 16%, Professional Services 16% — against a 6% "
+        "all-industry average. Three times the average, and all three are "
+        "knowledge-work sectors.\n\n"
+        "Land the reversal: for decades, automation threatened manual and "
+        "routine work while analytical office jobs were the 'safe' ones. "
+        "This research says the opposite is now true — high-skill, "
+        "analytical, office-based occupations face the steepest exposure. "
+        "Research management sits in exactly this category; say so, but "
+        "save the full framing for the thesis slide in a minute."
+    ))
+
+
+def _pipeline_slide(prs):
+    slide = template.add_content_slide(
+        prs,
+        "The augmentation–displacement pipeline",
+        ["The research's counterintuitive core finding: help and risk are "
+         "the same list."],
+    )
+    template.add_card(
+        slide, template.CONTENT_LEFT, Inches(2.3), Inches(5.5), Inches(1.7),
+        PALE, "Highest augmentation potential", PRIMARY,
+        "The occupations where AI helps the most with everyday tasks…",
+    )
+    template.add_label(slide, Inches(6.2), Inches(2.85), Inches(0.8), "→",
+                       size=32, color=ACCENT, align=PP_ALIGN.CENTER)
+    template.add_card(
+        slide, Inches(7.23), Inches(2.3), Inches(5.5), Inches(1.7),
+        PALE_WARM, "Highest displacement risk", PRIMARY,
+        "…are the same occupations AI can most readily replace.",
+    )
+    template.add_band(
+        slide, Inches(4.5), Inches(1.55),
+        "“The more AI helps you do your job, the more expendable you become.”",
+        size=22, sub="— the researchers' own framing",
+    )
+    template.set_notes(slide, (
+        "~2 min. This is the slide the whole opening builds to. The naive "
+        "expectation is that AI-helps and AI-replaces are different lists "
+        "of jobs. The research found they are the same list: the "
+        "occupations with the highest augmentation potential also show the "
+        "highest displacement risk.\n\n"
+        "Read the quote out loud, then pause. Then plant the question the "
+        "next slide answers: if being helped by AI makes you expendable, "
+        "what makes the difference between at-risk and empowered? Hold "
+        "there — that turn is the whole point of the course."
+    ))
+
+
+def _turn_slide(prs):
+    slide = template.add_content_slide(
+        prs,
+        "The turn: skill, not job title",
+        ["The point is not fear. The same research implies the way through — "
+         "what matters is how you work with AI, not what your job is called."],
+    )
+    template.add_card(
+        slide, template.CONTENT_LEFT, Inches(2.5), Inches(5.96), Inches(1.9),
+        PALE_WARM, "Displacement attaches to shallow use", PRIMARY,
+        "Letting AI do the job for you — unchecked, unexamined, at a "
+        "shallow level.",
+    )
+    template.add_card(
+        slide, Inches(6.77), Inches(2.5), Inches(5.96), Inches(1.9),
+        PALE, "Value attaches to moving up the skill curve", PRIMARY,
+        "Directing AI, verifying it, and building systems with it. This "
+        "course exists to move you up that curve.",
+    )
+    template.add_band(
+        slide, Inches(4.85), Inches(1.35),
+        "Research management is administrative, analytical knowledge work — "
+        "squarely in the exposed zone.\nThat is precisely why learning this "
+        "well matters for you, now.",
+        size=18,
+    )
+    template.set_notes(slide, (
+        "~3 min, including a beat for questions. Answer the question the "
+        "quote raised: displacement risk attaches to people who let AI do "
+        "their job for them at a shallow level. People who move up the "
+        "skill curve — who direct AI, verify it, and build systems with it "
+        "— become more valuable, not less. That is the course thesis, and "
+        "the reason this course exists.\n\n"
+        "Then make it personal for this audience: research management is "
+        "administrative, analytical knowledge work — squarely in the "
+        "exposed zone, which is precisely why learning this well matters "
+        "now. Keep the register matter-of-fact, not alarmist: the numbers "
+        "were the diagnosis, the course is the response.\n\n"
+        "Bridge to Segment 2: 'so let's start by understanding the tool "
+        "itself — what these models actually are, and why they behave so "
+        "strangely.'"
+    ))
 
 
 def add_slides(prs):
-    for title, gist in PLANNED_SLIDES:
-        template.add_placeholder_slide(prs, SEGMENT_LABEL, title, gist, TICKET)
+    _headline_figures_slide(prs)
+    _concentration_slide(prs)
+    _pipeline_slide(prs)
+    _turn_slide(prs)

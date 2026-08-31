@@ -9,45 +9,12 @@ engineering jargon.
 
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
-from pptx.util import Inches, Pt
+from pptx.util import Inches
 
 from deck import template
 from deck.template import (
     ACCENT, HEADING_FONT, HIGHLIGHT, MUTED, PALE, PALE_WARM, PRIMARY, TEXT, WHITE,
 )
-
-
-def _card(slide, left, top, width, height, fill, heading, heading_color, body=None):
-    """Rounded card with a bold heading and an optional body paragraph."""
-    card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
-    template.solid(card, fill)
-    tf = card.text_frame
-    tf.word_wrap = True
-    tf.margin_left = Inches(0.25)
-    tf.margin_right = Inches(0.25)
-    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-    run = tf.paragraphs[0].add_run()
-    run.text = heading
-    template.style(run, size=18, color=heading_color, font=HEADING_FONT, bold=True)
-    if body:
-        para = tf.add_paragraph()
-        para.space_before = Pt(4)
-        run = para.add_run()
-        run.text = body
-        template.style(run, size=14, color=TEXT)
-    return card
-
-
-def _label(slide, left, top, width, text, size=14, color=MUTED, italic=False,
-           align=PP_ALIGN.LEFT):
-    box = slide.shapes.add_textbox(left, top, width, Inches(0.4))
-    tf = box.text_frame
-    tf.word_wrap = True
-    tf.paragraphs[0].alignment = align
-    run = tf.paragraphs[0].add_run()
-    template.style(run, size=size, color=color, italic=italic)
-    run.text = text
-    return box
 
 
 def _framing_slide(prs):
@@ -62,21 +29,11 @@ def _framing_slide(prs):
             "The quirks are not bugs to fear. They are constraints to work within.",
         ],
     )
-    band = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE,
-        template.CONTENT_LEFT, Inches(4.6), template.CONTENT_WIDTH, Inches(1.4),
+    template.add_band(
+        slide, Inches(4.6), Inches(1.4),
+        "Once you know the quirks, you can use it for what it is:\n"
+        "a strange but powerful tool.",
     )
-    template.solid(band, PRIMARY)
-    tf = band.text_frame
-    tf.word_wrap = True
-    tf.margin_left = Inches(0.4)
-    tf.margin_right = Inches(0.4)
-    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
-    run = tf.paragraphs[0].add_run()
-    run.text = "Once you know the quirks, you can use it for what it is:\n" \
-               "a strange but powerful tool."
-    template.style(run, size=20, color=WHITE, font=HEADING_FONT, bold=True)
     template.set_notes(slide, (
         "~1 min. Framing for the whole course: AI is powerful — but weird. "
         "Everyone's first weeks with these tools produce both amazement and "
@@ -106,8 +63,8 @@ def _tokens_slide(prs):
             "limits count tokens, not words or pages.",
         ],
     )
-    _label(slide, template.CONTENT_LEFT, Inches(3.45), Inches(5.0),
-           "What the model sees:")
+    template.add_label(slide, template.CONTENT_LEFT, Inches(3.45), Inches(5.0),
+                       "What the model sees:")
     x = template.CONTENT_LEFT
     top = Inches(3.9)
     for i, chip_text in enumerate(_FRABJOUS_CHIPS):
@@ -122,8 +79,9 @@ def _tokens_slide(prs):
         run.text = chip_text
         template.style(run, size=18, color=PRIMARY, font=HEADING_FONT, bold=True)
         x = Inches(x.inches + width.inches + 0.12)
-    _label(slide, template.CONTENT_LEFT, Inches(4.75), Inches(9.0),
-           "“O Frabjous Day!” — 15 characters, but 7 tokens.", italic=True)
+    template.add_label(slide, template.CONTENT_LEFT, Inches(4.75), Inches(9.0),
+                       "“O Frabjous Day!” — 15 characters, but 7 tokens.",
+                       italic=True)
     template.add_demo_cue(
         slide,
         "tiktokenizer.vercel.app (1 min): paste a sentence, watch it split "
@@ -157,8 +115,8 @@ def _context_window_slide(prs):
             "“lost in the middle” problem.",
         ],
     )
-    _label(slide, template.CONTENT_LEFT, Inches(3.1), Inches(9.0),
-           "A long conversation, as the model weighs it:")
+    template.add_label(slide, template.CONTENT_LEFT, Inches(3.1), Inches(9.0),
+                       "A long conversation, as the model weighs it:")
     bar_top = Inches(3.55)
     segments = [
         ("beginning — remembered", 3.4, PRIMARY, WHITE),
@@ -177,13 +135,13 @@ def _context_window_slide(prs):
         run.text = text
         template.style(run, size=13, color=color)
         x = Inches(x.inches + width_in)
-    _card(
+    template.add_card(
         slide, template.CONTENT_LEFT, Inches(4.5), Inches(5.96), Inches(1.75),
         PALE, "Rule 1 — Start fresh per task", PRIMARY,
         "Long chats degrade. Open a new conversation for each new task "
         "instead of continuing yesterday's thread.",
     )
-    _card(
+    template.add_card(
         slide, Inches(6.77), Inches(4.5), Inches(5.96), Inches(1.75),
         PALE, "Rule 2 — More context is not better context", PRIMARY,
         "Fewer, relevant tokens beat a document dump. Curate what you paste; "
@@ -239,7 +197,7 @@ def _system_prompts_slide(prs):
                        bold=is_system,
                        font=HEADING_FONT if is_system else template.BODY_FONT)
         top += 0.78
-    _card(
+    template.add_card(
         slide, Inches(6.9), Inches(3.7), Inches(5.83), Inches(1.9),
         PALE_WARM, "Coming in Lesson 5", HIGHLIGHT,
         "You will write a system prompt yourself. That is all a custom "
@@ -280,20 +238,13 @@ def _failure_modes_slide(prs):
          "searching tool — Perplexity, in Lesson 3."),
     ]
     for i, (heading, body) in enumerate(cards):
-        _card(slide, Inches(template.CONTENT_LEFT.inches + i * 4.11), Inches(2.35),
+        template.add_card(slide, Inches(template.CONTENT_LEFT.inches + i * 4.11), Inches(2.35),
               Inches(3.91), Inches(2.5), PALE, heading, PRIMARY, body)
-    band = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE,
-        template.CONTENT_LEFT, Inches(5.3), template.CONTENT_WIDTH, Inches(0.9),
+    template.add_band(
+        slide, Inches(5.3), Inches(0.9),
+        "Rule from day one: verify anything you would sign your name to.",
+        fill=HIGHLIGHT,
     )
-    template.solid(band, HIGHLIGHT)
-    tf = band.text_frame
-    tf.word_wrap = True
-    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
-    run = tf.paragraphs[0].add_run()
-    run.text = "Rule from day one: verify anything you would sign your name to."
-    template.style(run, size=20, color=WHITE, font=HEADING_FONT, bold=True)
     template.set_notes(slide, (
         "~2 min. The three failure modes, briskly — each will bite someone "
         "in the cohort within weeks, so name them now. Hallucination: the "
@@ -321,7 +272,7 @@ def _tools_agents_slide(prs):
             "and in Lesson 5 you build your first agent, no code involved.",
         ],
     )
-    _label(slide, template.CONTENT_LEFT, Inches(3.85), Inches(9.0),
+    template.add_label(slide, template.CONTENT_LEFT, Inches(3.85), Inches(9.0),
            "An agent, one lap of the loop:")
     steps = ["decide the next step", "use a tool", "look at the result"]
     x = template.CONTENT_LEFT.inches
@@ -338,10 +289,10 @@ def _tools_agents_slide(prs):
         template.style(run, size=16, color=PRIMARY, font=HEADING_FONT, bold=True)
         x += 3.4
         if i < len(steps) - 1:
-            _label(slide, Inches(x), Inches(4.5), Inches(0.7), "→", size=24,
+            template.add_label(slide, Inches(x), Inches(4.5), Inches(0.7), "→", size=24,
                    color=ACCENT, align=PP_ALIGN.CENTER)
             x += 0.7
-    _label(slide, template.CONTENT_LEFT, Inches(5.35), Inches(11.0),
+    template.add_label(slide, template.CONTENT_LEFT, Inches(5.35), Inches(11.0),
            "⟲  …and around again, until the job is done.", italic=True)
     template.set_notes(
         slide,
@@ -383,7 +334,7 @@ def _principles_slide(prs):
         run = tf.paragraphs[0].add_run()
         run.text = number
         template.style(run, size=28, color=WHITE, font=HEADING_FONT, bold=True)
-        _card(slide, Inches(1.75), Inches(top), Inches(10.98), Inches(1.55),
+        template.add_card(slide, Inches(1.75), Inches(top), Inches(10.98), Inches(1.55),
               PALE, principle, PRIMARY, gloss)
         top += 1.72
     template.set_notes(slide, (

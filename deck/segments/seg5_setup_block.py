@@ -90,7 +90,7 @@ def _checklist_slide(prs):
         slide, Inches(top + 0.1), Inches(1.0),
         "Done with an item? Post its number in the meeting chat: ✅ 1 … ✅ 4",
         size=18, fill=HIGHLIGHT,
-        sub="Posted ✅ 1–4? You're fully set up — help a neighbour or "
+        sub="Posted ✅ 1–4? You're fully set up — help a neighbor or "
             "explore your new tools.",
     )
     template.set_notes(slide, (

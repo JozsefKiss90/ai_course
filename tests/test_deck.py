@@ -638,6 +638,110 @@ def test_seg5_notes_carry_the_facilitation_guidance(reopened):
     assert "flag" in catchup_notes.lower()
 
 
+# --- Integration pass: flow, timing, consistency (ticket 08) ------------------
+
+
+def test_no_placeholder_slides_remain_anywhere(reopened):
+    for i, slide in enumerate(reopened.slides):
+        assert "[PLACEHOLDER]" not in _slide_text(slide), f"slide {i + 1}"
+
+
+def _is_divider(slide):
+    return "Segment " in _slide_text(slide) and " of 5" in _slide_text(slide)
+
+
+# Slides per segment, reviewed against the Timing Overview durations and
+# pinned: the densest segment (2, a deliberately fast tour) runs at 0.6
+# slides per minute; everything else is far below.
+EXPECTED_SEGMENT_SLIDE_COUNTS = {
+    "Opening: why this matters": 4,
+    "The map: LLM fundamentals + 7 Levels tour": 9,
+    "Prompt engineering: ICC, meta-prompting, patterns": 6,
+    "Assignment briefing + close": 4,
+    "Guided setup block": 3,
+}
+
+
+def test_segment_slide_counts_fit_their_timings(reopened):
+    # The density guard fires if a future ticket grows a segment past one
+    # slide per minute of its TIMING_OVERVIEW duration (and updates the pin).
+    minutes = {name: int(duration.split()[0]) for name, duration, _ in TIMING_OVERVIEW}
+    for name, slides in _segment_ranges(reopened).items():
+        count = EXPECTED_SEGMENT_SLIDE_COUNTS[name]
+        assert len(slides) == count, (
+            f"{name}: {len(slides)} slides, expected {count}"
+        )
+        assert len(slides) <= minutes[name], f"{name}: over one slide per minute"
+
+
+# Forbidden synonyms from the CONTEXT.md Avoid-lists. Left out: generic
+# words that would match on substrings or legitimate uses ("team" hits
+# MS Teams, "class" hits "classify", "module"/"day" are everyday words).
+# "use case" is safe to include — the canonical term is hyphenated
+# ("Optional Use-Case Phase") so it never matches the spaced form.
+FORBIDDEN_TERMS = [
+    "homework week", "self-study week", "blank week", "blank lesson",
+    "breakout team", "domain team",
+    "knowledge base", "shared wiki", "team wiki",
+    "use case", "case study", "team project",
+    "home base", "primary AI environment",
+    "workhorse", "main tool",
+    "tool ecosystem", "satellite tool",
+]
+
+
+def test_terminology_audit_no_forbidden_synonyms(reopened):
+    for i, slide in enumerate(reopened.slides):
+        corpus = _slide_text(slide)
+        if slide.has_notes_slide:
+            corpus += "\n" + slide.notes_slide.notes_text_frame.text
+        corpus = corpus.lower()
+        for term in FORBIDDEN_TERMS:
+            assert term.lower() not in corpus, f"{term!r} on slide {i + 1}"
+
+
+def test_every_content_slide_has_speaker_notes(reopened):
+    # Everything except the title slide and the five section dividers.
+    for i, slide in enumerate(reopened.slides):
+        if i == 0 or _is_divider(slide):
+            continue
+        assert slide.has_notes_slide, f"slide {i + 1} has no notes slide"
+        assert slide.notes_slide.notes_text_frame.text.strip(), (
+            f"slide {i + 1} has empty speaker notes"
+        )
+
+
+def test_all_three_live_demo_moments_are_cued(reopened):
+    """lesson_1.md has three demo *switches*: the tiktokenizer playground
+    (Segment 2A) and the starts of Demos 1 and 2 (Segment 3) — meta-
+    prompting and the live pattern happen inside Demo 2, cued in notes
+    only. Each switch is marked on the slide AND in that slide's notes."""
+    cued = [s for s in reopened.slides if "LIVE DEMO" in _slide_text(s)]
+    assert len(cued) == 3, [_slide_text(s)[:40] for s in cued]
+    for slide in cued:
+        assert slide.has_notes_slide
+        assert "demo" in slide.notes_slide.notes_text_frame.text.lower()
+
+
+def test_fonts_and_sizes_are_explicit_everywhere(reopened):
+    """Every run everywhere uses a deck font with an explicit size — no
+    slide falls back to inherited/default styling. (The rest of the
+    visual-consistency criterion — colors, footer, divider style — is
+    covered by the master/theme test below and the manual PNG pass.)"""
+    for i, slide in enumerate(reopened.slides):
+        for shape in slide.shapes:
+            if not shape.has_text_frame:
+                continue
+            for para in shape.text_frame.paragraphs:
+                for run in para.runs:
+                    assert run.font.name in ("Segoe UI", "Segoe UI Semibold"), (
+                        f"slide {i + 1}: font {run.font.name!r} in {run.text!r}"
+                    )
+                    assert run.font.size is not None, (
+                        f"slide {i + 1}: inherited size in {run.text!r}"
+                    )
+
+
 def test_master_defines_footer_and_theme_fonts(reopened):
     master = reopened.slide_masters[0]
     master_text = "\n".join(

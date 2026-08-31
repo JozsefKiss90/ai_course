@@ -15,6 +15,13 @@ ehthumbs.db
 tmp/
 temp/
 
+# Python
+__pycache__/
+.pytest_cache/
+
+# Generated decks — always regenerable via `python -m deck.build`
+dist/
+
 # Node (defensive — no package.json yet)
 node_modules/
 

@@ -73,7 +73,7 @@ def test_dividers_appear_in_session_order(reopened):
 EXPECTED_PLACEHOLDERS = {
     "Opening: why this matters": 0,  # ticket 02 landed
     "The map: LLM fundamentals + 7 Levels tour": 0,  # tickets 03 + 04 landed
-    "Prompt engineering: ICC, meta-prompting, patterns": 6,
+    "Prompt engineering: ICC, meta-prompting, patterns": 0,  # ticket 05 landed
     "Assignment briefing + close": 4,
     "Guided setup block": 3,
 }
@@ -325,6 +325,121 @@ def test_seg2b_notes_keep_the_pace_instruction(reopened):
 
 def test_every_seg2b_slide_has_speaker_notes(reopened):
     for title in SEG2B_TITLES:
+        slide = _slide_by_title(reopened, title)
+        assert slide.has_notes_slide, f"{title!r} has no notes slide"
+        assert slide.notes_slide.notes_text_frame.text.strip(), (
+            f"{title!r} has empty speaker notes"
+        )
+
+
+# --- Segment 3: Prompt engineering backdrop (ticket 05) ----------------------
+
+SEG3_TITLES = [
+    "The same question, three ways",
+    "The ICC prompt",
+    "Two shortcuts",
+    "Meta-prompting — let the AI write the prompt",
+    "Four prompt patterns",
+    "Two rules while we demo",
+]
+
+
+def test_seg3_slides_present_in_order_and_not_placeholders(reopened):
+    all_slides = [_slide_text(s) for s in reopened.slides]
+    positions = []
+    for title in SEG3_TITLES:
+        matches = [i for i, t in enumerate(all_slides) if title in t]
+        assert matches, f"no slide titled {title!r}"
+        assert "[PLACEHOLDER]" not in all_slides[matches[0]]
+        positions.append(matches[0])
+    assert positions == sorted(positions)
+
+
+def test_three_ways_slide_shows_the_escalation_and_cues_demo1(reopened):
+    slide = _slide_by_title(reopened, "The same question, three ways")
+    text = _slide_text(slide)
+    # The three escalation stages from lesson_1.md Demo 1, verbatim prompts.
+    assert "Horizon Europe budget" in text
+    assert "Explain the budget structure of Horizon Europe collaborative projects" in text
+    assert "ICC" in text
+    # The retention point the side-by-side makes.
+    assert "quality" in text.lower() and "input" in text.lower()
+    # Demo-switch cue on the slide AND in the notes, with the ≈8 min share.
+    assert "LIVE DEMO" in text
+    notes = slide.notes_slide.notes_text_frame.text
+    assert "gemini" in notes.lower()
+    assert "8 min" in notes
+
+
+def test_icc_slide_carries_the_demo_prompt_verbatim_in_three_blocks(reopened):
+    text = _slide_text(_slide_by_title(reopened, "The ICC prompt"))
+    # The three block labels are each visible.
+    for label in ("Instruction", "Context", "Constraints"):
+        assert label in text, f"block label {label!r} missing"
+    # Spot-check each block's verbatim wording from lesson_1.md.
+    assert (
+        "Explain the eligible cost categories and overhead calculation "
+        "for a Horizon Europe collaborative project" in text
+    )
+    assert "the 5 most common budgeting mistakes" in text
+    assert "I am a research management administrator at a European university" in text
+    assert "Cluster 4 project" in text and "EUR 3-4M" in text
+    assert "who has never coordinated an EU project" in text
+    assert "Maximum 600 words" in text
+    assert "Use a table for cost categories" in text
+    assert "Plain language, no unexplained acronyms" in text
+
+
+def test_shortcuts_slide_carries_both_append_phrases_verbatim(reopened):
+    slide = _slide_by_title(reopened, "Two shortcuts")
+    text = _slide_text(slide)
+    assert (
+        "Before answering, ask me the questions you need to give "
+        "the best possible answer." in text
+    )
+    assert (
+        "Write the single prompt that would have gotten us to this result "
+        "on the first try." in text
+    )
+    # Demo 2 starts here: cue on the slide, ≈17 min share in the notes.
+    assert "LIVE DEMO" in text
+    notes = slide.notes_slide.notes_text_frame.text
+    assert "gemini" in notes.lower()
+    assert "17 min" in notes
+
+
+def test_meta_prompting_slide_carries_the_example_prompt_verbatim(reopened):
+    text = _slide_text(
+        _slide_by_title(reopened, "Meta-prompting — let the AI write the prompt")
+    )
+    assert (
+        "I need an AI assistant to help me draft the impact section of an "
+        "EU project's periodic report. Write the optimal prompt I should "
+        "use, including all the context and constraints that would produce "
+        "the best result." in text
+    )
+    assert "prompt engineer" in text
+
+
+def test_patterns_slide_shows_all_four_with_their_examples(reopened):
+    text = _slide_text(_slide_by_title(reopened, "Four prompt patterns"))
+    for pattern in ("Persona", "Example-driven", "Step-by-step", "Critique-then-improve"):
+        assert pattern in text, f"pattern {pattern!r} missing"
+    # The research-management example of each pattern, per lesson_1.md.
+    assert "Act as an experienced EU grants advisor" in text
+    assert "partner-search announcement in our house style" in text
+    assert "first list the eligibility criteria" in text
+    assert "three biggest weaknesses against the evaluation criteria" in text
+
+
+def test_rules_slide_states_both_safety_rules(reopened):
+    text = _slide_text(_slide_by_title(reopened, "Two rules while we demo"))
+    assert "nothing you couldn't publish" in text.lower()
+    assert "verify" in text.lower() and "factual" in text.lower()
+
+
+def test_every_seg3_slide_has_speaker_notes(reopened):
+    for title in SEG3_TITLES:
         slide = _slide_by_title(reopened, title)
         assert slide.has_notes_slide, f"{title!r} has no notes slide"
         assert slide.notes_slide.notes_text_frame.text.strip(), (

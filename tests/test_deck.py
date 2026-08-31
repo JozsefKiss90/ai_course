@@ -74,7 +74,7 @@ EXPECTED_PLACEHOLDERS = {
     "Opening: why this matters": 0,  # ticket 02 landed
     "The map: LLM fundamentals + 7 Levels tour": 0,  # tickets 03 + 04 landed
     "Prompt engineering: ICC, meta-prompting, patterns": 0,  # ticket 05 landed
-    "Assignment briefing + close": 4,
+    "Assignment briefing + close": 0,  # ticket 06 landed
     "Guided setup block": 3,
 }
 
@@ -440,6 +440,85 @@ def test_rules_slide_states_both_safety_rules(reopened):
 
 def test_every_seg3_slide_has_speaker_notes(reopened):
     for title in SEG3_TITLES:
+        slide = _slide_by_title(reopened, title)
+        assert slide.has_notes_slide, f"{title!r} has no notes slide"
+        assert slide.notes_slide.notes_text_frame.text.strip(), (
+            f"{title!r} has empty speaker notes"
+        )
+
+
+# --- Segment 4: Assignment briefing + close (ticket 06) ----------------------
+
+SEG4_TITLES = [
+    "Your Anchor Project",
+    "This week's assignment",
+    "Effort and debrief",
+    "Next week: the two-lane rule",
+]
+
+
+def test_seg4_slides_present_in_order_and_not_placeholders(reopened):
+    all_slides = [_slide_text(s) for s in reopened.slides]
+    positions = []
+    for title in SEG4_TITLES:
+        matches = [i for i, t in enumerate(all_slides) if title in t]
+        assert matches, f"no slide titled {title!r}"
+        assert "[PLACEHOLDER]" not in all_slides[matches[0]]
+        positions.append(matches[0])
+    assert positions == sorted(positions)
+
+
+def test_anchor_project_slide_states_the_anonymize_or_fictional_rule(reopened):
+    text = _slide_text(_slide_by_title(reopened, "Your Anchor Project"))
+    assert "anonymize" in text.lower()
+    assert "fictional" in text.lower()
+    # Its role as the course-long thread, and the 5-sentence description.
+    assert "entire knowledge system around it" in text
+    assert "5 sentences" in text
+
+
+def test_assignment_slide_enumerates_all_five_items(reopened):
+    text = _slide_text(_slide_by_title(reopened, "This week's assignment"))
+    # Item 1 — pick the Anchor Project, 5-sentence description.
+    assert "Pick your Anchor Project" in text
+    assert "5 sentences" in text
+    # Item 2 — three ICC prompts, at least one pattern (all four named so
+    # the screenshot is self-contained), what to save.
+    assert "Three ICC prompts" in text
+    assert "at least one" in text.lower() and "pattern" in text.lower()
+    for pattern in ("persona", "example-driven", "step-by-step", "critique-then-improve"):
+        assert pattern in text, f"pattern name {pattern!r} missing"
+    assert "what you'd improve" in text
+    # Item 3 — one ask-me-first.
+    assert "ask-me-first" in text
+    assert "interview you" in text
+    # Item 4 — one meta-prompt.
+    assert "meta-prompt" in text
+    assert "optimal prompt" in text
+    # Item 5 — bring everything to Lesson 2.
+    assert "Lesson 2" in text
+
+
+def test_effort_slide_states_expectation_and_debrief_format(reopened):
+    text = _slide_text(_slide_by_title(reopened, "Effort and debrief"))
+    assert "1–2 hours" in text
+    assert "Lesson 2" in text and "debrief" in text.lower()
+    assert "2–3 volunteers" in text
+
+
+def test_close_slide_teases_the_two_lanes_without_explaining(reopened):
+    text = _slide_text(_slide_by_title(reopened, "Next week: the two-lane rule"))
+    # CONTEXT.md terms, with their tools, per the lesson plan's close.
+    assert "Sensitive Lane" in text
+    assert "Copilot" in text
+    assert "Daily Driver" in text
+    assert "Gemini" in text
+    # A teaser, not a lesson: the explanation is deferred to Lesson 2.
+    assert "Lesson 2" in text
+
+
+def test_every_seg4_slide_has_speaker_notes(reopened):
+    for title in SEG4_TITLES:
         slide = _slide_by_title(reopened, title)
         assert slide.has_notes_slide, f"{title!r} has no notes slide"
         assert slide.notes_slide.notes_text_frame.text.strip(), (

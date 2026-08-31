@@ -72,7 +72,7 @@ def test_dividers_appear_in_session_order(reopened):
 # from the slide inventory implied by lesson_1.md's segment plans.
 EXPECTED_PLACEHOLDERS = {
     "Opening: why this matters": 0,  # ticket 02 landed
-    "The map: LLM fundamentals + 7 Levels tour": 2,  # 2B only; 2A landed (ticket 03)
+    "The map: LLM fundamentals + 7 Levels tour": 0,  # tickets 03 + 04 landed
     "Prompt engineering: ICC, meta-prompting, patterns": 6,
     "Assignment briefing + close": 4,
     "Guided setup block": 3,
@@ -255,6 +255,81 @@ def test_seg2a_notes_carry_the_forward_references(reopened):
     )
     assert "Lesson 3" in all_notes
     assert "Lesson 5" in all_notes
+
+
+# --- Segment 2B: The 7 Levels map (ticket 04) --------------------------------
+
+SEG2B_TITLES = [
+    "The 7 Levels of AI — the course's map",
+    "The destination: your KM System",
+]
+
+# Level names from the lesson_1.md Part B table — the framework itself.
+SEVEN_LEVEL_NAMES = [
+    "Question Asker",
+    "Prompt Crafter",
+    "Power User",
+    "Tool Orchestrator",
+    "Builder",
+    "Systems Builder",
+    "AI-Run Operation",
+]
+
+
+def test_seg2b_slides_present_in_order_and_not_placeholders(reopened):
+    all_slides = [_slide_text(s) for s in reopened.slides]
+    positions = []
+    for title in SEG2B_TITLES:
+        matches = [i for i, t in enumerate(all_slides) if title in t]
+        assert matches, f"no slide titled {title!r}"
+        assert "[PLACEHOLDER]" not in all_slides[matches[0]]
+        positions.append(matches[0])
+    assert positions == sorted(positions)
+
+
+def test_map_slide_names_all_seven_levels_with_coverage(reopened):
+    text = _slide_text(_slide_by_title(reopened, SEG2B_TITLES[0]))
+    for name in SEVEN_LEVEL_NAMES:
+        assert name in text, f"level name {name!r} missing"
+    # Course-coverage mapping, per the lesson table.
+    assert "You are (probably) here" in text  # the Level 1 marker
+    assert "Today + Lesson 2" in text
+    assert "Lessons 2–3" in text
+    assert "Lessons 3–4" in text
+    assert "Lesson 5" in text
+
+
+def test_vibe_coding_appears_in_exactly_one_sentence_deck_wide(reopened):
+    full_deck = "\n".join(_slide_text(s) for s in reopened.slides).lower()
+    assert full_deck.count("vibe coding") == 1
+    # And it lives on the 7 Levels map slide, positioned as out of scope.
+    map_text = _slide_text(_slide_by_title(reopened, SEG2B_TITLES[0])).lower()
+    assert "vibe coding" in map_text
+    assert "not part of this course" in map_text
+
+
+def test_km_teaser_slide_uses_context_terms_and_the_week8_line(reopened):
+    text = _slide_text(_slide_by_title(reopened, SEG2B_TITLES[1]))
+    for term in ("Wiki Sandbox", "Markdown Generator", "Personal Vault"):
+        assert term in text, f"CONTEXT.md term {term!r} missing"
+    assert "By Week 8, you will have built this" in text
+
+
+def test_seg2b_notes_keep_the_pace_instruction(reopened):
+    map_notes = _slide_by_title(
+        reopened, SEG2B_TITLES[0]
+    ).notes_slide.notes_text_frame.text
+    assert "one sentence per level" in map_notes.lower()
+    assert "no dwelling" in map_notes.lower()
+
+
+def test_every_seg2b_slide_has_speaker_notes(reopened):
+    for title in SEG2B_TITLES:
+        slide = _slide_by_title(reopened, title)
+        assert slide.has_notes_slide, f"{title!r} has no notes slide"
+        assert slide.notes_slide.notes_text_frame.text.strip(), (
+            f"{title!r} has empty speaker notes"
+        )
 
 
 def test_master_defines_footer_and_theme_fonts(reopened):

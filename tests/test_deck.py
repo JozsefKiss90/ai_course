@@ -75,7 +75,7 @@ EXPECTED_PLACEHOLDERS = {
     "The map: LLM fundamentals + 7 Levels tour": 0,  # tickets 03 + 04 landed
     "Prompt engineering: ICC, meta-prompting, patterns": 0,  # ticket 05 landed
     "Assignment briefing + close": 0,  # ticket 06 landed
-    "Guided setup block": 3,
+    "Guided setup block": 0,  # ticket 07 landed
 }
 
 
@@ -102,7 +102,7 @@ def test_each_segment_has_its_placeholder_slides(reopened):
 
 
 def test_total_slide_count(reopened):
-    # 1 title + 5 dividers + 26 placeholders
+    # 1 title + 5 dividers + 26 content slides
     assert len(reopened.slides) == 32
 
 
@@ -524,6 +524,118 @@ def test_every_seg4_slide_has_speaker_notes(reopened):
         assert slide.notes_slide.notes_text_frame.text.strip(), (
             f"{title!r} has empty speaker notes"
         )
+
+
+# --- Segment 5: Guided setup block (ticket 07) --------------------------------
+
+SEG5_TITLES = [
+    "Setup checklist",
+    "Troubleshooting",
+    "Not finished? Catch-up path",
+]
+
+
+def test_seg5_slides_present_in_order_and_not_placeholders(reopened):
+    all_slides = [_slide_text(s) for s in reopened.slides]
+    positions = []
+    for title in SEG5_TITLES:
+        matches = [i for i, t in enumerate(all_slides) if title in t]
+        assert matches, f"no slide titled {title!r}"
+        assert "[PLACEHOLDER]" not in all_slides[matches[0]]
+        positions.append(matches[0])
+    assert positions == sorted(positions)
+
+
+def test_checklist_slide_lists_the_four_setup_items(reopened):
+    text = _slide_text(_slide_by_title(reopened, "Setup checklist"))
+    # Item 1 — Google account signed in, Gemini answers a test prompt.
+    assert "gemini.google.com" in text
+    assert "test prompt" in text.lower()
+    # Item 2 — Copilot Chat with the institutional account.
+    assert "Copilot Chat" in text
+    assert "institutional" in text.lower()
+    # Item 3 — Perplexity free account.
+    assert "Perplexity" in text
+    # Item 4 — first experimental prompt in each tool.
+    assert "first" in text.lower() and "prompt in each" in text.lower()
+    # The four items are numbered.
+    for number in ("1", "2", "3", "4"):
+        assert number in text
+
+
+def test_checklist_slide_shows_the_chat_template(reopened):
+    text = _slide_text(_slide_by_title(reopened, "Setup checklist"))
+    assert "✅ 1–4" in text
+    assert "meeting chat" in text.lower()
+
+
+def test_checklist_is_large_type(reopened):
+    """Readable while screen-shared for 30 minutes: every run in all four
+    checklist item rows — number chips and item cards — is at least 14 pt."""
+    from pptx.util import Pt
+
+    item_markers = [
+        "gemini.google.com", "Copilot Chat", "perplexity.ai", "prompt in each",
+    ]
+    slide = _slide_by_title(reopened, "Setup checklist")
+    item_shapes = [
+        s for s in slide.shapes
+        if s.has_text_frame and (
+            s.text_frame.text.strip() in ("1", "2", "3", "4")  # number chips
+            or any(m in s.text_frame.text for m in item_markers)  # item cards
+        )
+    ]
+    assert len(item_shapes) == 8, [s.text_frame.text[:30] for s in item_shapes]
+    for shape in item_shapes:
+        for para in shape.text_frame.paragraphs:
+            for run in para.runs:
+                assert run.font.size is not None, f"inherited size: {run.text!r}"
+                assert run.font.size >= Pt(14), run.text
+
+
+def test_troubleshooting_slide_lists_the_three_failure_points_with_fixes(reopened):
+    text = _slide_text(_slide_by_title(reopened, "Troubleshooting"))
+    # Personal vs. institutional Microsoft account mixed up.
+    assert "personal" in text.lower() and "institutional" in text.lower()
+    # Blocked Google account → separate browser profile.
+    assert "browser profile" in text.lower()
+    # Gemini region/consent prompts.
+    assert "consent" in text.lower()
+
+
+def test_catchup_slide_names_the_venue_and_the_not_installed_note(reopened):
+    text = _slide_text(_slide_by_title(reopened, "Not finished? Catch-up path"))
+    # Practice Week 1 drop-in plus the offered 10-minute slot.
+    assert "Practice Week 1" in text
+    assert "drop-in" in text.lower()
+    assert "10-minute" in text
+    # Obsidian and Perfect Wiki deliberately not installed today.
+    assert "Obsidian" in text
+    assert "Perfect Wiki" in text
+    assert "not installed today" in text.lower()
+
+
+def test_every_seg5_slide_has_speaker_notes(reopened):
+    for title in SEG5_TITLES:
+        slide = _slide_by_title(reopened, title)
+        assert slide.has_notes_slide, f"{title!r} has no notes slide"
+        assert slide.notes_slide.notes_text_frame.text.strip(), (
+            f"{title!r} has empty speaker notes"
+        )
+
+
+def test_seg5_notes_carry_the_facilitation_guidance(reopened):
+    """The lesson plan's Segment 5 facilitation notes live in the deck's
+    speaker notes: chat-marking makes stragglers visible, and unfinished
+    participants are flagged now, not discovered in Week 3."""
+    checklist_notes = _slide_by_title(
+        reopened, "Setup checklist"
+    ).notes_slide.notes_text_frame.text
+    assert "stragglers" in checklist_notes.lower()
+    catchup_notes = _slide_by_title(
+        reopened, "Not finished? Catch-up path"
+    ).notes_slide.notes_text_frame.text
+    assert "flag" in catchup_notes.lower()
 
 
 def test_master_defines_footer_and_theme_fonts(reopened):

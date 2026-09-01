@@ -13,7 +13,8 @@ from pptx.util import Inches
 
 from deck import template
 from deck.template import (
-    ACCENT, HEADING_FONT, HIGHLIGHT, MUTED, PALE, PALE_WARM, PRIMARY, TEXT, WHITE,
+    ACCENT, HEADING_FONT, HIGHLIGHT, LINE, MUTED, PALE, PALE_WARM, PRIMARY,
+    SLATE, TEXT, WHITE,
 )
 
 
@@ -71,13 +72,13 @@ def _tokens_slide(prs):
         width = Inches(0.55 + 0.16 * len(chip_text))
         chip = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, top, width,
                                       Inches(0.6))
-        template.solid(chip, PALE if i % 2 == 0 else PALE_WARM)
+        template.solid(chip, ACCENT if i % 2 == 0 else HIGHLIGHT)
         tf = chip.text_frame
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
         tf.paragraphs[0].alignment = PP_ALIGN.CENTER
         run = tf.paragraphs[0].add_run()
         run.text = chip_text
-        template.style(run, size=18, color=PRIMARY, font=HEADING_FONT, bold=True)
+        template.style(run, size=18, color=WHITE, font=HEADING_FONT, bold=True)
         x = Inches(x.inches + width.inches + 0.12)
     template.add_label(slide, template.CONTENT_LEFT, Inches(4.75), Inches(9.0),
                        "“O Frabjous Day!” — 15 characters, but 7 tokens.",
@@ -120,7 +121,7 @@ def _context_window_slide(prs):
     bar_top = Inches(3.55)
     segments = [
         ("beginning — remembered", 3.4, PRIMARY, WHITE),
-        ("middle — often lost", 5.33, PALE, MUTED),
+        ("middle — often lost", 5.33, SLATE, WHITE),
         ("end — remembered", 3.4, PRIMARY, WHITE),
     ]
     x = template.CONTENT_LEFT
@@ -183,14 +184,20 @@ def _system_prompts_slide(prs):
     top = 3.35
     for text, is_system in stack:
         box = slide.shapes.add_shape(
-            MSO_SHAPE.ROUNDED_RECTANGLE,
+            MSO_SHAPE.RECTANGLE,
             template.CONTENT_LEFT, Inches(top), Inches(5.9), Inches(0.62),
         )
-        template.solid(box, PRIMARY if is_system else PALE)
+        if is_system:
+            template.solid(box, PRIMARY)
+        else:
+            template.outlined(box, WHITE, LINE)
+            template.add_bar(slide, template.CONTENT_LEFT, Inches(top),
+                             Inches(0.07), Inches(0.62), ACCENT)
         tf = box.text_frame
         tf.word_wrap = True
-        tf.margin_left = Inches(0.2)
+        tf.margin_left = Inches(0.25)
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf.paragraphs[0].alignment = PP_ALIGN.LEFT
         run = tf.paragraphs[0].add_run()
         run.text = text
         template.style(run, size=13, color=WHITE if is_system else TEXT,
@@ -281,12 +288,13 @@ def _tools_agents_slide(prs):
             MSO_SHAPE.ROUNDED_RECTANGLE, Inches(x), Inches(4.35), Inches(3.4),
             Inches(0.75),
         )
-        template.solid(box, PALE)
+        template.solid(box, ACCENT)
         tf = box.text_frame
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf.paragraphs[0].alignment = PP_ALIGN.CENTER
         run = tf.paragraphs[0].add_run()
         run.text = step
-        template.style(run, size=16, color=PRIMARY, font=HEADING_FONT, bold=True)
+        template.style(run, size=16, color=WHITE, font=HEADING_FONT, bold=True)
         x += 3.4
         if i < len(steps) - 1:
             template.add_label(slide, Inches(x), Inches(4.5), Inches(0.7), "→", size=24,

@@ -14,7 +14,7 @@ from pptx.util import Inches
 
 from deck import template
 from deck.template import (
-    CONTENT_WIDTH, HIGHLIGHT, PALE, PALE_WARM, PRIMARY, TEXT, WHITE,
+    CONTENT_WIDTH, HIGHLIGHT, LINE, PALE, PALE_WARM, PRIMARY, TEXT, WHITE,
 )
 
 
@@ -45,7 +45,7 @@ _ROW_GAP = 0.08
 def _checklist_row(slide, number, top, heading, detail):
     """Numbered checklist row: navy number chip + pale item card."""
     chip = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE, template.CONTENT_LEFT, Inches(top),
+        MSO_SHAPE.RECTANGLE, template.CONTENT_LEFT, Inches(top),
         Inches(0.7), Inches(_ROW_HEIGHT),
     )
     template.solid(chip, PRIMARY)
@@ -58,17 +58,18 @@ def _checklist_row(slide, number, top, heading, detail):
                    bold=True)
 
     card = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE,
+        MSO_SHAPE.RECTANGLE,
         Inches(template.CONTENT_LEFT.inches + 0.9), Inches(top),
         Inches(CONTENT_WIDTH.inches - 0.9), Inches(_ROW_HEIGHT),
     )
-    template.solid(card, PALE)
+    template.outlined(card, WHITE, LINE)
     tf = card.text_frame
     tf.word_wrap = True
     tf.margin_left = Inches(0.3)
     tf.margin_right = Inches(0.3)
     tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     para = tf.paragraphs[0]
+    para.alignment = PP_ALIGN.LEFT
     run = para.add_run()
     run.text = heading
     template.style(run, size=19, color=PRIMARY, font=template.HEADING_FONT,

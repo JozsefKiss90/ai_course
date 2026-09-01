@@ -14,7 +14,8 @@ from pptx.util import Inches
 
 from deck import template
 from deck.template import (
-    ACCENT, HEADING_FONT, HIGHLIGHT, MUTED, PALE, PALE_WARM, PRIMARY, WHITE,
+    ACCENT, HEADING_FONT, HIGHLIGHT, LINE, MUTED, PALE, PALE_WARM, PRIMARY,
+    SLATE, WHITE,
 )
 
 # (level, name, research-management translation, coverage, chip treatment)
@@ -64,7 +65,7 @@ def _level_row(slide, level, name, translation, coverage, treatment, top):
     indent = (level - 1) * _STAIR_STEP
 
     badge = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE,
+        MSO_SHAPE.RECTANGLE,
         Inches(template.CONTENT_LEFT.inches + indent), Inches(top),
         Inches(0.55), Inches(_ROW_HEIGHT),
     )
@@ -78,10 +79,10 @@ def _level_row(slide, level, name, translation, coverage, treatment, top):
 
     bar_left = template.CONTENT_LEFT.inches + indent + 0.67
     bar = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE, Inches(bar_left), Inches(top),
+        MSO_SHAPE.RECTANGLE, Inches(bar_left), Inches(top),
         Inches(_BAR_RIGHT - bar_left), Inches(_ROW_HEIGHT),
     )
-    template.solid(bar, PALE)
+    template.outlined(bar, WHITE, LINE)
     tf = bar.text_frame
     tf.word_wrap = True
     tf.margin_left = Inches(0.18)
@@ -98,7 +99,7 @@ def _level_row(slide, level, name, translation, coverage, treatment, top):
     chip_fill, chip_color, chip_bold = {
         "here": (HIGHLIGHT, WHITE, True),
         "course": (ACCENT, WHITE, False),
-        "outlook": (PALE, MUTED, False),
+        "outlook": (SLATE, WHITE, False),
     }[treatment]
     chip = slide.shapes.add_shape(
         MSO_SHAPE.ROUNDED_RECTANGLE, Inches(_CHIP_LEFT), Inches(top),

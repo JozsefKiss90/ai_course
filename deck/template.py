@@ -5,6 +5,12 @@ colors, and the footer stay uniform no matter which segment module adds
 the slide. The theme (fonts + color scheme) is written into the slide
 master's theme part, and the footer is a master shape, so both apply to
 all slides.
+
+Visual language: full-bleed deep-navy title and divider slides with amber
+accents; content slides carry an orange kicker bar beside the title and a
+layered rule beneath it; cards are crisp white rectangles with a colored
+edge bar (navy = neutral, orange = emphasis) instead of pale fills; solid
+emphasis bands get symmetric contrasting end caps.
 """
 
 from lxml import etree
@@ -20,13 +26,19 @@ from pptx.util import Emu, Inches, Pt
 HEADING_FONT = "Segoe UI Semibold"
 BODY_FONT = "Segoe UI"
 
-PRIMARY = RGBColor(0x1F, 0x38, 0x64)  # navy — headings, divider band
-ACCENT = RGBColor(0x2E, 0x75, 0xB6)  # mid blue — rules, secondary text
-HIGHLIGHT = RGBColor(0xC5, 0x5A, 0x11)  # warm orange — demo cues, emphasis
-TEXT = RGBColor(0x26, 0x26, 0x26)
-MUTED = RGBColor(0x59, 0x59, 0x59)
-PALE = RGBColor(0xDE, 0xEB, 0xF7)  # pale blue — placeholder cards, fills
-PALE_WARM = RGBColor(0xFB, 0xE5, 0xD6)  # pale orange — alternating chips, soft emphasis
+PRIMARY = RGBColor(0x1F, 0x38, 0x64)  # deep navy — headings, dark cards
+CANVAS = RGBColor(0x14, 0x24, 0x44)  # near-black navy — title/divider ground
+NAVY_SOFT = RGBColor(0x35, 0x52, 0x82)  # inactive markers on the navy ground
+ACCENT = RGBColor(0x2B, 0x7C, 0xD3)  # vivid azure — rules, chips, bars
+HIGHLIGHT = RGBColor(0xE8, 0x59, 0x0C)  # vivid orange — demo cues, emphasis
+AMBER = RGBColor(0xFF, 0xB1, 0x3D)  # warm amber — accents on navy ground
+TEXT = RGBColor(0x1F, 0x2A, 0x3D)
+MUTED = RGBColor(0x51, 0x60, 0x73)
+SLATE = RGBColor(0x8E, 0xA3, 0xBF)  # de-emphasized fills that stay legible
+SKY = RGBColor(0xBD, 0xD7, 0xF5)  # light azure text on navy
+LINE = RGBColor(0xD3, 0xDD, 0xEA)  # card borders, hairlines
+PALE = RGBColor(0xE8, 0xF0, 0xFB)  # light azure tint (sparingly)
+PALE_WARM = RGBColor(0xFD, 0xE9, 0xD8)  # light amber tint (sparingly)
 WHITE = RGBColor(0xFF, 0xFF, 0xFF)
 
 FOOTER_TEXT = "AI for Research Management · Lesson 1 · Week 1"
@@ -80,6 +92,29 @@ def solid(shape, color):
     shape.fill.fore_color.rgb = color
     shape.line.fill.background()
     shape.shadow.inherit = False
+
+
+def outlined(shape, fill=WHITE, border=LINE, weight=1.0):
+    """Light card style: solid fill with a thin border, no shadow."""
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = fill
+    shape.line.color.rgb = border
+    shape.line.width = Pt(weight)
+    shape.shadow.inherit = False
+
+
+def add_bar(slide, left, top, width, height, color):
+    """A plain filled rectangle — accent bars, rules, edge caps."""
+    bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, height)
+    solid(bar, color)
+    return bar
+
+
+def _is_dark(color):
+    """Perceived-luminance test: dark fills get white text, light get ink."""
+    hexval = str(color)
+    r, g, b = (int(hexval[i : i + 2], 16) for i in (0, 2, 4))
+    return (r * 299 + g * 587 + b * 114) / 1000 < 128
 
 
 def master_next_id(master):
@@ -161,72 +196,85 @@ def set_notes(slide, notes):
 
 
 def add_title_slide(prs, title, course_name, session_line):
-    """Full-width navy band with the lesson title; course name above."""
+    """Full-bleed deep-navy cover: amber kicker, white title, tri-color base."""
     slide = _blank_slide(prs)
 
-    tf = _add_text(slide, Inches(0.9), Inches(1.55), Inches(11.5), Inches(0.5))
+    bg = add_bar(slide, 0, 0, SLIDE_WIDTH, SLIDE_HEIGHT, CANVAS)
+    bg.shadow.inherit = False
+
+    add_bar(slide, Inches(0.9), Inches(1.55), Inches(1.0), Inches(0.06), AMBER)
+
+    tf = _add_text(slide, Inches(0.9), Inches(1.75), Inches(11.5), Inches(0.5))
     run = tf.paragraphs[0].add_run()
     run.text = course_name.upper()
-    style(run, size=16, color=ACCENT, font=HEADING_FONT)
+    style(run, size=16, color=AMBER, font=HEADING_FONT, bold=True)
 
-    band = slide.shapes.add_shape(
-        MSO_SHAPE.RECTANGLE, 0, Inches(2.2), SLIDE_WIDTH, Inches(2.3)
-    )
-    solid(band, PRIMARY)
-    tf = band.text_frame
-    tf.word_wrap = True
-    tf.margin_left = Inches(0.9)
-    tf.margin_right = Inches(0.9)
-    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf = _add_text(slide, Inches(0.9), Inches(2.5), Inches(11.5), Inches(2.0))
     run = tf.paragraphs[0].add_run()
     run.text = title
-    style(run, size=36, color=WHITE, font=HEADING_FONT, bold=True)
+    style(run, size=40, color=WHITE, font=HEADING_FONT, bold=True)
 
-    tf = _add_text(slide, Inches(0.9), Inches(4.8), Inches(11.5), Inches(0.5))
+    tf = _add_text(slide, Inches(0.9), Inches(4.75), Inches(11.5), Inches(0.5))
     run = tf.paragraphs[0].add_run()
     run.text = session_line
-    style(run, size=16, color=MUTED)
+    style(run, size=16, color=SKY)
+
+    # Tri-color baseline: azure, amber, orange — the deck's palette in one line.
+    add_bar(slide, 0, Inches(7.26), Inches(8.0), Inches(0.24), ACCENT)
+    add_bar(slide, Inches(8.0), Inches(7.26), Inches(3.2), Inches(0.24), AMBER)
+    add_bar(slide, Inches(11.2), Inches(7.26), Inches(2.14), Inches(0.24), HIGHLIGHT)
     return slide
 
 
 def add_section_divider(prs, number, total, title, duration, mode):
-    """Navy left column with the big segment number; title and timing right."""
+    """Full-bleed navy divider: giant number, amber rule, progress pills."""
     slide = _blank_slide(prs)
 
-    # Stops at the footer rule (y=7.08") so the master footer stays legible.
-    band = slide.shapes.add_shape(
-        MSO_SHAPE.RECTANGLE, 0, 0, Inches(2.6), Inches(7.08)
-    )
-    solid(band, PRIMARY)
-    tf = band.text_frame
-    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
-    run = tf.paragraphs[0].add_run()
-    run.text = str(number)
-    style(run, size=96, color=WHITE, font=HEADING_FONT, bold=True)
+    bg = add_bar(slide, 0, 0, SLIDE_WIDTH, SLIDE_HEIGHT, CANVAS)
+    bg.shadow.inherit = False
 
     tf = _add_text(
-        slide, Inches(3.1), Inches(2.35), Inches(9.4), Inches(1.6),
+        slide, Inches(0.7), Inches(2.0), Inches(2.5), Inches(2.4),
+        align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE,
+    )
+    run = tf.paragraphs[0].add_run()
+    run.text = str(number)
+    style(run, size=120, color=WHITE, font=HEADING_FONT, bold=True)
+
+    # Vertical amber rule between the number and the text block.
+    add_bar(slide, Inches(3.45), Inches(2.35), Inches(0.05), Inches(1.75), AMBER)
+
+    tf = _add_text(
+        slide, Inches(3.9), Inches(2.25), Inches(8.6), Inches(1.35),
         anchor=MSO_ANCHOR.BOTTOM,
     )
     run = tf.paragraphs[0].add_run()
     run.text = title
-    style(run, size=32, color=PRIMARY, font=HEADING_FONT, bold=True)
+    style(run, size=32, color=WHITE, font=HEADING_FONT, bold=True)
 
-    tf = _add_text(slide, Inches(3.1), Inches(4.1), Inches(9.4), Inches(0.5))
+    tf = _add_text(slide, Inches(3.9), Inches(3.75), Inches(8.6), Inches(0.5))
     run = tf.paragraphs[0].add_run()
     run.text = f"{duration} · {mode}"
-    style(run, size=18, color=ACCENT)
+    style(run, size=18, color=AMBER, font=HEADING_FONT, bold=True)
 
-    tf = _add_text(slide, Inches(3.1), Inches(4.65), Inches(9.4), Inches(0.4))
+    tf = _add_text(slide, Inches(3.9), Inches(4.3), Inches(8.6), Inches(0.4))
     run = tf.paragraphs[0].add_run()
     run.text = f"Segment {number} of {total}"
-    style(run, size=12, color=MUTED)
+    style(run, size=12, color=SKY)
+
+    # Progress pills: one per segment, the current one amber.
+    pill_w, pill_h, gap = 0.55, 0.1, 0.2
+    row_w = total * pill_w + (total - 1) * gap
+    x = (SLIDE_WIDTH.inches - row_w) / 2
+    for i in range(1, total + 1):
+        add_bar(slide, Inches(x), Inches(6.55), Inches(pill_w), Inches(pill_h),
+                AMBER if i == number else NAVY_SOFT)
+        x += pill_w + gap
     return slide
 
 
 def add_content_slide(prs, title, body_lines=None, notes=None):
-    """Standard content slide: navy title, accent underline, optional bullets.
+    """Standard content slide: orange kicker bar, navy title, layered rule.
 
     body_lines is a list of strings, or (indent_level, string) tuples.
     Returns the slide so callers can add custom shapes in the content area
@@ -234,15 +282,16 @@ def add_content_slide(prs, title, body_lines=None, notes=None):
     """
     slide = _blank_slide(prs)
 
-    tf = _add_text(slide, Inches(0.6), Inches(0.45), Inches(12.13), Inches(0.7))
+    add_bar(slide, CONTENT_LEFT, Inches(0.55), Inches(0.13), Inches(0.5), HIGHLIGHT)
+
+    tf = _add_text(slide, Inches(0.95), Inches(0.45), Inches(11.78), Inches(0.7))
     run = tf.paragraphs[0].add_run()
     run.text = title
     style(run, size=28, color=PRIMARY, font=HEADING_FONT, bold=True)
 
-    rule = slide.shapes.add_shape(
-        MSO_SHAPE.RECTANGLE, Inches(0.6), Inches(1.2), Inches(1.6), Pt(3)
-    )
-    solid(rule, ACCENT)
+    # Layered rule: full-width hairline with a vivid azure lead segment.
+    add_bar(slide, CONTENT_LEFT, Inches(1.21), CONTENT_WIDTH, Pt(1.2), LINE)
+    add_bar(slide, CONTENT_LEFT, Inches(1.19), Inches(1.6), Pt(3), ACCENT)
 
     if body_lines:
         tf = _add_text(slide, CONTENT_LEFT, CONTENT_TOP, CONTENT_WIDTH, CONTENT_HEIGHT)
@@ -269,12 +318,13 @@ def add_demo_cue(slide, text, top, left=CONTENT_LEFT, width=CONTENT_WIDTH):
     also mention the demo in the slide's speaker notes.
     """
     band = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, Inches(0.55)
+        MSO_SHAPE.RECTANGLE, left, top, width, Inches(0.55)
     )
     solid(band, HIGHLIGHT)
+    add_bar(slide, left, top, Inches(0.1), Inches(0.55), PRIMARY)
     tf = band.text_frame
     tf.word_wrap = True
-    tf.margin_left = Inches(0.25)
+    tf.margin_left = Inches(0.3)
     tf.margin_right = Inches(0.25)
     tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     run = tf.paragraphs[0].add_run()
@@ -284,12 +334,16 @@ def add_demo_cue(slide, text, top, left=CONTENT_LEFT, width=CONTENT_WIDTH):
 
 
 def add_band(slide, top, height, text, size=20, fill=PRIMARY, sub=None):
-    """Full-width emphasis band: centered bold white text on a filled
-    rounded rectangle spanning the content area; optional sub-line."""
+    """Full-width emphasis band: centered bold white text on a solid
+    rectangle with symmetric contrasting end caps; optional sub-line."""
     band = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE, CONTENT_LEFT, top, CONTENT_WIDTH, height
+        MSO_SHAPE.RECTANGLE, CONTENT_LEFT, top, CONTENT_WIDTH, height
     )
     solid(band, fill)
+    cap = AMBER if fill == PRIMARY else PRIMARY
+    add_bar(slide, CONTENT_LEFT, top, Inches(0.1), height, cap)
+    add_bar(slide, Inches(CONTENT_LEFT.inches + CONTENT_WIDTH.inches - 0.1),
+            top, Inches(0.1), height, cap)
     tf = band.text_frame
     tf.word_wrap = True
     tf.margin_left = Inches(0.4)
@@ -305,26 +359,37 @@ def add_band(slide, top, height, text, size=20, fill=PRIMARY, sub=None):
         para.space_before = Pt(6)
         run = para.add_run()
         run.text = sub
-        style(run, size=13, color=PALE)
+        style(run, size=13, color=SKY if fill == PRIMARY else PALE_WARM)
     return band
 
 
 def add_card(slide, left, top, width, height, fill, heading, heading_color,
              body=None):
-    """Rounded card with a bold heading and an optional body paragraph."""
-    card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width,
-                                  height)
-    solid(card, fill)
+    """Deck card. Dark fills render as solid color blocks (white heading);
+    light fills render as white cards with a colored edge bar taken from
+    the heading color — navy for neutral cards, orange for emphasis."""
+    card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, height)
+    dark = _is_dark(fill)
+    if dark:
+        solid(card, fill)
+    else:
+        outlined(card, WHITE, LINE)
+        edge = HIGHLIGHT if fill == PALE_WARM else heading_color
+        add_bar(slide, left, top, Inches(0.09), height, edge)
     tf = card.text_frame
     tf.word_wrap = True
-    tf.margin_left = Inches(0.25)
+    tf.margin_left = Inches(0.3)
     tf.margin_right = Inches(0.25)
     tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-    run = tf.paragraphs[0].add_run()
+    para = tf.paragraphs[0]
+    if not dark:
+        para.alignment = PP_ALIGN.LEFT
+    run = para.add_run()
     run.text = heading
     style(run, size=18, color=heading_color, font=HEADING_FONT, bold=True)
     if body:
         para = tf.add_paragraph()
+        para.alignment = PP_ALIGN.LEFT
         para.space_before = Pt(4)
         run = para.add_run()
         run.text = body
@@ -350,12 +415,9 @@ def add_placeholder_slide(prs, segment_label, planned_title, gist, ticket):
     slide = add_content_slide(prs, planned_title)
 
     card = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE, Inches(1.6), Inches(2.3), Inches(10.1), Inches(2.9)
+        MSO_SHAPE.RECTANGLE, Inches(1.6), Inches(2.3), Inches(10.1), Inches(2.9)
     )
-    card.fill.solid()
-    card.fill.fore_color.rgb = PALE
-    card.line.color.rgb = ACCENT
-    card.shadow.inherit = False
+    outlined(card, WHITE, ACCENT, weight=1.5)
     tf = card.text_frame
     tf.word_wrap = True
     tf.margin_left = Inches(0.4)

@@ -14,7 +14,7 @@ from pptx.util import Inches, Pt
 
 from deck import template
 from deck.template import (
-    CONTENT_WIDTH, HIGHLIGHT, PALE, PALE_WARM, PRIMARY, TEXT, WHITE,
+    CONTENT_WIDTH, HIGHLIGHT, LINE, PALE, PALE_WARM, PRIMARY, TEXT, WHITE,
 )
 
 
@@ -96,7 +96,7 @@ _ROW_GAP = 0.1
 def _assignment_row(slide, number, top, heading, detail, height):
     """Numbered assignment row: navy number chip + pale item card."""
     chip = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE, template.CONTENT_LEFT, Inches(top),
+        MSO_SHAPE.RECTANGLE, template.CONTENT_LEFT, Inches(top),
         Inches(0.6), Inches(height),
     )
     template.solid(chip, PRIMARY)
@@ -109,17 +109,18 @@ def _assignment_row(slide, number, top, heading, detail, height):
                    bold=True)
 
     card = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE,
+        MSO_SHAPE.RECTANGLE,
         Inches(template.CONTENT_LEFT.inches + 0.8), Inches(top),
         Inches(CONTENT_WIDTH.inches - 0.8), Inches(height),
     )
-    template.solid(card, PALE)
+    template.outlined(card, WHITE, LINE)
     tf = card.text_frame
     tf.word_wrap = True
     tf.margin_left = Inches(0.25)
     tf.margin_right = Inches(0.25)
     tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     para = tf.paragraphs[0]
+    para.alignment = PP_ALIGN.LEFT
     run = para.add_run()
     run.text = heading
     template.style(run, size=15, color=PRIMARY, font=template.HEADING_FONT,
@@ -209,10 +210,12 @@ def _close_slide(prs):
         slide, template.CONTENT_LEFT, Inches(2.15), Inches(5.96), Inches(1.6),
         PRIMARY, "The Sensitive Lane", WHITE,
     )
-    template.add_card(
+    card = template.add_card(
         slide, Inches(template.CONTENT_LEFT.inches + 6.17), Inches(2.15),
         Inches(5.96), Inches(1.6), PALE_WARM, "The Daily Driver", HIGHLIGHT,
     )
+    # Mirror the centered heading of the dark lane card beside it.
+    card.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
     template.add_label(
         slide, template.CONTENT_LEFT, Inches(4.35), CONTENT_WIDTH,
         "Which AI is allowed to see sensitive institutional data — Copilot "

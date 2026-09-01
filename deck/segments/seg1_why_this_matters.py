@@ -12,7 +12,8 @@ from pptx.util import Inches, Pt
 
 from deck import template
 from deck.template import (
-    ACCENT, HEADING_FONT, MUTED, PALE, PALE_WARM, PRIMARY, TEXT,
+    ACCENT, AMBER, CANVAS, HEADING_FONT, PALE, PALE_WARM, PRIMARY, SKY, SLATE,
+    TEXT, WHITE,
 )
 
 TUFTS_CREDIT = (
@@ -24,9 +25,10 @@ TUFTS_CREDIT = (
 def _stat_tile(slide, left, width, number, caption, detail=None):
     """Big-number tile: the figure dominates, the caption explains it."""
     tile = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE, left, Inches(2.1), width, Inches(3.1)
+        MSO_SHAPE.RECTANGLE, left, Inches(2.1), width, Inches(3.1)
     )
-    template.solid(tile, PALE)
+    template.solid(tile, CANVAS)
+    template.add_bar(slide, left, Inches(2.1), width, Inches(0.09), AMBER)
     tf = tile.text_frame
     tf.word_wrap = True
     tf.margin_left = Inches(0.4)
@@ -36,20 +38,20 @@ def _stat_tile(slide, left, width, number, caption, detail=None):
     para.alignment = PP_ALIGN.CENTER
     run = para.add_run()
     run.text = number
-    template.style(run, size=54, color=PRIMARY, font=HEADING_FONT, bold=True)
+    template.style(run, size=54, color=AMBER, font=HEADING_FONT, bold=True)
     para = tf.add_paragraph()
     para.alignment = PP_ALIGN.CENTER
     para.space_before = Pt(8)
     run = para.add_run()
     run.text = caption
-    template.style(run, size=16, color=TEXT)
+    template.style(run, size=16, color=WHITE)
     if detail:
         para = tf.add_paragraph()
         para.alignment = PP_ALIGN.CENTER
         para.space_before = Pt(6)
         run = para.add_run()
         run.text = detail
-        template.style(run, size=13, color=MUTED, italic=True)
+        template.style(run, size=13, color=SKY, italic=True)
     return tile
 
 
@@ -88,10 +90,10 @@ def _headline_figures_slide(prs):
 # Vulnerability by sector, per the Tufts research: three knowledge-work
 # sectors against the all-industry average.
 _VULNERABILITY_ROWS = [
-    ("Information", 18, PRIMARY),
-    ("Finance / Insurance", 16, PRIMARY),
-    ("Professional Services", 16, PRIMARY),
-    ("All-industry average", 6, ACCENT),
+    ("Information", 18, ACCENT),
+    ("Finance / Insurance", 16, ACCENT),
+    ("Professional Services", 16, ACCENT),
+    ("All-industry average", 6, SLATE),
 ]
 
 _BAR_SCALE = 0.42  # inches per percentage point

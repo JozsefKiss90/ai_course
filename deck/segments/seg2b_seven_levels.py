@@ -14,8 +14,8 @@ from pptx.util import Inches
 
 from deck import template
 from deck.template import (
-    ACCENT, HEADING_FONT, HIGHLIGHT, LINE, MUTED, PALE, PALE_WARM, PRIMARY,
-    SLATE, WHITE,
+    ACCENT, AMBER, HEADING_FONT, HIGHLIGHT, MUTED, NAVY_SOFT, PALE, PALE_WARM,
+    PRIMARY, SKY, WHITE,
 )
 
 # (level, name, research-management translation, coverage, chip treatment)
@@ -69,7 +69,7 @@ def _level_row(slide, level, name, translation, coverage, treatment, top):
         Inches(template.CONTENT_LEFT.inches + indent), Inches(top),
         Inches(0.55), Inches(_ROW_HEIGHT),
     )
-    template.solid(badge, PRIMARY)
+    template.solid(badge, ACCENT)
     tf = badge.text_frame
     tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     tf.paragraphs[0].alignment = PP_ALIGN.CENTER
@@ -82,7 +82,7 @@ def _level_row(slide, level, name, translation, coverage, treatment, top):
         MSO_SHAPE.RECTANGLE, Inches(bar_left), Inches(top),
         Inches(_BAR_RIGHT - bar_left), Inches(_ROW_HEIGHT),
     )
-    template.outlined(bar, WHITE, LINE)
+    template.panel(bar)
     tf = bar.text_frame
     tf.word_wrap = True
     tf.margin_left = Inches(0.18)
@@ -91,7 +91,7 @@ def _level_row(slide, level, name, translation, coverage, treatment, top):
     para = tf.paragraphs[0]
     run = para.add_run()
     run.text = name
-    template.style(run, size=15, color=PRIMARY, font=HEADING_FONT, bold=True)
+    template.style(run, size=15, color=WHITE, font=HEADING_FONT, bold=True)
     run = para.add_run()
     run.text = f"  —  {translation}"
     template.style(run, size=12, color=MUTED)
@@ -99,7 +99,7 @@ def _level_row(slide, level, name, translation, coverage, treatment, top):
     chip_fill, chip_color, chip_bold = {
         "here": (HIGHLIGHT, WHITE, True),
         "course": (ACCENT, WHITE, False),
-        "outlook": (SLATE, WHITE, False),
+        "outlook": (NAVY_SOFT, SKY, False),
     }[treatment]
     chip = slide.shapes.add_shape(
         MSO_SHAPE.ROUNDED_RECTANGLE, Inches(_CHIP_LEFT), Inches(top),
@@ -180,7 +180,7 @@ def _km_teaser_slide(prs):
         x += card_width
         if i < len(cards) - 1:
             template.add_label(slide, Inches(x), Inches(3.25), Inches(arrow_gap),
-                               "→", size=28, color=ACCENT, align=PP_ALIGN.CENTER)
+                               "→", size=28, color=AMBER, align=PP_ALIGN.CENTER)
             x += arrow_gap
 
     template.add_label(

@@ -13,8 +13,8 @@ from pptx.util import Inches
 
 from deck import template
 from deck.template import (
-    ACCENT, HEADING_FONT, HIGHLIGHT, LINE, MUTED, PALE, PALE_WARM, PRIMARY,
-    SLATE, TEXT, WHITE,
+    ACCENT, AMBER, HEADING_FONT, HIGHLIGHT, NAVY_SOFT, PALE, PALE_WARM,
+    PRIMARY, SKY, TEXT, WHITE,
 )
 
 
@@ -120,9 +120,9 @@ def _context_window_slide(prs):
                        "A long conversation, as the model weighs it:")
     bar_top = Inches(3.55)
     segments = [
-        ("beginning — remembered", 3.4, PRIMARY, WHITE),
-        ("middle — often lost", 5.33, SLATE, WHITE),
-        ("end — remembered", 3.4, PRIMARY, WHITE),
+        ("beginning — remembered", 3.4, ACCENT, WHITE),
+        ("middle — often lost", 5.33, NAVY_SOFT, SKY),
+        ("end — remembered", 3.4, ACCENT, WHITE),
     ]
     x = template.CONTENT_LEFT
     for text, width_in, fill, color in segments:
@@ -188,9 +188,9 @@ def _system_prompts_slide(prs):
             template.CONTENT_LEFT, Inches(top), Inches(5.9), Inches(0.62),
         )
         if is_system:
-            template.solid(box, PRIMARY)
+            template.solid(box, HIGHLIGHT)
         else:
-            template.outlined(box, WHITE, LINE)
+            template.panel(box)
             template.add_bar(slide, template.CONTENT_LEFT, Inches(top),
                              Inches(0.07), Inches(0.62), ACCENT)
         tf = box.text_frame
@@ -298,7 +298,7 @@ def _tools_agents_slide(prs):
         x += 3.4
         if i < len(steps) - 1:
             template.add_label(slide, Inches(x), Inches(4.5), Inches(0.7), "→", size=24,
-                   color=ACCENT, align=PP_ALIGN.CENTER)
+                   color=AMBER, align=PP_ALIGN.CENTER)
             x += 0.7
     template.add_label(slide, template.CONTENT_LEFT, Inches(5.35), Inches(11.0),
            "⟲  …and around again, until the job is done.", italic=True)
@@ -335,7 +335,7 @@ def _principles_slide(prs):
             MSO_SHAPE.OVAL, template.CONTENT_LEFT, Inches(top + 0.35),
             Inches(0.85), Inches(0.85),
         )
-        template.solid(badge, PRIMARY)
+        template.solid(badge, HIGHLIGHT)
         tf = badge.text_frame
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
         tf.paragraphs[0].alignment = PP_ALIGN.CENTER

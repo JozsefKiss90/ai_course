@@ -6,11 +6,11 @@ the slide. The theme (fonts + color scheme) is written into the slide
 master's theme part, and the footer is a master shape, so both apply to
 all slides.
 
-Visual language: full-bleed deep-navy title and divider slides with amber
-accents; content slides carry an orange kicker bar beside the title and a
-layered rule beneath it; cards are crisp white rectangles with a colored
-edge bar (navy = neutral, orange = emphasis) instead of pale fills; solid
-emphasis bands get symmetric contrasting end caps.
+Visual language: the whole deck lives on a deep-navy canvas (set as the
+master background). Content sits on elevated navy panels with a colored
+edge bar — azure for neutral, orange for emphasis. Type is white and
+light-azure; the accents are vivid azure, orange, and amber. Title and
+divider slides go full-bleed navy with amber accents and progress pills.
 """
 
 from lxml import etree
@@ -26,19 +26,21 @@ from pptx.util import Emu, Inches, Pt
 HEADING_FONT = "Segoe UI Semibold"
 BODY_FONT = "Segoe UI"
 
-PRIMARY = RGBColor(0x1F, 0x38, 0x64)  # deep navy — headings, dark cards
-CANVAS = RGBColor(0x14, 0x24, 0x44)  # near-black navy — title/divider ground
-NAVY_SOFT = RGBColor(0x35, 0x52, 0x82)  # inactive markers on the navy ground
-ACCENT = RGBColor(0x2B, 0x7C, 0xD3)  # vivid azure — rules, chips, bars
+PRIMARY = RGBColor(0x1F, 0x38, 0x64)  # brand navy — theme color, legacy fill key
+CANVAS = RGBColor(0x14, 0x24, 0x44)  # near-black navy — every slide's ground
+PANEL = RGBColor(0x20, 0x36, 0x5E)  # elevated card surface on the canvas
+PANEL_EDGE = RGBColor(0x31, 0x4E, 0x80)  # card borders, hairlines
+NAVY_SOFT = RGBColor(0x35, 0x52, 0x82)  # inactive markers, ghosted fills
+ACCENT = RGBColor(0x37, 0x8C, 0xE6)  # vivid azure — chips, bars, label blocks
 HIGHLIGHT = RGBColor(0xE8, 0x59, 0x0C)  # vivid orange — demo cues, emphasis
-AMBER = RGBColor(0xFF, 0xB1, 0x3D)  # warm amber — accents on navy ground
-TEXT = RGBColor(0x1F, 0x2A, 0x3D)
-MUTED = RGBColor(0x51, 0x60, 0x73)
+AMBER = RGBColor(0xFF, 0xB1, 0x3D)  # warm amber — numbers, accents, headings
+TEXT = RGBColor(0xE9, 0xF0, 0xFA)  # near-white body text
+MUTED = RGBColor(0x9D, 0xB2, 0xD3)  # light slate — captions, credits
 SLATE = RGBColor(0x8E, 0xA3, 0xBF)  # de-emphasized fills that stay legible
-SKY = RGBColor(0xBD, 0xD7, 0xF5)  # light azure text on navy
-LINE = RGBColor(0xD3, 0xDD, 0xEA)  # card borders, hairlines
-PALE = RGBColor(0xE8, 0xF0, 0xFB)  # light azure tint (sparingly)
-PALE_WARM = RGBColor(0xFD, 0xE9, 0xD8)  # light amber tint (sparingly)
+SKY = RGBColor(0xBD, 0xD7, 0xF5)  # light azure text
+LINE = PANEL_EDGE  # legacy alias — borders on the dark canvas
+PALE = RGBColor(0xE8, 0xF0, 0xFB)  # legacy fill key → neutral panel card
+PALE_WARM = RGBColor(0xFD, 0xE9, 0xD8)  # legacy fill key → emphasis panel card
 WHITE = RGBColor(0xFF, 0xFF, 0xFF)
 
 FOOTER_TEXT = "AI for Research Management · Lesson 1 · Week 1"
@@ -60,11 +62,14 @@ _P = "http://schemas.openxmlformats.org/presentationml/2006/main"
 
 
 def new_presentation():
-    """A 16:9 presentation with theme fonts/colors and footer on the master."""
+    """A 16:9 presentation with theme fonts/colors, dark canvas, and footer."""
     prs = Presentation()
     prs.slide_width = SLIDE_WIDTH
     prs.slide_height = SLIDE_HEIGHT
     _apply_theme(prs)
+    master = prs.slide_master
+    master.background.fill.solid()
+    master.background.fill.fore_color.rgb = CANVAS
     _add_master_footer(prs)
     return prs
 
@@ -94,8 +99,8 @@ def solid(shape, color):
     shape.shadow.inherit = False
 
 
-def outlined(shape, fill=WHITE, border=LINE, weight=1.0):
-    """Light card style: solid fill with a thin border, no shadow."""
+def outlined(shape, fill=PANEL, border=PANEL_EDGE, weight=1.0):
+    """Elevated panel style: solid fill with a thin border, no shadow."""
     shape.fill.solid()
     shape.fill.fore_color.rgb = fill
     shape.line.color.rgb = border
@@ -103,18 +108,16 @@ def outlined(shape, fill=WHITE, border=LINE, weight=1.0):
     shape.shadow.inherit = False
 
 
+def panel(shape):
+    """The standard elevated card surface."""
+    outlined(shape, PANEL, PANEL_EDGE)
+
+
 def add_bar(slide, left, top, width, height, color):
     """A plain filled rectangle — accent bars, rules, edge caps."""
     bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, height)
     solid(bar, color)
     return bar
-
-
-def _is_dark(color):
-    """Perceived-luminance test: dark fills get white text, light get ink."""
-    hexval = str(color)
-    r, g, b = (int(hexval[i : i + 2], 16) for i in (0, 2, 4))
-    return (r * 299 + g * 587 + b * 114) / 1000 < 128
 
 
 def master_next_id(master):
@@ -148,7 +151,7 @@ def _add_master_footer(prs):
         Inches(0.6), Inches(7.08), Inches(12.13), Pt(1.2),
     )
     line = _master_add_shape(master, sp)
-    solid(line, ACCENT)
+    solid(line, PANEL_EDGE)
 
     sp = CT_Shape.new_textbox_sp(
         master_next_id(master), "Footer Text",
@@ -274,7 +277,8 @@ def add_section_divider(prs, number, total, title, duration, mode):
 
 
 def add_content_slide(prs, title, body_lines=None, notes=None):
-    """Standard content slide: orange kicker bar, navy title, layered rule.
+    """Standard content slide on the dark canvas: orange kicker bar, white
+    title, layered rule with a vivid azure lead segment.
 
     body_lines is a list of strings, or (indent_level, string) tuples.
     Returns the slide so callers can add custom shapes in the content area
@@ -287,10 +291,10 @@ def add_content_slide(prs, title, body_lines=None, notes=None):
     tf = _add_text(slide, Inches(0.95), Inches(0.45), Inches(11.78), Inches(0.7))
     run = tf.paragraphs[0].add_run()
     run.text = title
-    style(run, size=28, color=PRIMARY, font=HEADING_FONT, bold=True)
+    style(run, size=28, color=WHITE, font=HEADING_FONT, bold=True)
 
     # Layered rule: full-width hairline with a vivid azure lead segment.
-    add_bar(slide, CONTENT_LEFT, Inches(1.21), CONTENT_WIDTH, Pt(1.2), LINE)
+    add_bar(slide, CONTENT_LEFT, Inches(1.21), CONTENT_WIDTH, Pt(1.2), PANEL_EDGE)
     add_bar(slide, CONTENT_LEFT, Inches(1.19), Inches(1.6), Pt(3), ACCENT)
 
     if body_lines:
@@ -321,7 +325,7 @@ def add_demo_cue(slide, text, top, left=CONTENT_LEFT, width=CONTENT_WIDTH):
         MSO_SHAPE.RECTANGLE, left, top, width, Inches(0.55)
     )
     solid(band, HIGHLIGHT)
-    add_bar(slide, left, top, Inches(0.1), Inches(0.55), PRIMARY)
+    add_bar(slide, left, top, Inches(0.1), Inches(0.55), AMBER)
     tf = band.text_frame
     tf.word_wrap = True
     tf.margin_left = Inches(0.3)
@@ -334,16 +338,18 @@ def add_demo_cue(slide, text, top, left=CONTENT_LEFT, width=CONTENT_WIDTH):
 
 
 def add_band(slide, top, height, text, size=20, fill=PRIMARY, sub=None):
-    """Full-width emphasis band: centered bold white text on a solid
-    rectangle with symmetric contrasting end caps; optional sub-line."""
+    """Full-width emphasis band: centered bold white text on a vivid solid
+    rectangle with symmetric amber end caps; optional sub-line. The legacy
+    navy fill maps to vivid azure so bands pop on the dark canvas."""
+    if fill == PRIMARY:
+        fill = ACCENT
     band = slide.shapes.add_shape(
         MSO_SHAPE.RECTANGLE, CONTENT_LEFT, top, CONTENT_WIDTH, height
     )
     solid(band, fill)
-    cap = AMBER if fill == PRIMARY else PRIMARY
-    add_bar(slide, CONTENT_LEFT, top, Inches(0.1), height, cap)
+    add_bar(slide, CONTENT_LEFT, top, Inches(0.1), height, AMBER)
     add_bar(slide, Inches(CONTENT_LEFT.inches + CONTENT_WIDTH.inches - 0.1),
-            top, Inches(0.1), height, cap)
+            top, Inches(0.1), height, AMBER)
     tf = band.text_frame
     tf.word_wrap = True
     tf.margin_left = Inches(0.4)
@@ -359,23 +365,30 @@ def add_band(slide, top, height, text, size=20, fill=PRIMARY, sub=None):
         para.space_before = Pt(6)
         run = para.add_run()
         run.text = sub
-        style(run, size=13, color=SKY if fill == PRIMARY else PALE_WARM)
+        style(run, size=13, color=PALE if fill == ACCENT else PALE_WARM)
     return band
 
 
 def add_card(slide, left, top, width, height, fill, heading, heading_color,
              body=None):
-    """Deck card. Dark fills render as solid color blocks (white heading);
-    light fills render as white cards with a colored edge bar taken from
-    the heading color — navy for neutral cards, orange for emphasis."""
+    """Deck card on the dark canvas. The legacy navy fill renders as a
+    solid vivid-azure label block (centered white heading). Light legacy
+    fills render as elevated navy panels with a colored edge bar — azure
+    for neutral cards, orange for emphasis — and headings remap to white
+    (neutral) or amber (emphasis) so they read on the dark surface."""
     card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, height)
-    dark = _is_dark(fill)
+    dark = fill == PRIMARY
     if dark:
-        solid(card, fill)
+        solid(card, ACCENT)
     else:
-        outlined(card, WHITE, LINE)
-        edge = HIGHLIGHT if fill == PALE_WARM else heading_color
-        add_bar(slide, left, top, Inches(0.09), height, edge)
+        panel(card)
+        warm = fill == PALE_WARM or heading_color == HIGHLIGHT
+        add_bar(slide, left, top, Inches(0.09), height,
+                HIGHLIGHT if warm else ACCENT)
+    if heading_color == PRIMARY:
+        heading_color = WHITE
+    elif heading_color == HIGHLIGHT:
+        heading_color = AMBER
     tf = card.text_frame
     tf.word_wrap = True
     tf.margin_left = Inches(0.3)
@@ -417,7 +430,7 @@ def add_placeholder_slide(prs, segment_label, planned_title, gist, ticket):
     card = slide.shapes.add_shape(
         MSO_SHAPE.RECTANGLE, Inches(1.6), Inches(2.3), Inches(10.1), Inches(2.9)
     )
-    outlined(card, WHITE, ACCENT, weight=1.5)
+    outlined(card, PANEL, ACCENT, weight=1.5)
     tf = card.text_frame
     tf.word_wrap = True
     tf.margin_left = Inches(0.4)
@@ -427,7 +440,7 @@ def add_placeholder_slide(prs, segment_label, planned_title, gist, ticket):
     para.alignment = PP_ALIGN.CENTER
     run = para.add_run()
     run.text = f"[PLACEHOLDER] {segment_label}"
-    style(run, size=20, color=PRIMARY, font=HEADING_FONT, bold=True)
+    style(run, size=20, color=WHITE, font=HEADING_FONT, bold=True)
     para = tf.add_paragraph()
     para.alignment = PP_ALIGN.CENTER
     run = para.add_run()

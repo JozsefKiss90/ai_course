@@ -14,12 +14,19 @@ from pptx.util import Inches, Pt
 
 from deck import template
 from deck.template import (
-    ACCENT, CONTENT_WIDTH, HIGHLIGHT, PALE, PALE_WARM, PRIMARY, TEXT, WHITE,
+    AMBER, CONTENT_WIDTH, HIGHLIGHT, PALE, PALE_WARM, PRIMARY, SKY, TEXT, WHITE,
 )
 
 
 def _add_quote(card, text, color=PRIMARY):
-    """Append the copy-this phrase to a card as its own quoted paragraph."""
+    """Append the copy-this phrase to a card as its own quoted paragraph.
+
+    Legacy heading colors remap for the dark canvas: navy quotes render
+    light azure, orange quotes render amber."""
+    if color == PRIMARY:
+        color = SKY
+    elif color == HIGHLIGHT:
+        color = AMBER
     para = card.text_frame.add_paragraph()
     para.space_before = Pt(8)
     run = para.add_run()
@@ -61,7 +68,7 @@ def _three_ways_slide(prs):
         x += card_width
         if i < len(_THREE_WAYS) - 1:
             template.add_label(slide, Inches(x), Inches(2.6), Inches(arrow_gap),
-                               "→", size=24, color=ACCENT, align=PP_ALIGN.CENTER)
+                               "→", size=24, color=AMBER, align=PP_ALIGN.CENTER)
             x += arrow_gap
 
     template.add_band(
@@ -180,7 +187,7 @@ def _shortcuts_slide(prs):
         slide, template.CONTENT_LEFT, Inches(4.45), CONTENT_WIDTH,
         "Copy these two phrases word for word — they alone jump you from "
         "Level 1 to Level 2.",
-        color=HIGHLIGHT, align=PP_ALIGN.CENTER,
+        color=AMBER, align=PP_ALIGN.CENTER,
     )
     template.add_demo_cue(
         slide,

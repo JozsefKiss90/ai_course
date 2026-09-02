@@ -12,7 +12,7 @@ from pptx.util import Inches, Pt
 
 from deck import template
 from deck.template import (
-    ACCENT, AMBER, CANVAS, HEADING_FONT, PALE, PALE_WARM, PRIMARY, SKY, SLATE,
+    ACCENT, AMBER, HEADING_FONT, PALE, PALE_WARM, PRIMARY, SKY, SLATE,
     TEXT, WHITE,
 )
 
@@ -27,7 +27,7 @@ def _stat_tile(slide, left, width, number, caption, detail=None):
     tile = slide.shapes.add_shape(
         MSO_SHAPE.RECTANGLE, left, Inches(2.1), width, Inches(3.1)
     )
-    template.solid(tile, CANVAS)
+    template.panel(tile)
     template.add_bar(slide, left, Inches(2.1), width, Inches(0.09), AMBER)
     tf = tile.text_frame
     tf.word_wrap = True
@@ -116,7 +116,7 @@ def _concentration_slide(prs):
         template.solid(bar, fill)
         template.add_label(slide, Inches(3.7 + pct * _BAR_SCALE + 0.15),
                            Inches(top + 0.04), Inches(1.0), f"{pct}%",
-                           size=16, color=PRIMARY)
+                           size=16, color=AMBER)
         top += 0.75
     template.add_label(
         slide, template.CONTENT_LEFT, Inches(5.35), template.CONTENT_WIDTH,
@@ -154,7 +154,7 @@ def _pipeline_slide(prs):
         "The occupations where AI helps the most with everyday tasks…",
     )
     template.add_label(slide, Inches(6.2), Inches(2.85), Inches(0.8), "→",
-                       size=32, color=ACCENT, align=PP_ALIGN.CENTER)
+                       size=32, color=AMBER, align=PP_ALIGN.CENTER)
     template.add_card(
         slide, Inches(7.23), Inches(2.3), Inches(5.5), Inches(1.7),
         PALE_WARM, "Highest displacement risk", PRIMARY,

@@ -14,7 +14,8 @@ from pptx.util import Inches, Pt
 
 from deck import template
 from deck.template import (
-    CONTENT_WIDTH, HIGHLIGHT, LINE, PALE, PALE_WARM, PRIMARY, TEXT, WHITE,
+    ACCENT, AMBER, CONTENT_WIDTH, HIGHLIGHT, PALE, PALE_WARM, PRIMARY, TEXT,
+    WHITE,
 )
 
 
@@ -47,7 +48,7 @@ def _anchor_project_slide(prs):
     template.add_label(
         slide, template.CONTENT_LEFT, Inches(5.0), CONTENT_WIDTH,
         "First step this week: write 5 sentences describing it.",
-        color=HIGHLIGHT, align=PP_ALIGN.CENTER,
+        color=AMBER, align=PP_ALIGN.CENTER,
     )
     template.set_notes(slide, (
         "Segment 4 opens the briefing with the one decision that outlives "
@@ -99,7 +100,7 @@ def _assignment_row(slide, number, top, heading, detail, height):
         MSO_SHAPE.RECTANGLE, template.CONTENT_LEFT, Inches(top),
         Inches(0.6), Inches(height),
     )
-    template.solid(chip, PRIMARY)
+    template.solid(chip, ACCENT)
     tf = chip.text_frame
     tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     tf.paragraphs[0].alignment = PP_ALIGN.CENTER
@@ -113,7 +114,7 @@ def _assignment_row(slide, number, top, heading, detail, height):
         Inches(template.CONTENT_LEFT.inches + 0.8), Inches(top),
         Inches(CONTENT_WIDTH.inches - 0.8), Inches(height),
     )
-    template.outlined(card, WHITE, LINE)
+    template.panel(card)
     tf = card.text_frame
     tf.word_wrap = True
     tf.margin_left = Inches(0.25)
@@ -123,7 +124,7 @@ def _assignment_row(slide, number, top, heading, detail, height):
     para.alignment = PP_ALIGN.LEFT
     run = para.add_run()
     run.text = heading
-    template.style(run, size=15, color=PRIMARY, font=template.HEADING_FONT,
+    template.style(run, size=15, color=WHITE, font=template.HEADING_FONT,
                    bold=True)
     run = para.add_run()
     run.text = f"  —  {detail}"
@@ -220,7 +221,7 @@ def _close_slide(prs):
         slide, template.CONTENT_LEFT, Inches(4.35), CONTENT_WIDTH,
         "Which AI is allowed to see sensitive institutional data — Copilot "
         "or Gemini? And why?",
-        size=18, color=PRIMARY, align=PP_ALIGN.CENTER,
+        size=18, color=WHITE, align=PP_ALIGN.CENTER,
     )
     template.add_label(
         slide, template.CONTENT_LEFT, Inches(5.15), CONTENT_WIDTH,

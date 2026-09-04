@@ -102,8 +102,8 @@ def test_each_segment_has_its_placeholder_slides(reopened):
 
 
 def test_total_slide_count(reopened):
-    # 1 title + 5 dividers + 26 content slides
-    assert len(reopened.slides) == 32
+    # 1 title + 5 dividers + 31 content slides
+    assert len(reopened.slides) == 37
 
 
 def test_placeholder_slides_carry_notes_naming_their_ticket(reopened):
@@ -179,7 +179,9 @@ SEG2A_TITLES = [
     "Powerful — but weird",
     "Tokens — the model doesn't see words",
     "The context window — a finite working memory",
+    "What fills the window — and what falls out",
     "System prompts — standing instructions",
+    "Reasoning tokens — the pause before the answer",
     "Hallucination, sycophancy, and the cutoff",
     "Tools and agents — where this is heading",
     "Three principles to keep",
@@ -204,9 +206,14 @@ def test_seg2a_slides_present_in_order_and_not_placeholders(reopened):
     assert positions == sorted(positions)
 
 
-def test_tokens_slide_carries_frabjous_example_and_demo_cue(reopened):
+def test_tokens_slide_contrasts_common_and_rare_and_cues_demo(reopened):
     slide = _slide_by_title(reopened, "Tokens — the model doesn't see words")
     text = _slide_text(slide)
+    # The common expression: every word one token.
+    assert "O Happy Day!" in text
+    assert "12 characters" in text
+    assert "4 tokens" in text
+    # The rare expression: the uncommon word shatters.
     assert "O Frabjous Day!" in text
     assert "15 characters" in text
     assert "7 tokens" in text
@@ -223,6 +230,49 @@ def test_context_window_slide_states_the_two_practical_rules(reopened):
     assert "lost in the middle" in text.lower()
     assert "start fresh" in text.lower()
     assert "more context is not better context" in text.lower()
+
+
+def test_window_diagram_slide_combines_both_reference_images(reopened):
+    text = _slide_text(
+        _slide_by_title(reopened, "What fills the window — and what falls out")
+    )
+    # Left half — the inputs funnel (from contexwindow2.png).
+    for chip in ("Instructions", "Chat history", "System prompt",
+                 "Context window"):
+        assert chip in text, f"{chip!r} missing from the inputs half"
+    # Right half — the timeline (from Context-Window-Summary-1.jpg).
+    assert "1st prompt" in text
+    assert "3rd prompt" in text
+    assert "lost" in text.lower()
+    assert "time" in text.lower()
+
+
+def test_system_prompts_slide_shows_the_morse_conversation(reopened):
+    text = _slide_text(
+        _slide_by_title(reopened, "System prompts — standing instructions")
+    )
+    assert "Respond only in morse code." in text
+    assert "Stop doing morse code!" in text
+    assert "-. ---" in text  # the model's final answer: morse for NO
+
+
+def test_reasoning_tokens_slide_splits_the_reply_in_two(reopened):
+    text = _slide_text(
+        _slide_by_title(reopened, "Reasoning tokens — the pause before the answer")
+    )
+    assert "Hello, how are you?" in text
+    assert "Quite well, thank you." in text  # the visible answer
+    assert "hidden reasoning tokens" in text
+
+
+def test_framing_notes_enumerate_the_quirks(reopened):
+    notes = _slide_by_title(
+        reopened, "Powerful — but weird"
+    ).notes_slide.notes_text_frame.text
+    for quirk in ("token", "context window", "system prompt", "reasoning",
+                  "hallucination", "sycophancy", "cutoff"):
+        assert quirk in notes.lower(), f"quirk {quirk!r} not named in notes"
+    assert "aihero.dev" in notes
 
 
 def test_failure_modes_slide_states_the_verify_rule(reopened):
@@ -335,11 +385,14 @@ def test_every_seg2b_slide_has_speaker_notes(reopened):
 # --- Segment 3: Prompt engineering backdrop (ticket 05) ----------------------
 
 SEG3_TITLES = [
+    "The Problem Space",
     "The same question, three ways",
     "The ICC prompt",
+    "Prompting LLMs",
     "Two shortcuts",
     "Meta-prompting — let the AI write the prompt",
     "Four prompt patterns",
+    "Prompt Patterns & Meta-Prompting",
     "Two rules while we demo",
 ]
 
@@ -430,6 +483,57 @@ def test_patterns_slide_shows_all_four_with_their_examples(reopened):
     assert "partner-search announcement in our house style" in text
     assert "first list the eligibility criteria" in text
     assert "three biggest weaknesses against the evaluation criteria" in text
+
+
+def test_problem_space_slide_grounds_the_segment(reopened):
+    text = _slide_text(_slide_by_title(reopened, "The Problem Space"))
+    assert "Horizon Europe" in text
+    for heading in ("Structural complexity", "Fragmented inputs",
+                    "Consistency & compliance risks"):
+        assert heading in text, f"{heading!r} missing"
+    assert "structural, not conceptual" in text
+
+
+def test_prompting_llms_slide_lands_the_contract_framing(reopened):
+    text = _slide_text(_slide_by_title(reopened, "Prompting LLMs"))
+    assert "Garbage in, garbage out" in text
+    # The five contract blocks, and the worked Gantt example.
+    for block in ("Role", "Task", "Inputs", "Constraints", "Output"):
+        assert block in text, f"contract block {block!r} missing"
+    assert "Gantt" in text
+    assert "contract, not just an instruction" in text
+
+
+def test_patterns_meta_slide_shows_families_and_the_template_move(reopened):
+    text = _slide_text(
+        _slide_by_title(reopened, "Prompt Patterns & Meta-Prompting")
+    )
+    for family in ("Role-based", "Verifier", "Constraint-driven",
+                   "Input-grounded", "Refinement"):
+        assert family in text, f"pattern family {family!r} missing"
+    assert "reusable prompt template" in text
+    assert "You design standards, not just prompts." in text
+
+
+def test_shortcuts_notes_carry_the_full_demo2_script(reopened):
+    """The ≈17-minute Demo 2 has a minute-by-minute script in the Two
+    shortcuts notes, covering the whole arc through the rules recap."""
+    notes = _slide_by_title(
+        reopened, "Two shortcuts"
+    ).notes_slide.notes_text_frame.text
+    # Every timed step of the script is present, in order.
+    marks = ["0:00–1:00", "1:00–3:00", "3:00–6:00", "6:00–8:00",
+             "8:00–10:00", "10:00–13:00", "13:00–15:00", "15:00–16:00",
+             "16:00–17:00"]
+    positions = [notes.find(m) for m in marks]
+    assert all(p >= 0 for p in positions), [
+        m for m, p in zip(marks, positions) if p < 0
+    ]
+    assert positions == sorted(positions)
+    # The script spans the later slides and ends with a contingency plan.
+    assert "Meta-prompting" in notes
+    assert "Prompt Patterns & Meta-Prompting" in notes
+    assert "Contingencies" in notes
 
 
 def test_rules_slide_states_both_safety_rules(reopened):
@@ -655,8 +759,8 @@ def _is_divider(slide):
 # slides per minute; everything else is far below.
 EXPECTED_SEGMENT_SLIDE_COUNTS = {
     "Opening: why this matters": 4,
-    "The map: LLM fundamentals + 7 Levels tour": 9,
-    "Prompt engineering: ICC, meta-prompting, patterns": 6,
+    "The map: LLM fundamentals + 7 Levels tour": 11,
+    "Prompt engineering: ICC, meta-prompting, patterns": 9,
     "Assignment briefing + close": 4,
     "Guided setup block": 3,
 }

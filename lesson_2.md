@@ -10,7 +10,7 @@
 - Dean's directive 1/2026 (III.26.) of the ELTE Faculty of Informatics on the use of artificial intelligence in education, research and administration — `.scratch/1_2026_sz_dekani_utasitas.pdf` (version 1.0, effective 26 March 2026; a reference, not slide content)
 - Rector's directive 4/2025. (X. 28.) on the use of artificial intelligence in education at ELTE — the umbrella rule the dean's directive supplements
 - `.scratch/copilot_free_to_use_tools.md` — the compiled list of Copilot Chat (Basic) agents and apps available under the institutional licence
-- Gemini free-tier feature set as published by Google at the time of writing (September 2026); see the re-verification flag in Segment 4
+- Gemini free-tier feature set at the time of writing (September 2026): Google One's plan comparison — https://one.google.com/intl/en/about/google-ai-plans/ — and Google's announcement of Notebooks in Gemini — https://blog.google/innovation-and-ai/products/gemini-app/notebooks-gemini-notebooklm/ ; see the re-verification flag in Segment 4
 
 **Downstream use:** this plan is the single oracle for the Lesson 2 deck tickets and their tests, exactly as `lesson_1.md` is for the Lesson 1 deck. Each segment below is written to map onto a slide sequence.
 
@@ -42,7 +42,7 @@ One slide, read at pace. Each row names a Lesson 1 concept and the Lesson 2 topi
 | ICC prompting and the four patterns (persona, example-driven, step-by-step, critique-then-improve) | The same prompts run in both lanes — the lane decides where a prompt goes, not how it is written (Segments 3 and 4); Prompt Coach checks them (Segment 3) |
 | Ask-me-first and reverse prompt | Reverse prompts become a Gem's standing instructions (Segment 4) |
 | Meta-prompting | Prompt Coach is meta-prompting as a packaged agent (Segment 3) |
-| The two rules stated during the Lesson 1 demo: nothing you couldn't publish goes into Gemini; verify anything factual | Today the first rule becomes the full two-lane rule (Segment 2); the second is the directive's "critical checking of every output" (Segment 2) |
+| The two rules stated during the Lesson 1 demo (the publish test for Gemini; verify before use) | Today the first becomes the full two-lane rule (Segment 2); the second is the directive's "critical checking of every output" (Segment 2) |
 | The anonymize-or-fictional Anchor Project rule | Becomes the institutional anonymise-before-upload rule for documents (Segment 2) and the routing test in the assignment (Segment 5) |
 | Context window and "more context is not better context" | Why file upload and long context (Segment 4) need curation, and why NotebookLM's source grounding exists (Segment 4 preview, Lesson 3) |
 

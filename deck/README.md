@@ -8,12 +8,12 @@ python -m deck.lesson2.build    # Lesson 2 → dist/lesson_2_deck.pptx
 ```
 
 Output goes to `dist/` (git-ignored — the source of truth is this package).
-Requires Python 3.11+ and `python-pptx`. Tests: `python -m pytest` (`tests/test_core.py` for the shared core, `tests/test_deck.py` for Lesson 1).
+Requires Python 3.11+ and `python-pptx`. Tests: `python -m pytest` (`tests/test_core.py` for the shared core, `tests/test_deck.py` for Lesson 1). After a build, `python -m deck.com_check` opens the decks in real PowerPoint (Windows + pywin32) — the check that catches what a python-pptx round-trip does not.
 
 ## Core vs. per-lesson template
 
 - `core.py` — **mechanics**, lesson-independent: presentation setup at 16:9, writing fonts and colours into the theme part, the master footer, `master_next_id()` (see the gotcha below), the `solid`/`outlined` shape styles, `style(run, ...)`, and the blank-slide, text-box and notes helpers. A lesson hands it a `core.Design` (fonts, theme colour scheme, canvas, footer text and colours) and gets a presentation back. Nothing here knows a palette or a layout.
-- `template.py` (Lesson 1) and `lesson2/template.py` (Lesson 2) — **design**, one per lesson: the colour constants, the `Design` handed to the core, and the slide builders and in-slide blocks segment modules call. Both templates keep the same call shapes (`add_content_slide`, `add_section_divider`, `add_placeholder_slide`, `add_demo_cue`, `add_card`, `add_band`, `add_label`) so segment authors work the same way in either lesson. Lesson 1's template re-exports the core helpers segment modules use (`solid`, `add_bar`, `set_notes`) so segment modules keep calling `template.solid(...)`.
+- `template.py` (Lesson 1) and `lesson2/template.py` (Lesson 2) — **design**, one per lesson: the colour constants, the `Design` handed to the core, and the slide builders and in-slide blocks segment modules call. Lesson 1's template defines the slide builders and in-slide blocks (`add_content_slide`, `add_section_divider`, `add_placeholder_slide`, `add_demo_cue`, `add_card`, `add_band`, `add_label`); ticket 03 gives Lesson 2's template the same call shapes so segment authors work the same way in either lesson. Lesson 1's template re-exports the core helpers segment modules use (`solid`, `add_bar`, `set_notes`) so segment modules keep calling `template.solid(...)`.
 
 Adding a lesson means adding a sub-package like `lesson2/` (its own `template.py`, `build.py`, `segments/`), never editing the core for a design reason.
 

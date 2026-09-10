@@ -276,26 +276,40 @@ def add_section_divider(prs, number, total, title, duration, mode):
     return slide
 
 
-def add_content_slide(prs, title, body_lines=None, notes=None):
+# How far the header block rides up on a compact slide, in inches. Chart
+# slides carry a full-width image that needs the vertical room; everything
+# else keeps the standard header.
+COMPACT_HEADER_RISE = 0.44
+COMPACT_CONTENT_TOP = Inches(0.9)  # first free inch below a compact header
+
+
+def add_content_slide(prs, title, body_lines=None, notes=None, compact=False):
     """Standard content slide on the dark canvas: orange kicker bar, white
     title, layered rule with a vivid azure lead segment.
 
     body_lines is a list of strings, or (indent_level, string) tuples.
     Returns the slide so callers can add custom shapes in the content area
     (CONTENT_LEFT/TOP/WIDTH/HEIGHT).
+
+    compact=True raises the whole header block by COMPACT_HEADER_RISE so an
+    image-dominant slide can start its content at COMPACT_CONTENT_TOP.
     """
     slide = _blank_slide(prs)
+    rise = COMPACT_HEADER_RISE if compact else 0.0
 
-    add_bar(slide, CONTENT_LEFT, Inches(0.55), Inches(0.13), Inches(0.5), HIGHLIGHT)
+    add_bar(slide, CONTENT_LEFT, Inches(0.55 - rise), Inches(0.13), Inches(0.5),
+            HIGHLIGHT)
 
-    tf = _add_text(slide, Inches(0.95), Inches(0.45), Inches(11.78), Inches(0.7))
+    tf = _add_text(slide, Inches(0.95), Inches(0.45 - rise), Inches(11.78),
+                   Inches(0.7))
     run = tf.paragraphs[0].add_run()
     run.text = title
     style(run, size=28, color=WHITE, font=HEADING_FONT, bold=True)
 
     # Layered rule: full-width hairline with a vivid azure lead segment.
-    add_bar(slide, CONTENT_LEFT, Inches(1.21), CONTENT_WIDTH, Pt(1.2), PANEL_EDGE)
-    add_bar(slide, CONTENT_LEFT, Inches(1.19), Inches(1.6), Pt(3), ACCENT)
+    add_bar(slide, CONTENT_LEFT, Inches(1.21 - rise), CONTENT_WIDTH, Pt(1.2),
+            PANEL_EDGE)
+    add_bar(slide, CONTENT_LEFT, Inches(1.19 - rise), Inches(1.6), Pt(3), ACCENT)
 
     if body_lines:
         tf = _add_text(slide, CONTENT_LEFT, CONTENT_TOP, CONTENT_WIDTH, CONTENT_HEIGHT)

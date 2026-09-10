@@ -6,6 +6,7 @@ PowerPoint will actually load, not just the in-memory object.
 
 import pytest
 from pptx import Presentation
+from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from deck.build import build_presentation
 
@@ -102,8 +103,8 @@ def test_each_segment_has_its_placeholder_slides(reopened):
 
 
 def test_total_slide_count(reopened):
-    # 1 title + 5 dividers + 31 content slides
-    assert len(reopened.slides) == 37
+    # 1 title + 5 dividers + 34 content slides
+    assert len(reopened.slides) == 40
 
 
 def test_placeholder_slides_carry_notes_naming_their_ticket(reopened):
@@ -117,7 +118,7 @@ def test_placeholder_slides_carry_notes_naming_their_ticket(reopened):
 
 SEG1_TITLES = [
     "AI and the geography of job risk",
-    "The risk is concentrated in knowledge work",
+    "Percentage of Jobs at Risk Aggregated by Sector",
     "The augmentation–displacement pipeline",
     "The turn: skill, not job title",
 ]
@@ -142,12 +143,25 @@ def test_headline_figures_slide_shows_stats_and_credits_tufts(reopened):
     assert "Tufts Digital Planet" in text
 
 
-def test_concentration_slide_shows_the_vulnerability_figures(reopened):
-    text = _slide_text(
-        _slide_by_title(reopened, "The risk is concentrated in knowledge work")
-    )
-    for figure in ("18%", "16%", "6%"):
-        assert figure in text, f"{figure} missing"
+def test_chart_slides_carry_the_researchers_own_graphics(reopened):
+    """Both charts are the researchers' own PNGs — the figures live in the
+    image, so each slide carries the picture, a reading of it, and the
+    credit."""
+    sector = _slide_by_title(
+        reopened, "Percentage of Jobs at Risk Aggregated by Sector")
+    text = _slide_text(sector)
+    assert any(sh.shape_type == MSO_SHAPE_TYPE.PICTURE for sh in sector.shapes)
+    assert "steepest exposure" in text
+    assert "Tufts Digital Planet" in text
+
+    pipeline = _slide_by_title(reopened, "The augmentation–displacement pipeline")
+    text = _slide_text(pipeline)
+    assert any(sh.shape_type == MSO_SHAPE_TYPE.PICTURE for sh in pipeline.shapes)
+    assert "Tufts Digital Planet" in text
+    # The scatter is taught, not just shown: the slide says how to read it.
+    assert "Reading the chart" in text
+    for axis in ("Across:", "Up:"):
+        assert axis in text, f"axis gloss {axis!r} missing"
 
 
 def test_pipeline_slide_carries_the_verbatim_quote(reopened):
@@ -177,6 +191,9 @@ def test_every_seg1_slide_has_speaker_notes(reopened):
 # One slide per concept, in teaching order, per lesson_1.md Segment 2 Part A.
 SEG2A_TITLES = [
     "Powerful — but weird",
+    "What an LLM actually is — a file full of numbers",
+    "How the file got smart — reading, then manners",
+    "The Four-Layer AI Engineering Stack",
     "Tokens — the model doesn't see words",
     "The context window — a finite working memory",
     "What fills the window — and what falls out",
@@ -204,6 +221,51 @@ def test_seg2a_slides_present_in_order_and_not_placeholders(reopened):
         assert "[PLACEHOLDER]" not in all_slides[matches[0]]
         positions.append(matches[0])
     assert positions == sorted(positions)
+
+
+def test_what_is_an_llm_pair_carries_the_article_story(reopened):
+    """The two aihero.dev/what-is-an-llm slides: the anatomy slide carries
+    the network diagram (.scratch/llm.jpg is a build input) and the file
+    framing; the training slide tells the two-phase story with the factory
+    numbers."""
+    anatomy = _slide_by_title(
+        reopened, "What an LLM actually is — a file full of numbers")
+    assert any(sh.shape_type == MSO_SHAPE_TYPE.PICTURE for sh in anatomy.shapes)
+    text = _slide_text(anatomy)
+    assert "parameters" in text.lower()
+    assert "140 GB" in text
+
+    training = _slide_by_title(
+        reopened, "How the file got smart — reading, then manners")
+    text = _slide_text(training)
+    assert "Pre-training" in text
+    assert "Post-training" in text
+    assert "10,000 GB" in text and "140 GB" in text
+    assert "patterns, not pages" in text
+    # Both slides credit the article in their notes.
+    for slide in (anatomy, training):
+        assert "aihero.dev" in slide.notes_slide.notes_text_frame.text
+
+
+def test_stack_slide_maps_all_four_layers_with_coverage(reopened):
+    slide = _slide_by_title(reopened, "The Four-Layer AI Engineering Stack")
+    text = _slide_text(slide)
+    for layer in ("Prompt engineering", "Context engineering",
+                  "Harness engineering", "Loop engineering"):
+        assert layer in text, f"layer {layer!r} missing"
+    # Each layer carries a tool and an example, so no layer reads as abstract.
+    for example in ("Gemini", "NotebookLM", "Copilot Agent Builder",
+                    "Agent frameworks"):
+        assert example in text, f"example {example!r} missing"
+    # Course coverage on the slide, mirroring the 7 Levels chips.
+    assert "Today + Lesson 2" in text
+    assert "Lessons 3–4" in text
+    assert "Lesson 5" in text
+    assert "Outlook only" in text
+    # And the notes say what is taught and what is not.
+    notes = slide.notes_slide.notes_text_frame.text
+    assert "WHAT THIS COURSE COVERS" in notes
+    assert "WHAT IT DOES NOT COVER" in notes
 
 
 def test_tokens_slide_contrasts_common_and_rare_and_cues_demo(reopened):
@@ -349,10 +411,16 @@ def test_map_slide_names_all_seven_levels_with_coverage(reopened):
     assert "Lesson 5" in text
 
 
-def test_vibe_coding_appears_in_exactly_one_sentence_deck_wide(reopened):
+def test_vibe_coding_stays_out_of_scope_deck_wide(reopened):
+    """Twice, deliberately: once as the contrast on the stack slide, once as
+    the out-of-scope aside on the 7 Levels map. Nowhere else."""
     full_deck = "\n".join(_slide_text(s) for s in reopened.slides).lower()
-    assert full_deck.count("vibe coding") == 1
-    # And it lives on the 7 Levels map slide, positioned as out of scope.
+    assert full_deck.count("vibe coding") == 2
+    stack_text = _slide_text(
+        _slide_by_title(reopened, "The Four-Layer AI Engineering Stack")
+    ).lower()
+    assert "vibe coding" in stack_text
+    assert "agentic engineering" in stack_text
     map_text = _slide_text(_slide_by_title(reopened, SEG2B_TITLES[0])).lower()
     assert "vibe coding" in map_text
     assert "not part of this course" in map_text
@@ -755,11 +823,11 @@ def _is_divider(slide):
 
 
 # Slides per segment, reviewed against the Timing Overview durations and
-# pinned: the densest segment (2, a deliberately fast tour) runs at 0.6
-# slides per minute; everything else is far below.
+# pinned: the densest segment (2, a deliberately fast tour) runs just under
+# one slide per minute; everything else is far below.
 EXPECTED_SEGMENT_SLIDE_COUNTS = {
     "Opening: why this matters": 4,
-    "The map: LLM fundamentals + 7 Levels tour": 11,
+    "The map: LLM fundamentals + 7 Levels tour": 14,
     "Prompt engineering: ICC, meta-prompting, patterns": 9,
     "Assignment briefing + close": 4,
     "Guided setup block": 3,

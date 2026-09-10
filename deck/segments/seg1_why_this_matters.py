@@ -1,10 +1,17 @@
 """Segment 1 — Opening: why this matters (10 min, Presentation).
 
 Four slides per lesson_1.md Segment 1: the Tufts Digital Planet headline
-figures, the concentration of risk in knowledge work, the augmentation–
-displacement pipeline with its verbatim quote, and the turn — the course
-thesis, framed for research management administrators. Not fear — skill.
+figures, the sector chart showing where the risk concentrates, the
+augmentation–displacement pipeline — claim, the researchers' scatter as its
+evidence, and the verbatim quote on one slide — and the turn, the course
+thesis framed for research management administrators. Not fear — skill.
+
+Both chart slides place the researchers' own graphics (.scratch/
+aijobloss.png, aijobloss2.png) on a white mat under a compact header;
+everything else on the slide is drawn in the deck's own language.
 """
+
+import pathlib
 
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
@@ -162,45 +169,47 @@ def _headline_figures_slide(prs):
     ))
 
 
-# Vulnerability by sector, per the Tufts research: three knowledge-work
-# sectors against the all-industry average.
-_VULNERABILITY_ROWS = [
-    ("Information", 18, ACCENT),
-    ("Finance / Insurance", 16, ACCENT),
-    ("Professional Services", 16, ACCENT),
-    ("All-industry average", 6, SLATE),
-]
+# The two Tufts charts ship as PNGs rather than redrawn shapes: they carry
+# hundreds of plotted occupations, which no native-shape recreation would
+# survive. The files live with the rest of the lesson's source material and
+# are versioned alongside it.
+_ASSETS = pathlib.Path(__file__).resolve().parents[2] / ".scratch"
+_SECTOR_CHART = _ASSETS / "aijobloss.png"
+_AUGMENTATION_CHART = _ASSETS / "aijobloss2.png"
 
-_BAR_SCALE = 0.42  # inches per percentage point
+_MAT_INSET = 0.09  # white margin the chart sits on, so the PNG never bleeds
+
+
+def _chart_on_mat(slide, image, left, top, width, height):
+    """A chart PNG on a white mat — the charts have white grounds, so the
+    mat extends them into a deliberate panel instead of a ragged edge."""
+    mat = slide.shapes.add_shape(
+        MSO_SHAPE.RECTANGLE, Inches(left - _MAT_INSET), Inches(top - _MAT_INSET),
+        Inches(width + 2 * _MAT_INSET), Inches(height + 2 * _MAT_INSET),
+    )
+    template.solid(mat, WHITE)
+    return slide.shapes.add_picture(
+        str(image), Inches(left), Inches(top), Inches(width), Inches(height),
+    )
 
 
 def _concentration_slide(prs):
+    """The sector chart itself, full width — the figures live in the PNG."""
     slide = template.add_content_slide(
-        prs,
-        "The risk is concentrated in knowledge work",
-        ["Share of jobs vulnerable to AI, by sector:"],
-    )
-    top = 2.15
-    for sector, pct, fill in _VULNERABILITY_ROWS:
-        template.add_label(slide, template.CONTENT_LEFT, Inches(top + 0.06),
-                           Inches(3.0), sector, size=14, color=TEXT)
-        bar = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE, Inches(3.7), Inches(top),
-            Inches(pct * _BAR_SCALE), Inches(0.5),
-        )
-        template.solid(bar, fill)
-        template.add_label(slide, Inches(3.7 + pct * _BAR_SCALE + 0.15),
-                           Inches(top + 0.04), Inches(1.0), f"{pct}%",
-                           size=16, color=AMBER)
-        top += 0.75
+        prs, "Percentage of Jobs at Risk Aggregated by Sector", compact=True)
+
+    width, height = 7.9, 5.09  # the chart's own 854×550 aspect ratio
+    _chart_on_mat(slide, _SECTOR_CHART, (13.333 - width) / 2, 0.95, width, height)
+
+    # The caption runs two lines at this width; the credit clears both.
     template.add_label(
-        slide, template.CONTENT_LEFT, Inches(5.35), template.CONTENT_WIDTH,
+        slide, template.CONTENT_LEFT, Inches(6.15), template.CONTENT_WIDTH,
         "High-skill, analytical, office-based occupations face the steepest "
         "exposure. The jobs historically “safe” from automation are now the "
         "most exposed.",
-        size=16, color=TEXT,
+        size=15, color=TEXT,
     )
-    template.add_label(slide, template.CONTENT_LEFT, Inches(6.35),
+    template.add_label(slide, template.CONTENT_LEFT, Inches(6.64),
                        template.CONTENT_WIDTH, TUFTS_CREDIT, size=11)
     template.set_notes(slide, (
         "~2 min. Walk the bars top-down: Information 18%, Finance and "
@@ -216,40 +225,114 @@ def _concentration_slide(prs):
     ))
 
 
-def _pipeline_slide(prs):
-    slide = template.add_content_slide(
-        prs,
-        "The augmentation–displacement pipeline",
-        ["The research's counterintuitive core finding: help and risk are "
-         "the same list."],
+_CHART_READING = [
+    "Across: how much AI augments the job's tasks.",
+    "Up: predicted job loss for that job.",
+    "The cloud climbs a diagonal — the more augmented, the more displaced.",
+    "The flat blue band along the bottom is physical work: neither.",
+]
+
+
+def _reading_panel(slide, left, top, width, height, heading, lines):
+    """A small how-to-read-it panel — the step between chart and claim."""
+    box = slide.shapes.add_shape(
+        MSO_SHAPE.RECTANGLE, Inches(left), Inches(top), Inches(width),
+        Inches(height),
     )
+    template.panel(box)
+    template.add_bar(slide, Inches(left), Inches(top), Inches(0.09),
+                     Inches(height), ACCENT)
+    tf = box.text_frame
+    tf.word_wrap = True
+    tf.margin_left = Inches(0.28)
+    tf.margin_right = Inches(0.2)
+    tf.margin_top = Inches(0.14)
+    tf.vertical_anchor = MSO_ANCHOR.TOP
+    para = tf.paragraphs[0]
+    para.alignment = PP_ALIGN.LEFT
+    run = para.add_run()
+    run.text = heading
+    template.style(run, size=14, color=WHITE, font=HEADING_FONT, bold=True)
+    for line in lines:
+        para = tf.add_paragraph()
+        para.space_before = Pt(5)
+        run = para.add_run()
+        run.text = line
+        template.style(run, size=12, color=MUTED)
+    return box
+
+
+def _pipeline_slide(prs):
+    """The core finding and the researchers' own scatter on one slide: the
+    claim on the left, the measurement beside it, the quote under both."""
+    slide = template.add_content_slide(
+        prs, "The augmentation–displacement pipeline", compact=True)
+
+    template.add_label(
+        slide, template.CONTENT_LEFT, Inches(0.86), template.CONTENT_WIDTH,
+        "The research's counterintuitive core finding: help and risk are the "
+        "same list — and here is the measurement that says so.",
+        size=15, color=SKY,
+    )
+
+    # Right: the evidence. 949×750 on a white mat, sized to the column.
+    chart_width = 5.69
+    chart_height = chart_width / 1.2653  # the chart's own aspect ratio
+    _chart_on_mat(slide, _AUGMENTATION_CHART, 12.63 - chart_width, 1.28,
+                  chart_width, chart_height)
+
+    # Left: the claim, read top-down — augmentation leads to displacement.
+    column = 6.05
     template.add_card(
-        slide, template.CONTENT_LEFT, Inches(2.3), Inches(5.5), Inches(1.7),
+        slide, template.CONTENT_LEFT, Inches(1.28), Inches(column), Inches(1.05),
         PALE, "Highest augmentation potential", PRIMARY,
         "The occupations where AI helps the most with everyday tasks…",
     )
-    template.add_label(slide, Inches(6.2), Inches(2.85), Inches(0.8), "→",
-                       size=32, color=AMBER, align=PP_ALIGN.CENTER)
     template.add_card(
-        slide, Inches(7.23), Inches(2.3), Inches(5.5), Inches(1.7),
+        slide, template.CONTENT_LEFT, Inches(2.72), Inches(column), Inches(1.05),
         PALE_WARM, "Highest displacement risk", PRIMARY,
         "…are the same occupations AI can most readily replace.",
     )
+    template.add_label(slide, Inches(0.6 + column / 2 - 0.4), Inches(2.33),
+                       Inches(0.8), "↓", size=20, color=AMBER,
+                       align=PP_ALIGN.CENTER)
+    _reading_panel(slide, 0.6, 3.97, column, 1.81,
+                   "Reading the chart", _CHART_READING)
+
     template.add_band(
-        slide, Inches(4.5), Inches(1.55),
+        slide, Inches(5.95), Inches(0.78),
         "“The more AI helps you do your job, the more expendable you become.”",
-        size=22, sub="— the researchers' own framing",
+        size=18, sub="— the researchers' own framing",
     )
+    template.add_label(slide, template.CONTENT_LEFT, Inches(6.82),
+                       template.CONTENT_WIDTH, TUFTS_CREDIT, size=11)
+
     template.set_notes(slide, (
-        "~2 min. This is the slide the whole opening builds to. The naive "
-        "expectation is that AI-helps and AI-replaces are different lists "
-        "of jobs. The research found they are the same list: the "
-        "occupations with the highest augmentation potential also show the "
-        "highest displacement risk.\n\n"
-        "Read the quote out loud, then pause. Then plant the question the "
-        "next slide answers: if being helped by AI makes you expendable, "
-        "what makes the difference between at-risk and empowered? Hold "
-        "there — that turn is the whole point of the course."
+        "~3 min. This is the slide the whole opening builds to, and it is "
+        "built to be taught in three moves — claim, evidence, consequence. "
+        "Do not read it all at once.\n\n"
+        "1. THE CLAIM (left, top-down). The naive expectation is that "
+        "AI-helps and AI-replaces are two different lists of jobs. The "
+        "research found they are one list: the occupations with the highest "
+        "augmentation potential also carry the highest displacement risk. "
+        "Say it before showing why it is true.\n\n"
+        "2. THE EVIDENCE (right). Now turn to the chart and show that this "
+        "is measured, not asserted. Give the axes first — across is how much "
+        "AI augments the job's tasks, up is predicted job loss — then let "
+        "the shape do the work: if the two were unrelated, the cloud would "
+        "be shapeless; instead it climbs a diagonal. Point at two named dots "
+        "and let the room read them aloud: Writers and Authors, Computer "
+        "Programmers, top right — most augmented and most displaced. Then "
+        "the flat blue band along the bottom: physical work, barely "
+        "augmented and barely displaced. Ninety seconds, no more.\n\n"
+        "3. THE CONSEQUENCE (the quote). Read it out loud, then pause and "
+        "let it sit — this is the uncomfortable moment of the opening and "
+        "it should feel that way. Then plant the question the next slide "
+        "answers: if being helped by AI makes you expendable, what makes "
+        "the difference between at-risk and empowered? Do not answer it "
+        "here — the turn is the whole point of the course.\n\n"
+        "If the room is quiet, ask where they would put their own job on "
+        "the chart before you move on."
     ))
 
 

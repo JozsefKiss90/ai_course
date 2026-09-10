@@ -1,17 +1,24 @@
 """Segment 2, Part A — How LLMs actually work (~10 min, Presentation).
 
-Nine slides, one per concept, per lesson_1.md Segment 2 Part A: framing,
-tokens (with live tiktokenizer demo cue), context window plus its diagram
-slide, system prompts, reasoning tokens, failure modes, tools/agents
-foreshadow, and the three closing principles. Wording stays at the
-practitioner mental-model level — no mathematics, no engineering jargon.
+Twelve slides, one per concept, per lesson_1.md Segment 2 Part A: framing,
+a what-is-an-LLM pair (the file of numbers, then pre-/post-training —
+both after aihero.dev/what-is-an-llm), the four-layer AI engineering
+stack that maps the segment, tokens (with live tiktokenizer demo cue),
+context window plus its diagram slide, system prompts, reasoning tokens,
+failure modes, tools/agents foreshadow, and the three closing principles.
+Wording stays at the practitioner mental-model level — no mathematics, no
+engineering jargon.
 
-The context-window diagram slide recreates and combines two reference
-images (.scratch/Context-Window-Summary-1.jpg, .scratch/contexwindow2.png)
-as native shapes; the system-prompt and reasoning-token conversation
-diagrams recreate .scratch/systemprompt.webp and
-.scratch/'reasoning tokens.webp' in the deck's visual language.
+The what-is-an-LLM slide embeds .scratch/llm.jpg (a classic
+input→hidden→output network diagram) at build time, so that file is a
+build input. The context-window diagram slide recreates and combines two
+reference images (.scratch/Context-Window-Summary-1.jpg,
+.scratch/contexwindow2.png) as native shapes; the system-prompt and
+reasoning-token conversation diagrams recreate .scratch/systemprompt.webp
+and .scratch/'reasoning tokens.webp' in the deck's visual language.
 """
+
+import pathlib
 
 from pptx.enum.dml import MSO_LINE_DASH_STYLE
 from pptx.enum.shapes import MSO_SHAPE
@@ -23,6 +30,24 @@ from deck.template import (
     ACCENT, AMBER, HEADING_FONT, HIGHLIGHT, MUTED, NAVY_SOFT, PALE,
     PALE_WARM, PRIMARY, SKY, TEXT, WHITE,
 )
+
+
+def _chip(slide, left, top, width, height, text, fill, color, size=12,
+          bold=False, shape=MSO_SHAPE.ROUNDED_RECTANGLE):
+    """A small filled pill with centered text — diagram building block."""
+    box = slide.shapes.add_shape(shape, left, top, width, height)
+    template.solid(box, fill)
+    tf = box.text_frame
+    tf.word_wrap = True
+    tf.margin_left = Inches(0.05)
+    tf.margin_right = Inches(0.05)
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+    run = tf.paragraphs[0].add_run()
+    run.text = text
+    template.style(run, size=size, color=color, bold=bold,
+                   font=HEADING_FONT if bold else template.BODY_FONT)
+    return box
 
 
 def _framing_slide(prs):
@@ -69,6 +94,410 @@ def _framing_slide(prs):
         "Quirks 1–7 each get a slide in this segment; say 8 and 9 out loud "
         "here since no slide carries them. Everything gets lived out in "
         "later lessons; today is the map, not the training."
+    ))
+
+
+# --- What an LLM actually is (aihero.dev/what-is-an-llm) --------------------
+
+_ASSETS = pathlib.Path(__file__).resolve().parents[2] / ".scratch"
+_NETWORK_DIAGRAM = _ASSETS / "llm.jpg"  # 474×231 input→hidden→output diagram
+_DIAGRAM_ASPECT = 474 / 231
+_MAT_INSET = 0.12
+
+
+def _llm_anatomy_slide(prs):
+    """The demystifying slide: an LLM is one huge file of numbers, run word
+    by word. Places .scratch/llm.jpg on a white mat, Segment 1 style."""
+    slide = template.add_content_slide(
+        prs,
+        "What an LLM actually is — a file full of numbers",
+        [
+            "Strip away the chat screen and an LLM is one enormous file of "
+            "numbers — billions of connection strengths, called parameters. "
+            "No stored pages, no rule book.",
+            "Your words go in one side, ripple through the network, and one "
+            "word comes out — then it runs again, word by word, until the "
+            "reply is done.",
+        ],
+    )
+    pic_width = 5.8
+    pic_height = pic_width / _DIAGRAM_ASPECT
+    mat = slide.shapes.add_shape(
+        MSO_SHAPE.RECTANGLE, template.CONTENT_LEFT, Inches(3.05),
+        Inches(pic_width + 2 * _MAT_INSET), Inches(pic_height + 2 * _MAT_INSET),
+    )
+    template.solid(mat, WHITE)
+    slide.shapes.add_picture(
+        str(_NETWORK_DIAGRAM),
+        Inches(template.CONTENT_LEFT.inches + _MAT_INSET),
+        Inches(3.05 + _MAT_INSET), Inches(pic_width), Inches(pic_height),
+    )
+    template.add_label(
+        slide, template.CONTENT_LEFT, Inches(3.35 + pic_height), Inches(6.05),
+        "The shape inside every LLM — in on the left, one guess out on the "
+        "right. Real ones: billions of connections, not dozens.",
+        size=11, italic=True,
+    )
+    template.add_card(
+        slide, Inches(6.9), Inches(3.05), Inches(5.83), Inches(1.6),
+        PALE, "Billions of parameters", PRIMARY,
+        "Every line in the picture carries one stored number — its strength, "
+        "a “parameter” — that training nudged, tiny step by tiny step. The "
+        "picture shows dozens; the real thing has hundreds of billions.",
+    )
+    template.add_card(
+        slide, Inches(6.9), Inches(4.8), Inches(5.83), Inches(1.6),
+        PALE, "Small enough to carry", PRIMARY,
+        "All of it together is one file of roughly 140 GB — it would fit "
+        "on a laptop. The magic is not where it lives; it is how those "
+        "numbers got set.",
+    )
+    template.set_notes(slide, (
+        "~1–2 min. This slide and the next follow aihero.dev/what-is-an-llm. "
+        "The demystifying move: when people hear 'artificial intelligence' "
+        "they imagine something like a mind, or at least a database. The "
+        "reality is stranger and simpler — an LLM is one enormous file of "
+        "numbers. Nothing else is in there: no rules written by engineers, "
+        "no stored answers, no pages to look things up in.\n\n"
+        "TERMS, disambiguated (keep it light on screen, but be exact if "
+        "asked): the circles in the picture are NODES — during a pass each "
+        "holds a temporary value, computed on the spot and discarded "
+        "afterwards. The lines are CONNECTIONS, and each carries a WEIGHT: "
+        "one stored number that says how strongly one node feeds the next. "
+        "The weights (plus a few extra numbers per node) are the PARAMETERS "
+        "— the billions of numbers that make up the file, and the only "
+        "things training changes. If a hands-on image helps, each weight is "
+        "a tiny dial on the machine: training turns the dials; answering a "
+        "question only reads them. Use that metaphor at most once, then say "
+        "'parameters' — the word the audience will meet everywhere else.\n\n"
+        "Walk the picture left to right, in action — this is the model "
+        "answering, not learning; the parameters are frozen: the arrows are "
+        "your words coming in as numbers; the values flow node to node, "
+        "each connection scaling its signal by that stored weight; out the "
+        "right side comes a single guess — the most plausible next word. "
+        "Then the whole thing runs again for the word after that, one word "
+        "at a time, until the answer is done. When you watch a chatbot "
+        "'type', you are watching this loop spin.\n\n"
+        "Two scale corrections to say out loud: the picture shows a few "
+        "dozen connections — real models have hundreds of billions; same "
+        "idea, unimaginably bigger. And for all that, the file is "
+        "surprisingly small: roughly 140 GB for a big model — it fits on a "
+        "laptop. Reading the file (answering) is cheap; setting the "
+        "parameters in the first place is the expensive part — that is the "
+        "next slide.\n\n"
+        "If someone asks why the same question gives different answers on "
+        "different runs: the model's real output is a ranked list of "
+        "candidate next words, and the next word is drawn with a little "
+        "deliberate chance rather than always taking the top one — quirk 8 "
+        "from the previous slide, working as designed."
+    ))
+
+
+def _llm_training_slide(prs):
+    """Where the dials come from: pre-training compresses the internet into
+    the file; post-training teaches it to behave like an assistant."""
+    slide = template.add_content_slide(
+        prs,
+        "How the file got smart — reading, then manners",
+        [
+            "Two phases set those billions of parameters — a long reading "
+            "phase, then a short finishing school:",
+        ],
+    )
+    template.add_card(
+        slide, template.CONTENT_LEFT, Inches(2.3), Inches(5.96), Inches(2.3),
+        PALE, "1 · Pre-training — the reading phase", PRIMARY,
+        "The network plays guess-the-next-word against a huge slice of the "
+        "internet, trillions of rounds; every miss nudges the weights. Like "
+        "packing a library into a suitcase: the patterns survive, the pages "
+        "do not.",
+    )
+    template.add_card(
+        slide, Inches(6.77), Inches(2.3), Inches(5.96), Inches(2.3),
+        PALE, "2 · Post-training — learning to assist", PRIMARY,
+        "A far shorter phase teaches it manners: answer questions, follow "
+        "instructions, admit uncertainty. Without it, all that knowledge "
+        "would just sit there — able only to continue text, not to help.",
+    )
+    template.add_band(
+        slide, Inches(4.9), Inches(1.05),
+        "≈10,000 GB of text in  →  weeks of guessing  →  one 140 GB file out",
+        size=18,
+        sub="Thousands of specialised computers, millions of dollars — and "
+            "the result fits on a laptop.",
+    )
+    template.add_label(
+        slide, template.CONTENT_LEFT, Inches(6.15), template.CONTENT_WIDTH,
+        "It keeps patterns, not pages — which is why it can sound confident "
+        "yet misremember, and why its knowledge stops at a date.",
+        italic=True,
+    )
+    template.set_notes(slide, (
+        "~1–2 min. Where do the numbers come from? Two phases — and the "
+        "split explains a lot of the behavior later in this segment "
+        "(source: aihero.dev/what-is-an-llm).\n\n"
+        "Phase 1, pre-training: the network plays guess-the-next-word "
+        "against a huge slice of the internet — roughly 10,000 GB of text — "
+        "for trillions of rounds, and every wrong guess nudges the weights a "
+        "little. The factory numbers are worth savoring: thousands of "
+        "specialised computers running for weeks, a bill in the millions of "
+        "dollars — and the output is that one 140 GB file. Ten thousand "
+        "gigabytes squeezed into a hundred and forty: a library packed into "
+        "a suitcase. The squeeze is the point — the patterns survive, the "
+        "pages do not. It cannot quote its reading back; it can only "
+        "re-create things that sound like it.\n\n"
+        "Phase 2, post-training: a far shorter, cheaper phase where people "
+        "teach the network how to behave — answer questions, follow "
+        "instructions, decline nonsense, sound like an assistant. Without "
+        "it, the article's phrase is apt: you would have an 'inert blob of "
+        "knowledge' that can only continue whatever text you start, not "
+        "converse.\n\n"
+        "Land the two consequences before moving on: (1) patterns-not-pages "
+        "is why it can sound confident and still misremember — "
+        "hallucination, which gets its own slide in a few minutes; (2) the "
+        "file was written once, at a moment in time — which is why its "
+        "knowledge simply stops at a cutoff date. Then on to the four-layer "
+        "stack."
+    ))
+
+
+# --- The four-layer stack ---------------------------------------------------
+
+# (layer, what you engineer, where it shows up · example, coverage, treatment)
+# — ordered top of the stack down, so the slide reads Loop → Prompt with the
+# foundation at the bottom. Treatments follow the 7 Levels slide's convention:
+# "course" = taught here, "build" = the one hands-on slice, "outlook" = named
+# but out of scope.
+_LAYERS = [
+    ("Loop engineering",
+     "How the model runs itself — steps, checks, when to stop and hand back",
+     "Agent frameworks, coding agents  →  “keep going until the check passes”",
+     "Outlook only", "outlook"),
+    ("Harness engineering",
+     "The setup around the model — instructions, tools, output format",
+     "Copilot Agent Builder  →  “wiki page in, vault note out”",
+     "Lesson 5 · Markdown Generator", "build"),
+    ("Context engineering",
+     "What is in the window — sources, memory, and what you leave out",
+     "NotebookLM · Perplexity · Perfect Wiki  →  “answer from these 12 documents”",
+     "Lessons 3–4", "course"),
+    ("Prompt engineering",
+     "The single message — instruction, context, constraints",
+     "Gemini · Copilot Chat  →  “a 600-word call summary for our PI”",
+     "Today + Lesson 2", "course"),
+]
+
+_LAYER_TOP = 1.88
+_LAYER_HEIGHT = 0.8
+_LAYER_PITCH = 0.88
+_LAYER_CHIP_LEFT = 1.18
+_LAYER_CHIP_WIDTH = 2.42
+_LAYER_BAR_LEFT = 3.7
+_LAYER_BAR_WIDTH = 6.28
+_COVERAGE_LEFT = 10.1
+_COVERAGE_WIDTH = 2.63
+
+_LAYER_TREATMENTS = {  # chip fill, chip text color
+    "course": (ACCENT, WHITE),
+    "build": (HIGHLIGHT, WHITE),
+    "outlook": (NAVY_SOFT, SKY),
+}
+
+
+def _scope_rail(slide, top, height):
+    """The upward arrow beside the stack: scope grows layer by layer."""
+    rail = slide.shapes.add_shape(
+        MSO_SHAPE.UP_ARROW, template.CONTENT_LEFT, Inches(top),
+        Inches(0.42), Inches(height),
+    )
+    template.solid(rail, template.PANEL)
+    tf = rail.text_frame
+    tf._txBody.bodyPr.set("vert", "vert270")  # reads bottom-to-top, up the arrow
+    tf.margin_left = Inches(0.04)
+    tf.margin_right = Inches(0.04)
+    tf.margin_top = Inches(0.02)
+    tf.margin_bottom = Inches(0.32)  # keeps the label clear of the arrowhead
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+    run = tf.paragraphs[0].add_run()
+    run.text = "one message  →  a whole job"
+    template.style(run, size=10, color=SKY, font=HEADING_FONT, bold=True)
+    return rail
+
+
+def _layer_row(slide, name, engineered, shows_up, coverage, treatment, top):
+    """One layer of the stack: name block, what you engineer, coverage chip."""
+    chip_fill, chip_color = _LAYER_TREATMENTS[treatment]
+
+    chip = slide.shapes.add_shape(
+        MSO_SHAPE.RECTANGLE, Inches(_LAYER_CHIP_LEFT), Inches(top),
+        Inches(_LAYER_CHIP_WIDTH), Inches(_LAYER_HEIGHT),
+    )
+    template.solid(chip, chip_fill)
+    tf = chip.text_frame
+    tf.word_wrap = True
+    tf.margin_left = Inches(0.12)
+    tf.margin_right = Inches(0.12)
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+    run = tf.paragraphs[0].add_run()
+    run.text = name
+    template.style(run, size=15, color=chip_color, font=HEADING_FONT, bold=True)
+
+    bar = slide.shapes.add_shape(
+        MSO_SHAPE.RECTANGLE, Inches(_LAYER_BAR_LEFT), Inches(top),
+        Inches(_LAYER_BAR_WIDTH), Inches(_LAYER_HEIGHT),
+    )
+    template.panel(bar)
+    tf = bar.text_frame
+    tf.word_wrap = True
+    tf.margin_left = Inches(0.18)
+    tf.margin_right = Inches(0.12)
+    tf.margin_top = Inches(0.06)
+    tf.margin_bottom = Inches(0.06)
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    para = tf.paragraphs[0]
+    run = para.add_run()
+    run.text = engineered
+    template.style(run, size=12, color=WHITE)
+    para = tf.add_paragraph()
+    para.space_before = Pt(3)
+    run = para.add_run()
+    run.text = shows_up
+    template.style(run, size=11, color=MUTED)
+
+    cover = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE, Inches(_COVERAGE_LEFT), Inches(top),
+        Inches(_COVERAGE_WIDTH), Inches(_LAYER_HEIGHT),
+    )
+    template.panel(cover)
+    template.add_bar(slide, Inches(_COVERAGE_LEFT), Inches(top), Inches(0.09),
+                     Inches(_LAYER_HEIGHT), chip_fill)
+    tf = cover.text_frame
+    tf.word_wrap = True
+    tf.margin_left = Inches(0.2)
+    tf.margin_right = Inches(0.12)
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+    run = tf.paragraphs[0].add_run()
+    run.text = coverage
+    template.style(run, size=11, color=SKY if treatment == "outlook" else WHITE,
+                   font=HEADING_FONT, bold=treatment != "outlook")
+
+
+def _flow_panel(slide, left, top, heading, heading_color, edge, steps,
+                chip_fill, chip_color, caption):
+    """One side of the vibe-coding / agentic-engineering contrast: a titled
+    panel holding a left-to-right chain of steps and a one-line gloss."""
+    width, height, arrow = 5.95, 1.42, 0.3
+    box = slide.shapes.add_shape(
+        MSO_SHAPE.RECTANGLE, Inches(left), Inches(top), Inches(width),
+        Inches(height),
+    )
+    template.panel(box)
+    template.add_bar(slide, Inches(left), Inches(top), Inches(0.09),
+                     Inches(height), edge)
+    tf = box.text_frame
+    tf.margin_left = Inches(0.27)
+    tf.margin_right = Inches(0.2)
+    tf.margin_top = Inches(0.09)
+    tf.vertical_anchor = MSO_ANCHOR.TOP
+    run = tf.paragraphs[0].add_run()
+    run.text = heading
+    template.style(run, size=15, color=heading_color, font=HEADING_FONT,
+                   bold=True)
+
+    inner = width - 0.54
+    chip_width = (inner - arrow * (len(steps) - 1)) / len(steps)
+    x = left + 0.27
+    for i, step in enumerate(steps):
+        _chip(slide, Inches(x), Inches(top + 0.5), Inches(chip_width),
+              Inches(0.44), step, chip_fill, chip_color, size=11)
+        x += chip_width
+        if i < len(steps) - 1:
+            template.add_label(slide, Inches(x), Inches(top + 0.53),
+                               Inches(arrow), "→", size=15, color=AMBER,
+                               align=PP_ALIGN.CENTER)
+            x += arrow
+    template.add_label(slide, Inches(left + 0.27), Inches(top + 1.0),
+                       Inches(inner), caption, size=11, italic=True)
+    return box
+
+
+def _stack_slide(prs):
+    """Segment-opening map: the four layers of AI engineering, what the course
+    teaches at each, and vibe coding against agentic engineering."""
+    slide = template.add_content_slide(
+        prs, "The Four-Layer AI Engineering Stack")
+
+    template.add_label(
+        slide, template.CONTENT_LEFT, Inches(1.46), Inches(12.13),
+        "Everything people call “AI engineering” is one of four layers — and "
+        "each layer wraps the one below it.",
+        size=14, color=SKY,
+    )
+
+    _scope_rail(slide, _LAYER_TOP,
+                _LAYER_PITCH * (len(_LAYERS) - 1) + _LAYER_HEIGHT)
+    top = _LAYER_TOP
+    for name, engineered, shows_up, coverage, treatment in _LAYERS:
+        _layer_row(slide, name, engineered, shows_up, coverage, treatment, top)
+        top += _LAYER_PITCH
+
+    _flow_panel(
+        slide, template.CONTENT_LEFT.inches, 5.52,
+        "“Vibe coding”", SKY, NAVY_SOFT,
+        ["describe it", "accept the output", "judge the result"],
+        NAVY_SOFT, SKY,
+        "Layers 1–2, used casually — you judge the output, never the mechanism.",
+    )
+    _flow_panel(
+        slide, 6.78, 5.52,
+        "Agentic engineering", AMBER, ACCENT,
+        ["specify", "ground it", "equip it", "check the lap"],
+        ACCENT, WHITE,
+        "All four layers, deliberately — you engineer the process, not just "
+        "the ask.",
+    )
+
+    template.set_notes(slide, (
+        "~1–2 min, the context slide for the whole segment — the frame "
+        "everything else in Segment 2 hangs on. Read the stack bottom-up: the "
+        "prompt is one message; context is everything in the window around "
+        "that message; the harness is the standing setup (an agent's "
+        "instructions, its tools, its output format); the loop is the model "
+        "running itself until a job is done. Each layer wraps the one below, "
+        "so the skills accumulate — nobody skips to the top.\n\n"
+        "WHAT THIS COURSE COVERS:\n"
+        "• Prompt engineering — fully, starting today: Segment 3's ICC "
+        "structure, meta-prompting, and the four patterns, then applied "
+        "hands-on in Lesson 2.\n"
+        "• Context engineering — the practical half of it. The next four "
+        "slides (tokens, the context window, what fills it, system prompts) "
+        "are exactly this layer's mechanics; Lesson 3 adds source-grounded "
+        "tools (NotebookLM, Perplexity); Lessons 3–4 turn the Wiki Sandbox "
+        "and Personal Vault into durable context you reuse every week.\n"
+        "• Harness engineering — one hands-on slice, in Lesson 5. Writing a "
+        "custom agent's instructions in Agent Builder is writing a system "
+        "prompt; the Markdown Generator is the worked example. Still no code.\n\n"
+        "WHAT IT DOES NOT COVER:\n"
+        "• Loop engineering, entirely — unattended multi-step agents, agent "
+        "frameworks, orchestration platforms, coding agents. That is Level "
+        "6–7 on the map two slides from now: named for perspective, not "
+        "taught. Anyone who wants it needs an engineering course, not this "
+        "one.\n"
+        "• The engineering interior of the layers we do teach: retrieval "
+        "pipelines and vector stores, API and token-budget work, automated "
+        "evaluation of outputs — anything that requires code.\n"
+        "• Vibe coding itself — the one-sentence aside on the 7 Levels slide "
+        "is all it gets.\n\n"
+        "The bottom contrast, said plainly: vibe coding and agentic "
+        "engineering can run on the same tools. The difference is discipline "
+        "— one describes, accepts, and judges the result; the other "
+        "engineers each layer and checks every lap. This course teaches the "
+        "second habit from Level 2 upward even though it stops short of the "
+        "top layer. Do not debate the terms; land the distinction, then move "
+        "on to tokens."
     ))
 
 
@@ -201,24 +630,6 @@ def _context_window_slide(prs):
         "chat, you give a tool a fixed set of sources and it answers only "
         "from those."
     ))
-
-
-def _chip(slide, left, top, width, height, text, fill, color, size=12,
-          bold=False, shape=MSO_SHAPE.ROUNDED_RECTANGLE):
-    """A small filled pill with centered text — diagram building block."""
-    box = slide.shapes.add_shape(shape, left, top, width, height)
-    template.solid(box, fill)
-    tf = box.text_frame
-    tf.word_wrap = True
-    tf.margin_left = Inches(0.05)
-    tf.margin_right = Inches(0.05)
-    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-    tf.paragraphs[0].alignment = PP_ALIGN.CENTER
-    run = tf.paragraphs[0].add_run()
-    run.text = text
-    template.style(run, size=size, color=color, bold=bold,
-                   font=HEADING_FONT if bold else template.BODY_FONT)
-    return box
 
 
 def _window_diagram_slide(prs):
@@ -607,6 +1018,9 @@ def _principles_slide(prs):
 
 def add_slides(prs):
     _framing_slide(prs)
+    _llm_anatomy_slide(prs)
+    _llm_training_slide(prs)
+    _stack_slide(prs)
     _tokens_slide(prs)
     _context_window_slide(prs)
     _window_diagram_slide(prs)

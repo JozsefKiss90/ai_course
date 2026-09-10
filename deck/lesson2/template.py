@@ -6,7 +6,8 @@ colours and the footer stay uniform across segment modules. The builders
 and in-slide blocks keep the call shapes of deck/template.py (Lesson 1) —
 add_title_slide, add_section_divider, add_content_slide,
 add_placeholder_slide, add_demo_cue, add_card, add_band, add_label — so a
-segment author works the same way in either lesson.
+segment author works the same way in either lesson. add_open_card is the
+one addition: a card whose text the caller writes run by run.
 
 Visual language — deliberately not Lesson 1's dark navy: a light, warm
 paper canvas with near-black ink type, a serif heading face (Cambria) over
@@ -245,6 +246,10 @@ def add_section_divider(prs, number, total, title, duration, mode, lane=None):
 COMPACT_HEADER_RISE = 0.44
 COMPACT_CONTENT_TOP = Inches(0.9)
 
+# A lane slide's title stops short of the lane chip at the top right; a
+# slide with no chip gets the whole CONTENT_WIDTH.
+TITLE_WIDTH_WITH_CHIP = Inches(8.8)
+
 
 def add_content_slide(prs, title, body_lines=None, notes=None, compact=False,
                       lane=None):
@@ -263,7 +268,8 @@ def add_content_slide(prs, title, body_lines=None, notes=None, compact=False,
     accent = _accent(lane)
     rise = COMPACT_HEADER_RISE if compact else 0.0
 
-    tf = _add_text(slide, CONTENT_LEFT, Inches(0.45 - rise), Inches(8.8),
+    tf = _add_text(slide, CONTENT_LEFT, Inches(0.45 - rise),
+                   TITLE_WIDTH_WITH_CHIP if lane else CONTENT_WIDTH,
                    Inches(0.7), anchor=MSO_ANCHOR.BOTTOM)
     run = tf.paragraphs[0].add_run()
     run.text = title
@@ -365,6 +371,30 @@ def add_band(slide, top, height, text, size=20, fill=PRIMARY, sub=None):
     return band
 
 
+# Width of the coloured edge bar down a card's left side; add_card and
+# add_open_card share it so cards line up wherever they are built.
+EDGE_BAR = Inches(0.09)
+
+
+def add_open_card(slide, left, top, width, height, edge):
+    """A white card with a coloured edge bar and an *empty*, vertically
+    centred text frame, for callers whose text is several runs at their own
+    sizes. add_card is the fixed-shape version of the same block (one
+    heading, one body); reach for this one when that shape does not fit."""
+    card = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, height)
+    outlined(card, PANEL, LINE)
+    add_bar(slide, left, top, EDGE_BAR, height, edge)
+    tf = card.text_frame
+    tf.word_wrap = True
+    tf.margin_left = Inches(0.26)
+    tf.margin_right = Inches(0.2)
+    tf.margin_top = Inches(0.04)
+    tf.margin_bottom = Inches(0.04)
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.paragraphs[0].alignment = PP_ALIGN.LEFT
+    return card
+
+
 def add_card(slide, left, top, width, height, fill, heading, heading_color,
              body=None):
     """Card on the paper canvas. A lane colour as fill gives a solid label
@@ -379,7 +409,7 @@ def add_card(slide, left, top, width, height, fill, heading, heading_color,
         heading_color = WHITE
     else:
         outlined(card, fill, LINE)
-        add_bar(slide, left, top, Inches(0.09), height,
+        add_bar(slide, left, top, EDGE_BAR, height,
                 lane.color if lane else SLATE)
     tf = card.text_frame
     tf.word_wrap = True

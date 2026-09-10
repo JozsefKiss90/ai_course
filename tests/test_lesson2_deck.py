@@ -86,7 +86,7 @@ def test_dividers_appear_in_session_order_after_the_title(reopened):
 # ticket that replaces them.
 EXPECTED_PLACEHOLDERS = {
     "Recap + assignment debrief": (0, "04"),  # ticket 04 landed
-    "The sensitive-data rule and data-protection principles": (5, "05"),
+    "The sensitive-data rule and data-protection principles": (0, "05"),  # ticket 05 landed
     "Copilot Chat (Basic) in practice": (7, "06"),
     "Gemini in depth (+ NotebookLM preview)": (11, "07"),
     "Assignment briefing + close": (3, "08"),
@@ -126,7 +126,7 @@ def test_placeholder_slides_name_their_ticket_on_the_slide_and_in_notes(reopened
 
 
 def test_total_slide_count(reopened):
-    # 1 title + 5 dividers + 3 Segment 1 slides + 26 placeholders
+    # 1 title + 5 dividers + 3 Segment 1 + 5 Segment 2 slides + 21 placeholders
     assert len(reopened.slides) == 35
 
 
@@ -333,6 +333,281 @@ def test_seg1_notes_carry_the_time_keeping_script(reopened):
     assert "cut at 4" in notes
     assert "practice week 1" in notes
     assert "backup" in notes  # the spare volunteer if a screen-share fails
+
+
+# --- Segment 2: The sensitive-data rule (ticket 05) --------------------------
+
+ROUTING_TITLE = "The two-lane rule: one routing question"
+PRINCIPLES_TITLE = "Data-protection principles — why the rule exists"
+DIRECTIVE_TITLE = "Institutional rules: the dean's directive as reference"
+ANONYMISE_TITLE = "Anonymise before upload"
+NEVER_TITLE = "What must never enter Gemini"
+SEG2_TITLES = [
+    ROUTING_TITLE, PRINCIPLES_TITLE, DIRECTIVE_TITLE, ANONYMISE_TITLE,
+    NEVER_TITLE,
+]
+
+CONTEXT_PATH = PLAN_PATH.parent / "CONTEXT.md"
+
+
+def _plan_section(heading):
+    """The body of one subsection of lesson_2.md, up to the next heading."""
+    text = PLAN_PATH.read_text(encoding="utf-8")
+    rest = text[text.index(heading) + len(heading):]
+    end = rest.index("\n#") if "\n#" in rest else len(rest)
+    return rest[:end]
+
+
+def test_seg2_slides_present_in_plan_order_and_not_placeholders(reopened):
+    """All five slides live between Segment 2's divider and Segment 3's, in
+    the plan's order, with no placeholder left."""
+    segment = _segment_ranges(reopened)[
+        "The sensitive-data rule and data-protection principles"]
+    texts = [_slide_text(s) for s in segment]
+    positions = []
+    for title in SEG2_TITLES:
+        matches = [i for i, t in enumerate(texts) if title in t]
+        assert matches, f"{title!r} is not in Segment 2"
+        assert "[PLACEHOLDER]" not in texts[matches[0]]
+        positions.append(matches[0])
+    assert positions == sorted(positions)
+
+
+# The four kinds of work CONTEXT.md puts in the Sensitive Lane. Each is
+# asserted against CONTEXT.md's own Sensitive Lane entry first, so the
+# routing slide cannot drift from the ubiquitous language.
+SENSITIVE_CATEGORIES = [
+    "Internal administration", "Unsubmitted grant proposals",
+    "Personnel information", "Strategic financial planning",
+]
+
+
+def test_routing_slide_asks_one_question_and_names_both_lanes(reopened):
+    text = _slide_text(_slide_by_title(reopened, ROUTING_TITLE))
+    assert "Does the task involve sensitive or IP-sensitive institutional data?" in text
+    for lane in ("Sensitive Lane", "Daily Driver"):
+        assert lane in text, f"{lane!r} missing from the routing slide"
+    assert "Copilot Chat (Basic)" in text
+    assert "Gemini" in text
+    # Routed per task, not per person and not per day.
+    assert "per task" in text.lower()
+
+
+# What the plan's routing table puts in the Daily Driver column. CONTEXT.md
+# is the oracle for the Sensitive Lane's four — they are its own list; the
+# plan is the oracle for the Daily Driver's, which it words for the slide.
+DAILY_CATEGORIES = [
+    "Drafting", "Prompting exercises", "Long-document analysis",
+    "General research management work",
+]
+
+
+def test_routing_slide_lists_what_the_daily_driver_covers(reopened):
+    plan = _plan_section("### The two-lane rule as a routing decision").lower()
+    text = _slide_text(_slide_by_title(reopened, ROUTING_TITLE)).lower()
+    for category in DAILY_CATEGORIES:
+        assert category.lower() in plan, (
+            f"{category!r} is not in the plan's routing table"
+        )
+        assert category.lower() in text, f"{category!r} missing from the routing slide"
+
+
+def test_routing_slide_lists_the_four_sensitive_categories(reopened):
+    context = CONTEXT_PATH.read_text(encoding="utf-8")
+    sensitive = context[
+        context.index("**Sensitive Lane**"):context.index("**Daily Driver**")
+    ].lower()
+    text = _slide_text(_slide_by_title(reopened, ROUTING_TITLE)).lower()
+    for category in SENSITIVE_CATEGORIES:
+        assert category.lower() in sensitive, (
+            f"{category!r} is not a CONTEXT.md Sensitive Lane category"
+        )
+        assert category.lower() in text, f"{category!r} missing from the routing slide"
+
+
+def test_routing_slide_carries_the_three_worked_examples(reopened):
+    """The plan's three routing examples, each landing in the lane the plan
+    routes it to."""
+    plan = _plan_section("### The two-lane rule as a routing decision")
+    slide = _slide_by_title(reopened, ROUTING_TITLE)
+    for token, lane in (("Cluster 4", "Sensitive Lane"),
+                        ("Horizon Europe", "Daily Driver"),
+                        ("workload plan", "Sensitive Lane")):
+        assert token in plan, f"{token!r} is not one of the plan's examples"
+        shape = _shape_containing(slide, token)
+        assert lane in shape.text_frame.text, f"{token!r} is not routed to {lane}"
+
+
+def test_routing_slide_colour_codes_both_lanes(reopened):
+    from deck.lesson2 import template
+
+    fills = _fills(_slide_by_title(reopened, ROUTING_TITLE))
+    assert str(template.SENSITIVE_LANE.color) in fills
+    assert str(template.DAILY_DRIVER.color) in fills
+
+
+def test_principles_slide_carries_the_plans_four_principles(reopened):
+    text = _slide_text(_slide_by_title(reopened, PRINCIPLES_TITLE)).lower()
+    for principle in ("personal data", "confidential institutional data",
+                      "purpose and minimisation", "human responsibility"):
+        assert principle in text, f"{principle!r} missing from the principles slide"
+    assert "gdpr" in text
+    assert "the person signs" in text
+
+
+def test_directive_slide_names_the_dean_directive_and_its_rector_parent(reopened):
+    text = _slide_text(_slide_by_title(reopened, DIRECTIVE_TITLE))
+    assert "1/2026 (III.26.)" in text, "the dean's directive is not cited"
+    assert "4/2025. (X. 28.)" in text, "the rector-level parent is not named"
+    lowered = text.lower()
+    assert "rector" in lowered and "dean" in lowered
+
+
+# The six key points of the dean's directive, as tokens that must appear
+# both in the plan's directive subsection and on the slide. The slide is a
+# set of reference points, so each is asserted to stay one short line.
+DIRECTIVE_KEY_POINTS = [
+    "Human oversight and final responsibility",
+    "Transparency and documentation of AI use",
+    "explicit permission",
+    "AI in institutional administration is allowed",
+    "Critical checking of every output",
+    "Consequences of breaches",
+]
+
+KEY_POINT_MAX_CHARS = 170
+
+# The section of the directive each key point lives in, as the plan gives
+# it. One entry per distinct reference, so a wrong number fails here.
+_KEY_POINT_SECTIONS = ["2", "2, 4, 5", "2, 4", "6", "4, 6", "7"]
+
+
+def test_directive_slide_stays_at_key_point_level(reopened):
+    """Six key points, each a short line rather than a paragraph — the
+    directive is the reference, the slide is the pointer."""
+    plan = _plan_section("### Institutional rules: the dean's directive as reference")
+    slide = _slide_by_title(reopened, DIRECTIVE_TITLE)
+    seats = []
+    for point in DIRECTIVE_KEY_POINTS:
+        assert point in plan, f"{point!r} is not a key point in the plan"
+        shape = _shape_containing(slide, point)
+        body = shape.text_frame.text
+        assert len(body) <= KEY_POINT_MAX_CHARS, (
+            f"{point!r}: {len(body)} chars — a paragraph, not a key point"
+        )
+        assert body.count(". ") <= 1, f"{point!r}: prose, not a one-liner"
+        seats.append((shape.top, shape.left))
+    assert len(set(seats)) == len(seats), "two key points share a position"
+
+
+def test_directive_section_references_live_in_the_notes_not_on_the_slide(reopened):
+    """Every section reference the plan attaches to a key point is in the
+    notes, and none is on the slide — the slide points at the document, the
+    facilitator holds the page numbers."""
+    plan = _plan_section("### Institutional rules: the dean's directive as reference")
+    planned = set(re.findall(r"\(sections? ([\d, ]+)\)", plan))
+    assert planned == set(_KEY_POINT_SECTIONS), (
+        f"the plan gives {sorted(planned)}, the test knows {_KEY_POINT_SECTIONS}"
+    )
+
+    slide = _slide_by_title(reopened, DIRECTIVE_TITLE)
+    assert "section" not in _slide_text(slide).lower()
+    notes = slide.notes_slide.notes_text_frame.text.lower()
+    for reference in _KEY_POINT_SECTIONS:
+        word = "sections" if "," in reference else "section"
+        assert f"{word} {reference}" in notes, (
+            f"the notes do not place a key point at {word} {reference}"
+        )
+
+
+def test_anonymise_slide_binds_every_upload_in_either_lane(reopened):
+    text = _slide_text(_slide_by_title(reopened, ANONYMISE_TITLE))
+    lowered = text.lower()
+    assert "anonymised before it is uploaded" in lowered
+    assert "any ai tool" in lowered
+    assert "either lane" in lowered
+    # Both lanes are named, so "either lane" is not an abstraction.
+    assert "Sensitive Lane" in text and "Daily Driver" in text
+    # The Lesson 1 rule it generalises, as a reference not a re-teach.
+    assert "Anchor Project" in text
+
+
+# One token per item of the plan's "what must never enter Gemini" list.
+NEVER_TOKENS = [
+    "Personal data of any kind",
+    "Unsubmitted grant proposals",
+    "Internal financial planning",
+    "Unpublished research results",
+    "industrial or contract research",
+    "confidentiality or data-processing agreement",
+    "not anonymised",
+]
+
+
+def test_never_slide_lists_the_plans_items_and_routes_them_onward(reopened):
+    plan = _plan_section("### What must never enter Gemini")
+    slide = _slide_by_title(reopened, NEVER_TITLE)
+    text = _slide_text(slide)
+    tops = []
+    for token in NEVER_TOKENS:
+        assert token in plan, f"{token!r} is not on the plan's list"
+        tops.append(_shape_containing(slide, token).top)
+    assert tops == sorted(tops), "the list is out of the plan's order"
+
+    # Where the list sends the work, and the floor under it.
+    assert "Sensitive Lane" in text
+    assert "Copilot Chat (Basic)" in text
+    assert "does not go into an ai tool at all" in text.lower()
+
+
+def test_never_slide_is_not_coloured_as_a_gemini_recommendation(reopened):
+    """Violet means "Gemini is the right tool" everywhere in this deck, so
+    the list of what must never go to Gemini carries none of it. The only
+    lane colour on the slide is the teal of the lane it routes to."""
+    from deck.lesson2 import template
+
+    fills = _fills(_slide_by_title(reopened, NEVER_TITLE))
+    assert str(template.DAILY_DRIVER.color) not in fills
+    assert str(template.SENSITIVE_LANE.color) in fills
+
+
+def test_every_seg2_slide_has_speaker_notes(reopened):
+    for title in SEG2_TITLES:
+        slide = _slide_by_title(reopened, title)
+        assert slide.has_notes_slide, f"{title!r} has no notes slide"
+        assert slide.notes_slide.notes_text_frame.text.strip(), (
+            f"{title!r} has empty speaker notes"
+        )
+
+
+def test_seg2_notes_supersede_the_lesson_1_interim_rule(reopened):
+    """The tie-back to Lesson 1's interim rule is a note to the
+    facilitator, not a slide that teaches the old rule again."""
+    notes = " ".join(
+        _slide_by_title(reopened, t).notes_slide.notes_text_frame.text
+        for t in SEG2_TITLES
+    ).lower()
+    assert "nothing you couldn't publish" in notes
+    assert "lesson 1" in notes
+    for title in SEG2_TITLES:
+        on_slide = _slide_text(_slide_by_title(reopened, title)).lower()
+        assert "couldn't publish" not in on_slide, f"{title!r} re-teaches the old rule"
+
+
+# --- Deck-wide --------------------------------------------------------------
+
+
+def test_no_youtube_link_anywhere_in_the_deck(reopened):
+    """The prompt bans YouTube as a reference. The word itself stays
+    allowed — Segment 4 describes turning a YouTube link into a textual
+    source — so what is banned is a link to one."""
+    for i, slide in enumerate(reopened.slides):
+        corpus = _slide_text(slide)
+        if slide.has_notes_slide:
+            corpus += "\n" + slide.notes_slide.notes_text_frame.text
+        lowered = corpus.lower()
+        for marker in ("youtube.com", "youtu.be", "m.youtube"):
+            assert marker not in lowered, f"{marker!r} on slide {i + 1}"
 
 
 # --- Master, theme and the Lesson 2 look ------------------------------------

@@ -6,10 +6,32 @@ Source note: the segment-1 template file referenced in the prompt is empty; this
 
 **Blocked by:** 03 — Lesson 2 skeleton with a new design template.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Segment 2 placeholders replaced; slides in plan order
-- [ ] Two-lane slide uses the CONTEXT.md lane names and lists the four sensitive categories
-- [ ] Directive slide names both the dean's directive and its rector-level parent and stays at key-point level (a test caps it to a short list, not paragraphs)
-- [ ] Anonymise-before-upload rule stated as an institutional constraint on every upload
-- [ ] No YouTube URL on any slide or in notes; speaker notes on every slide; deck rebuilds and tests pass
+- [x] Segment 2 placeholders replaced; slides in plan order
+- [x] Two-lane slide uses the CONTEXT.md lane names and lists the four sensitive categories
+- [x] Directive slide names both the dean's directive and its rector-level parent and stays at key-point level (a test caps it to a short list, not paragraphs)
+- [x] Anonymise-before-upload rule stated as an institutional constraint on every upload
+- [x] No YouTube URL on any slide or in notes; speaker notes on every slide; deck rebuilds and tests pass
+
+## Comments
+
+**2026-09-10 (agent):** Implemented. `deck/lesson2/segments/seg2_sensitive_data_rule.py` replaces the five Segment 2 placeholders with the plan's five subsections, in order: the routing question; the data-protection principles; the two directives as reference; anonymise-before-upload; and what must never enter Gemini. The deck still builds to 35 slides.
+
+Slide by slide. The routing slide leads with the question as a full-width band ("Answered before any prompt is written — per task, not per person and not per day"), then two lane columns — a solid lane-coloured header (YES → Sensitive Lane / NO → Daily Driver, with the tool under it) over a lane-tinted card listing what goes there; the Sensitive Lane's four are CONTEXT.md's categories verbatim. Below them the plan's three worked examples, one row each, edge-barred and tailed in the lane they route to, and the asymmetry as a closing caption. The principles slide is four cards in the terms these take in research management, closing on a band that says why the rule exists at all ("the judgement is made once, at routing time"). The directive slide carries the two documents as cards — the rector's 4/2025. (X. 28.) as umbrella, the dean's 1/2026 (III.26.) as the faculty supplement with its EU AI Act reference — over the six key points as one-liners, with a "cited, not reproduced" caption and the version/review dates. The anonymise slide states the rule as a band, shows it binding both lanes as two lane chips, lists what anonymising removes, and points back at the Lesson 1 Anchor Project rule and one-pager. The closing slide is the plan's seven-item list over two bands: the teal exit to the Sensitive Lane, and the floor under it — fails the anonymisation test even there, and it does not go into an AI tool at all.
+
+Notes carry the facilitation script per slide: the pace, the opening use of a debrief example (anonymised), the six section references of the directive, the re-verify-the-version reminder, and the tie-back to Lesson 1's interim "nothing you couldn't publish" rule stated as one sentence that completes it rather than re-teaches it.
+
+Two changes outside the module, both needed by these slides. `template.add_open_card` was extracted from Segment 1's hand-built card (a card with an edge bar and an empty text frame, for rows whose text is several runs at their own sizes) because both segment modules need it, and `add_content_slide` now gives a title the full content width when no lane chip shares its row — without it two of this segment's titles wrapped and overflowed the top of the slide. `deck/README.md` records both.
+
+Tests: fifteen Segment 2 tests in `tests/test_lesson2_deck.py`, plus a deck-wide no-YouTube-link test. The plan and CONTEXT.md are the oracles: the four sensitive categories are asserted against CONTEXT.md's own Sensitive Lane entry before being asserted on the slide, the Daily Driver's four against the plan's routing table, the three worked examples and the seven never-items against their plan sections, and the six key points against the plan's directive subsection with a 170-character cap and a one-sentence check so the slide cannot grow into paragraphs. `EXPECTED_PLACEHOLDERS` for Segment 2 is now 0.
+
+**2026-09-10 (agent, after code review):** Two-axis review run. The material fix was on the closing slide: it had been built with `lane=DAILY_DRIVER`, so the Daily Driver chip and violet edge bars ran down the list of things that must never go to Gemini — violet means "Gemini is the right tool" in this deck, the opposite of what the list says. The slide is now neutral and only its exit band carries a lane colour, the teal of the lane it routes to; a test asserts the Daily Driver colour is absent from that slide and the module docstring states the rule that survived (a lane colour only where a slide names that lane's tool as where work goes), narrowing the coarser "the rest stays neutral" instruction ticket 03 left in the module.
+
+Second content fix: key point 3's lead read "No external AI without explicit permission" — broader than the directive and contradicting key point 4 ("AI in institutional administration is allowed") on the same slide. It now reads "No sensitive data into external AI without permission", with the qualifier in the lead rather than only in the detail line.
+
+Standards: `add_open_card`'s unused `fill`/`edge` defaults dropped; the bare `8.8` title width named `TITLE_WIDTH_WITH_CHIP`; Segment 1's `_edged_card`, reduced to a pure delegator by the extraction, inlined at its three call sites; the routed-example row and the never-list row, the same block read in opposite directions, folded into one `_run_row`; the README's card call-shape sentence updated for the `lane.tint` form the loops use. Test hardening from the review: the Daily Driver column is now guarded against the plan (it was unchecked), and the directive's section references are checked as the six mappings the plan gives rather than the mere presence of the word "section". The deck-wide URL test was narrowed to YouTube links — it had banned `http://`/`https://`/`www.` deck-wide, which would have pre-constrained tickets 06–08 beyond anything the prompt asks.
+
+Judgement call left standing: the anonymise slide keeps its two lane chips in lane colours. They name both tools as the rule's subject, which is exactly what a lane colour is for, and the colouring is what shows the rule does not bend for the institutional account.
+
+Note for whoever rebuilds: `dist/lesson_2_deck.pptx` was open in PowerPoint while this landed, so the committed source is ahead of the file in `dist/`. Re-run `python -m deck.lesson2.build` with the deck closed.

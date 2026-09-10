@@ -78,13 +78,6 @@ _LINK_LEFT = 5.65
 _LINK_WIDTH = 7.08
 
 
-# The template's white card carries a fixed heading run, so a cell whose
-# text is several runs at its own sizes builds the same shape here — same
-# fill, hairline and edge-bar width as template.add_card — and leaves the
-# text to the caller.
-_EDGE_BAR = 0.09
-
-
 def _solid_label(slide, left, top, width, height, text, size):
     """A solid slate block with centred white heading type — the debrief's
     number badges and the capture slide's item tags are the same block."""
@@ -105,29 +98,10 @@ def _solid_label(slide, left, top, width, height, text, size):
     return block
 
 
-def _edged_card(slide, left, top, width, height, edge):
-    """A white card with a coloured edge bar; its text frame is empty and
-    left-aligned, vertically centred, for the caller to fill."""
-    card = slide.shapes.add_shape(
-        MSO_SHAPE.RECTANGLE, Inches(left), Inches(top), Inches(width),
-        Inches(height),
-    )
-    template.panel(card)
-    template.add_bar(slide, Inches(left), Inches(top), Inches(_EDGE_BAR),
-                     Inches(height), edge)
-    tf = card.text_frame
-    tf.word_wrap = True
-    tf.margin_left = Inches(0.26)
-    tf.margin_right = Inches(0.2)
-    tf.margin_top = Inches(0.04)
-    tf.margin_bottom = Inches(0.04)
-    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-    tf.paragraphs[0].alignment = PP_ALIGN.LEFT
-    return card
-
-
 def _recap_row(slide, concept, link, forward, top):
-    card = _edged_card(slide, _LEFT, top, _CONCEPT_WIDTH, _ROW_HEIGHT, SLATE)
+    card = template.add_open_card(
+        slide, Inches(_LEFT), Inches(top), Inches(_CONCEPT_WIDTH),
+        Inches(_ROW_HEIGHT), SLATE)
     run = card.text_frame.paragraphs[0].add_run()
     run.text = concept
     template.style(run, size=12, color=INK, bold=True)
@@ -137,7 +111,9 @@ def _recap_row(slide, concept, link, forward, top):
         size=15, color=MUTED, align=PP_ALIGN.CENTER,
     )
 
-    card = _edged_card(slide, _LINK_LEFT, top, _LINK_WIDTH, _ROW_HEIGHT, INK)
+    card = template.add_open_card(
+        slide, Inches(_LINK_LEFT), Inches(top), Inches(_LINK_WIDTH),
+        Inches(_ROW_HEIGHT), INK)
     para = card.text_frame.paragraphs[0]
     run = para.add_run()
     run.text = link
@@ -337,8 +313,9 @@ def _capture_slide(prs):
         _capture_row(slide, tag, top)
         top += _CAPTURE_PITCH
 
-    card = _edged_card(slide, _LEFT, _READ_BACK_TOP,
-                       template.CONTENT_WIDTH.inches, _READ_BACK_HEIGHT, INK)
+    card = template.add_open_card(
+        slide, Inches(_LEFT), Inches(_READ_BACK_TOP), template.CONTENT_WIDTH,
+        Inches(_READ_BACK_HEIGHT), INK)
     tf = card.text_frame
     run = tf.paragraphs[0].add_run()
     run.text = "After the last volunteer — read the list back, 30 seconds:"

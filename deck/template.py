@@ -13,13 +13,18 @@ light-azure; the accents are vivid azure, orange, and amber. Title and
 divider slides go full-bleed navy with amber accents and progress pills.
 """
 
-from lxml import etree
-from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
-from pptx.opc.constants import RELATIONSHIP_TYPE as RT
-from pptx.util import Emu, Inches, Pt
+from pptx.util import Inches, Pt
+
+from deck import core
+# The lesson-independent mechanics live in deck.core; these names are
+# re-exported so segment modules keep calling template.solid(...) etc.
+from deck.core import (  # noqa: F401
+    SLIDE_HEIGHT, SLIDE_WIDTH, Design, add_bar, add_text as _add_text,
+    blank_slide as _blank_slide, set_notes, solid,
+)
 
 # --- Design constants -------------------------------------------------------
 
@@ -45,67 +50,33 @@ WHITE = RGBColor(0xFF, 0xFF, 0xFF)
 
 FOOTER_TEXT = "AI for Research Management · Lesson 1 · Week 1"
 
-SLIDE_WIDTH = Emu(12192000)  # 13.333 in — 16:9 for Teams
-SLIDE_HEIGHT = Emu(6858000)  # 7.5 in
-
 # Content area shared by all content slides (below the title block).
 CONTENT_LEFT = Inches(0.6)
 CONTENT_TOP = Inches(1.5)
 CONTENT_WIDTH = Inches(12.13)
 CONTENT_HEIGHT = Inches(5.3)
 
-_A = "http://schemas.openxmlformats.org/drawingml/2006/main"
-_P = "http://schemas.openxmlformats.org/presentationml/2006/main"
-
-
 # --- Presentation setup -----------------------------------------------------
+
+DESIGN = Design(
+    heading_font=HEADING_FONT,
+    body_font=BODY_FONT,
+    scheme={"dk2": PRIMARY, "accent1": ACCENT, "accent2": HIGHLIGHT},
+    canvas=CANVAS,
+    footer_text=FOOTER_TEXT,
+    footer_rule=PANEL_EDGE,
+    footer_color=MUTED,
+)
 
 
 def new_presentation():
     """A 16:9 presentation with theme fonts/colors, dark canvas, and footer."""
-    prs = Presentation()
-    prs.slide_width = SLIDE_WIDTH
-    prs.slide_height = SLIDE_HEIGHT
-    _apply_theme(prs)
-    master = prs.slide_master
-    master.background.fill.solid()
-    master.background.fill.fore_color.rgb = CANVAS
-    _add_master_footer(prs)
-    return prs
-
-
-def _apply_theme(prs):
-    """Write our fonts and color scheme into the master's theme part."""
-    theme_part = prs.slide_master.part.part_related_by(RT.THEME)
-    root = etree.fromstring(theme_part.blob)
-    for tag, font in (("majorFont", HEADING_FONT), ("minorFont", BODY_FONT)):
-        latin = root.find(f".//{{{_A}}}{tag}/{{{_A}}}latin")
-        latin.set("typeface", font)
-    scheme = root.find(f".//{{{_A}}}clrScheme")
-    for name, color in (("dk2", PRIMARY), ("accent1", ACCENT), ("accent2", HIGHLIGHT)):
-        srgb = scheme.find(f"{{{_A}}}{name}/{{{_A}}}srgbClr")
-        if srgb is not None:
-            srgb.set("val", str(color))
-    theme_part._blob = etree.tostring(
-        root, xml_declaration=True, encoding="UTF-8", standalone=True
-    )
-
-
-def solid(shape, color):
-    """Flat fill with no outline or shadow — the deck's shape style."""
-    shape.fill.solid()
-    shape.fill.fore_color.rgb = color
-    shape.line.fill.background()
-    shape.shadow.inherit = False
+    return core.new_presentation(DESIGN)
 
 
 def outlined(shape, fill=PANEL, border=PANEL_EDGE, weight=1.0):
     """Elevated panel style: solid fill with a thin border, no shadow."""
-    shape.fill.solid()
-    shape.fill.fore_color.rgb = fill
-    shape.line.color.rgb = border
-    shape.line.width = Pt(weight)
-    shape.shadow.inherit = False
+    core.outlined(shape, fill, border, weight)
 
 
 def panel(shape):
@@ -113,86 +84,8 @@ def panel(shape):
     outlined(shape, PANEL, PANEL_EDGE)
 
 
-def add_bar(slide, left, top, width, height, color):
-    """A plain filled rectangle — accent bars, rules, edge caps."""
-    bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, height)
-    solid(bar, color)
-    return bar
-
-
-def master_next_id(master):
-    """Next free shape id on the master, ignoring the near-2^31 ids the
-    stock template uses for its footer placeholders — ids above the signed
-    32-bit limit make PowerPoint report the file as corrupt."""
-    ids = [
-        int(el.get("id"))
-        for el in master.shapes._spTree.iter(f"{{{_P}}}cNvPr")
-    ]
-    return max((i for i in ids if i < 0x7F000000), default=1) + 1
-
-
-def _master_add_shape(master, sp):
-    """Append a shape element to the master's shape tree (python-pptx's
-    MasterShapes collection has no add_shape/add_textbox of its own)."""
-    from pptx.shapes.autoshape import Shape
-
-    master.shapes._spTree.append(sp)
-    return Shape(sp, master.shapes)
-
-
-def _add_master_footer(prs):
-    """Footer rule + text on the slide master, inherited by every slide."""
-    from pptx.oxml.shapes.autoshape import CT_Shape
-
-    master = prs.slide_master
-
-    sp = CT_Shape.new_autoshape_sp(
-        master_next_id(master), "Footer Rule", "rect",
-        Inches(0.6), Inches(7.08), Inches(12.13), Pt(1.2),
-    )
-    line = _master_add_shape(master, sp)
-    solid(line, PANEL_EDGE)
-
-    sp = CT_Shape.new_textbox_sp(
-        master_next_id(master), "Footer Text",
-        Inches(0.6), Inches(7.13), Inches(12.13), Inches(0.3),
-    )
-    box = _master_add_shape(master, sp)
-    tf = box.text_frame
-    tf.margin_left = 0
-    tf.margin_right = 0
-    tf.margin_top = 0
-    tf.margin_bottom = 0
-    para = tf.paragraphs[0]
-    run = para.add_run()
-    run.text = FOOTER_TEXT
-    style(run, size=10, color=MUTED)
-
-
 def style(run, size, color, font=BODY_FONT, bold=False, italic=False):
-    run.font.name = font
-    run.font.size = Pt(size)
-    run.font.color.rgb = color
-    run.font.bold = bold
-    run.font.italic = italic
-
-
-def _blank_slide(prs):
-    return prs.slides.add_slide(prs.slide_master.slide_layouts[6])
-
-
-def _add_text(slide, left, top, width, height, align=PP_ALIGN.LEFT, anchor=None):
-    box = slide.shapes.add_textbox(left, top, width, height)
-    tf = box.text_frame
-    tf.word_wrap = True
-    if anchor is not None:
-        tf.vertical_anchor = anchor
-    tf.paragraphs[0].alignment = align
-    return tf
-
-
-def set_notes(slide, notes):
-    slide.notes_slide.notes_text_frame.text = notes
+    core.style(run, size, color, font, bold=bold, italic=italic)
 
 
 # --- Slide builders ---------------------------------------------------------

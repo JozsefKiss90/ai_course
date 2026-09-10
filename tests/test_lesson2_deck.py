@@ -97,7 +97,7 @@ EXPECTED_PLACEHOLDERS = {
     "The sensitive-data rule and data-protection principles": (0, "05"),  # ticket 05 landed
     "Copilot Chat (Basic) in practice": (0, "06"),  # ticket 06 landed
     "Gemini in depth (+ NotebookLM preview)": (0, "07"),  # ticket 07 landed
-    "Assignment briefing + close": (3, "08"),
+    "Assignment briefing + close": (0, "08"),  # ticket 08 landed
 }
 
 
@@ -135,8 +135,8 @@ def test_placeholder_slides_name_their_ticket_on_the_slide_and_in_notes(reopened
 
 def test_total_slide_count(reopened):
     # 1 title + 5 dividers + 3 Segment 1 + 5 Segment 2 + 7 Segment 3
-    #   + 15 Segment 4 slides + 3 placeholders
-    assert len(reopened.slides) == 39
+    #   + 15 Segment 4 + 4 Segment 5
+    assert len(reopened.slides) == 40
 
 
 # --- Segment 1: Recap + assignment debrief (ticket 04) -----------------------
@@ -184,6 +184,26 @@ def _shape_containing(slide, token):
         if sh.has_text_frame and token in sh.text_frame.text
     ]
     assert len(matches) == 1, f"{token!r}: {len(matches)} shapes matched"
+    return matches[0]
+
+
+def _slide_title(slide):
+    """A content slide's title — the first text box add_content_slide adds.
+    A segment names its own subjects in more places than the title, so a
+    title match has to be the title, not a mention anywhere on the slide."""
+    for shape in slide.shapes:
+        if shape.has_text_frame:
+            return shape.text_frame.text
+    return ""
+
+
+def _segment_slide(reopened, segment, title):
+    """The slide inside one segment whose title is exactly this."""
+    matches = [
+        s for s in _segment_ranges(reopened)[segment]
+        if _slide_title(s) == title
+    ]
+    assert len(matches) == 1, f"{title!r}: {len(matches)} slides matched"
     return matches[0]
 
 
@@ -953,25 +973,9 @@ SEG4_TITLES = (
 )
 
 
-def _slide_title(slide):
-    """A content slide's title — the first text box add_content_slide adds.
-    Segment 4 names capabilities on its opener and its closing slide as
-    well as on their own slides, so a title match here has to be the title,
-    not a mention anywhere on the slide."""
-    for shape in slide.shapes:
-        if shape.has_text_frame:
-            return shape.text_frame.text
-    return ""
-
-
 def _seg4_slide(reopened, title):
     """The Segment 4 slide with exactly this title."""
-    matches = [
-        s for s in _segment_ranges(reopened)[SEG4_NAME]
-        if _slide_title(s) == title
-    ]
-    assert len(matches) == 1, f"{title!r}: {len(matches)} slides matched"
-    return matches[0]
+    return _segment_slide(reopened, SEG4_NAME, title)
 
 
 def _seg4_capability_rows():
@@ -1209,6 +1213,218 @@ def test_seg4_names_youtube_without_linking_one(reopened):
     assert not re.search(r"https?://|www\.", corpus), (
         "the YouTube scenario carries a link"
     )
+
+
+# --- Segment 5: Assignment briefing + close (ticket 08) ----------------------
+
+SEG5_NAME = "Assignment briefing + close"
+
+SEG5_ASSIGNMENT_TITLE = "Assignment: your first workflow orchestration"
+SEG5_OUTCOME_TITLE = "The outcome, on the 7 Levels map"
+SEG5_EFFORT_TITLE = "Effort and where the work is shown"
+SEG5_CLOSE_TITLE = "Next: Practice Week 1 and Lesson 3"
+
+SEG5_TITLES = [
+    SEG5_ASSIGNMENT_TITLE, SEG5_OUTCOME_TITLE, SEG5_EFFORT_TITLE,
+    SEG5_CLOSE_TITLE,
+]
+
+LESSON1_PATH = PLAN_PATH.parent / "lesson_1.md"
+
+ASSIGNMENT_SECTION = "### Assignment slide (as it will appear)"
+EFFORT_SECTION = "### Effort and where the work is shown"
+CLOSE_SECTION = "### Close (≈1 min)"
+
+
+def _seg5_slide(reopened, title):
+    """The Segment 5 slide with exactly this title."""
+    return _segment_slide(reopened, SEG5_NAME, title)
+
+
+def _seven_levels_from_lesson_1():
+    """Level number -> level name, from the 7 Levels table in lesson_1.md.
+    The map is Lesson 1's, so the outcome slide is checked against where it
+    was taught rather than against a name transcribed here."""
+    text = LESSON1_PATH.read_text(encoding="utf-8")
+    section = text[text.index("### Part B: The 7 Levels of AI"):
+                   text.index("**Vibe coding")]
+    levels = {}
+    for line in section.splitlines():
+        line = line.strip()
+        if not line.startswith("|") or set(line) <= set("|- "):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if not cells[0].isdigit():
+            continue
+        levels[int(cells[0])] = cells[1]
+    return levels
+
+
+def test_seg5_slides_present_in_plan_order_and_not_placeholders(reopened):
+    """All four slides live after Segment 5's divider, in the plan's order —
+    the assignment, the outcome on the 7 Levels map, the effort and its two
+    venues, the close — with no placeholder left."""
+    segment = _segment_ranges(reopened)[SEG5_NAME]
+    assert len(segment) == len(SEG5_TITLES)
+    assert [_slide_title(s) for s in segment] == SEG5_TITLES
+    for slide in segment:
+        assert "[PLACEHOLDER]" not in _slide_text(slide)
+
+
+# Every element of the plan's assignment, as a token asserted to appear in
+# the plan's own assignment section first, so the slide cannot drift from
+# the wording participants are told to screenshot. The first item of each
+# pair only names the element in the failure message.
+SEG5_ASSIGNMENT_ELEMENTS = [
+    ("chain", "multi-step workflow orchestration"),
+    ("blueprint", "the tool, the input, the output"),
+    ("blueprint", "detailed guidelines"),
+    ("blueprint", "justification"),
+    ("deliverable", "hand-picked topic"),
+    ("deliverable", "educational purposes"),
+    ("deliverable", "learning outcomes"),
+    ("routing", "touches sensitive data"),
+    ("routing", "anonymised before upload"),
+    ("routing", "the lane per step"),
+]
+
+
+def test_assignment_slide_carries_every_element_of_the_plans_assignment(reopened):
+    """The plan's three numbered items, whole, on the one slide the room is
+    told to screenshot."""
+    plan = _plan_section(ASSIGNMENT_SECTION).lower()
+    text = _slide_text(_seg5_slide(reopened, SEG5_ASSIGNMENT_TITLE)).lower()
+    for element, token in SEG5_ASSIGNMENT_ELEMENTS:
+        assert token in plan, f"{token!r} is not in the plan's assignment"
+        assert token in text, f"the assignment slide drops the {element}: {token!r}"
+
+
+def test_assignment_is_one_screenshot(reopened):
+    """The assignment is on one slide and says so: no other Segment 5 slide
+    carries a piece of it, and the slide carries the screenshot cue."""
+    assignment = _seg5_slide(reopened, SEG5_ASSIGNMENT_TITLE)
+    assert "Screenshot this slide" in _slide_text(assignment)
+    others = [
+        s for s in _segment_ranges(reopened)[SEG5_NAME]
+        if _slide_title(s) != SEG5_ASSIGNMENT_TITLE
+    ]
+    for token in ("hand-picked topic", "detailed guidelines"):
+        for slide in others:
+            assert token not in _slide_text(slide).lower(), (
+                f"{token!r} is split off the assignment slide onto "
+                f"{_slide_title(slide)!r}"
+            )
+
+
+def test_assignment_slide_shows_a_worked_blueprint_row(reopened):
+    """One row of the blueprint, filled in, so its shape is unambiguous: the
+    four columns the plan asks a step to carry, and a row that names a real
+    tool and routes it to a lane CONTEXT.md defines."""
+    text = _slide_text(_seg5_slide(reopened, SEG5_ASSIGNMENT_TITLE))
+    for column in ("STEP", "TOOL", "LANE", "WHY"):
+        assert column in text, f"the blueprint example has no {column!r} column"
+    assert "Gemini" in text, "the example row names no tool"
+    lanes = [name for name in ("Sensitive Lane", "Daily Driver") if name in text]
+    assert lanes, "the example row routes to no lane"
+    context = CONTEXT_PATH.read_text(encoding="utf-8")
+    for lane in lanes:
+        assert f"**{lane}**" in context, f"{lane!r} is not a CONTEXT.md lane"
+
+
+def test_outcome_slide_states_level_3_achieved_and_level_4_founded(reopened):
+    """The plan's outcome sentence, against the map it refers to: Level 3
+    achieved, Level 4's foundation established, both under the names the
+    7 Levels table in lesson_1.md gives them."""
+    plan = _plan_section(ASSIGNMENT_SECTION)
+    text = _slide_text(_seg5_slide(reopened, SEG5_OUTCOME_TITLE))
+    for token in ("Level 3 achieved", "foundation for Level 4 established"):
+        assert token in plan, f"{token!r} is not the plan's outcome"
+        assert token in text, f"the outcome slide does not say {token!r}"
+    levels = _seven_levels_from_lesson_1()
+    assert levels[3] == "Power User" and levels[4] == "Tool Orchestrator"
+    assert "7 Levels" in text, "the outcome is not stated against the map"
+    for number in (2, 3, 4):
+        assert f"Level {number}" in text, f"Level {number} is not on the map"
+        assert levels[number] in text, f"Level {number} is unnamed"
+
+
+# The plan's effort bullet, its two venues, and every tool it tells
+# participants to chain from — each asserted against the plan's own section
+# before it is looked for on the slide.
+SEG5_EFFORT_TOKENS = [
+    "3–4 hours", "blueprint first",
+    "Practice Week 1", "W3", "Lesson 3 debrief", "W4", "2–3 volunteers",
+]
+
+SEG5_CHAIN_TOOLS = [
+    "Copilot Chat (Basic)", "Prompt Coach", "Study and Learn",
+    "Adobe Acrobat", "Canva for the prototype", "genspark.ai",
+    "Gemini", "Gems", "Deep Research", "Canvas", "NotebookLM",
+]
+
+
+def test_effort_slide_states_the_effort_and_both_venues(reopened):
+    plan = _plan_section(EFFORT_SECTION)
+    slide = _seg5_slide(reopened, SEG5_EFFORT_TITLE)
+    text, corpus = _slide_text(slide), _slide_corpus(slide)
+    for token in SEG5_EFFORT_TOKENS:
+        assert token in plan, f"{token!r} is not in the plan's effort section"
+        assert token in corpus, f"the effort slide drops {token!r}"
+    for token in ("3–4 hours", "Practice Week 1", "Lesson 3"):
+        assert token in text, f"{token!r} is only in the notes"
+
+
+def test_effort_slide_lists_every_tool_the_plan_chains_from(reopened):
+    """The assignment chains what the course has taught, so the slide names
+    all of it — otherwise "all the tools so far" is a memory test."""
+    plan = _plan_section(EFFORT_SECTION)
+    text = _slide_text(_seg5_slide(reopened, SEG5_EFFORT_TITLE))
+    for tool in SEG5_CHAIN_TOOLS:
+        assert tool in plan, f"{tool!r} is not in the plan's tool list"
+        assert tool in text, f"the effort slide does not name {tool!r}"
+
+
+# The close's terms, each asserted to be CONTEXT.md's ubiquitous language
+# before it is looked for on the slide.
+SEG5_CLOSE_TERMS = ["Practice Week", "Wiki Sandbox", "KM System"]
+
+
+def test_close_names_practice_week_1_and_lesson_3_in_context_terms(reopened):
+    plan = _plan_section(CLOSE_SECTION)
+    context = CONTEXT_PATH.read_text(encoding="utf-8")
+    text = _slide_text(_seg5_slide(reopened, SEG5_CLOSE_TITLE))
+    for term in SEG5_CLOSE_TERMS:
+        assert f"**{term}**" in context, f"{term!r} is not a CONTEXT.md term"
+        assert term in text, f"the close does not use {term!r}"
+    for token in ("Practice Week 1", "W3", "drop-in", "Lesson 3", "W4",
+                  "NotebookLM", "Perplexity"):
+        assert token in plan, f"{token!r} is not in the plan's close"
+        assert token in text, f"the close does not name {token!r}"
+
+
+def test_close_promises_no_new_material_in_the_practice_week(reopened):
+    """CONTEXT.md's Practice Week is a week with no new material; the close
+    says so, because that is what makes the drop-in optional."""
+    text = _slide_text(_seg5_slide(reopened, SEG5_CLOSE_TITLE)).lower()
+    assert "no new material" in text
+    assert "optional" in text
+
+
+def test_segment_5_names_both_lanes(reopened):
+    """Segments 3 and 4 each stay in one lane; the assignment chains across
+    both, so this one names both tools and both lanes."""
+    corpus = "\n".join(_segment_corpus(reopened, SEG5_NAME)).lower()
+    for token in ("sensitive lane", "daily driver", "copilot", "gemini"):
+        assert token in corpus, f"Segment 5 never names {token!r}"
+
+
+def test_every_seg5_slide_has_speaker_notes(reopened):
+    for title in SEG5_TITLES:
+        slide = _seg5_slide(reopened, title)
+        assert slide.has_notes_slide, f"{title!r} has no notes slide"
+        assert slide.notes_slide.notes_text_frame.text.strip(), (
+            f"{title!r} has empty speaker notes"
+        )
 
 
 # --- Deck-wide --------------------------------------------------------------

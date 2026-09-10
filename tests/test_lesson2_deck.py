@@ -96,7 +96,7 @@ EXPECTED_PLACEHOLDERS = {
     "Recap + assignment debrief": (0, "04"),  # ticket 04 landed
     "The sensitive-data rule and data-protection principles": (0, "05"),  # ticket 05 landed
     "Copilot Chat (Basic) in practice": (0, "06"),  # ticket 06 landed
-    "Gemini in depth (+ NotebookLM preview)": (11, "07"),
+    "Gemini in depth (+ NotebookLM preview)": (0, "07"),  # ticket 07 landed
     "Assignment briefing + close": (3, "08"),
 }
 
@@ -134,9 +134,9 @@ def test_placeholder_slides_name_their_ticket_on_the_slide_and_in_notes(reopened
 
 
 def test_total_slide_count(reopened):
-    # 1 title + 5 dividers + 3 Segment 1 + 5 Segment 2 + 7 Segment 3 slides
-    #   + 14 placeholders
-    assert len(reopened.slides) == 35
+    # 1 title + 5 dividers + 3 Segment 1 + 5 Segment 2 + 7 Segment 3
+    #   + 15 Segment 4 slides + 3 placeholders
+    assert len(reopened.slides) == 39
 
 
 # --- Segment 1: Recap + assignment debrief (ticket 04) -----------------------
@@ -631,9 +631,10 @@ def _seg3_demo_script():
     return text[start:text.index("**Rule stated while demoing:**", start)]
 
 
-def _seg3_corpus(reopened):
-    """Segment 3's divider and slides, each as slide text plus its notes."""
-    slides = _segment_ranges(reopened)[SEG3_NAME]
+def _segment_corpus(reopened, name):
+    """One segment's divider and slides, each as slide text plus its
+    notes — everything that segment says, in one list."""
+    slides = _segment_ranges(reopened)[name]
     all_slides = list(reopened.slides)
     divider = all_slides[all_slides.index(slides[0]) - 1]
     return [_slide_corpus(slide) for slide in [divider, *slides]]
@@ -896,10 +897,318 @@ def test_segment_3_never_names_the_other_lane(reopened):
     """The two lanes are demonstrated separately, so Segment 3 stays
     entirely in the Sensitive Lane: the Daily Driver and its tool are not
     named on a slide or in a note anywhere in the segment."""
-    for text in _seg3_corpus(reopened):
+    for text in _segment_corpus(reopened, SEG3_NAME):
         lowered = text.lower()
         assert "gemini" not in lowered, "Segment 3 names Gemini"
         assert "daily driver" not in lowered, "Segment 3 names the Daily Driver"
+
+
+# --- Segment 4: Gemini in depth (+ NotebookLM preview) (ticket 07) -----------
+
+SEG4_NAME = "Gemini in depth (+ NotebookLM preview)"
+
+SEG4_OPENER_TITLE = "What the Daily Driver adds"
+SEG4_GEMS_TITLE = "Gems — persistent context"
+SEG4_CHAIN_TITLE = "Chaining what you have just seen"
+
+# One (plan capability, slide title, scenario token) triple per row of the
+# plan's capability table, in the plan's order. The token is asserted to
+# appear in the plan's own use-case cell first, so a slide cannot drift
+# from the scenario the plan gave it; the rows themselves are read out of
+# the plan at test time, so a capability added there fails the deck here.
+SEG4_CAPABILITIES = [
+    ("File and image upload", "File and image upload",
+     "anonymised call document"),
+    ("Long context", "Long context", "structured summary"),
+    ("Gems — persistent context", SEG4_GEMS_TITLE, "Anchor Project assistant"),
+    ("Deep Research", "Deep Research", "funding landscape"),
+    ("Canvas", "Canvas", "Draft the outline"),
+    ("Google Workspace hooks", "Google Workspace hooks", "Drive"),
+    ("Image generation and editing", "Image generation and editing",
+     "diagram"),
+    ("Gemini Live and mobile", "Gemini Live and mobile", "rehears"),
+    ("Guided Learning mode", "Guided Learning mode", "concept"),
+    ("Saved info / personalisation", "Saved info — the lightweight Gem",
+     "lightweight version of a Gem"),
+]
+
+# The three NotebookLM scenarios: the plan's numbered heading, the slide
+# title, and a token that has to survive from one to the other.
+SEG4_NOTEBOOK_SCENARIOS = [
+    ("YouTube link turned into a textual source",
+     "NotebookLM: a YouTube link becomes a source", "captions"),
+    ("Several documents aggregated in one notebook",
+     "NotebookLM: several documents, one notebook", "FAQ"),
+    ("Notebooks imported into Gemini as project folders",
+     "NotebookLM: a notebook as the project folder", "sources travel with"),
+]
+
+SEG4_NOTEBOOK_TITLES = [title for _, title, _ in SEG4_NOTEBOOK_SCENARIOS]
+
+SEG4_TITLES = (
+    [SEG4_OPENER_TITLE]
+    + [title for _, title, _ in SEG4_CAPABILITIES]
+    + SEG4_NOTEBOOK_TITLES
+    + [SEG4_CHAIN_TITLE]
+)
+
+
+def _slide_title(slide):
+    """A content slide's title — the first text box add_content_slide adds.
+    Segment 4 names capabilities on its opener and its closing slide as
+    well as on their own slides, so a title match here has to be the title,
+    not a mention anywhere on the slide."""
+    for shape in slide.shapes:
+        if shape.has_text_frame:
+            return shape.text_frame.text
+    return ""
+
+
+def _seg4_slide(reopened, title):
+    """The Segment 4 slide with exactly this title."""
+    matches = [
+        s for s in _segment_ranges(reopened)[SEG4_NAME]
+        if _slide_title(s) == title
+    ]
+    assert len(matches) == 1, f"{title!r}: {len(matches)} slides matched"
+    return matches[0]
+
+
+def _seg4_capability_rows():
+    """The (capability, scenario, demo) rows of the plan's Segment 4
+    capability table."""
+    section = _plan_section(
+        "### Free-tier capabilities beyond the Sensitive Lane tool")
+    rows = []
+    for line in section.splitlines():
+        line = line.strip()
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip().replace("**", "") for c in line.strip("|").split("|")]
+        if len(cells) != 3 or cells[0] in ("Capability",):
+            continue
+        if set(cells[0]) <= set("-: "):
+            continue
+        rows.append(tuple(cells))
+    return rows
+
+
+def _seg4_demo_script():
+    """The plan's Segment 4 demo script — the facilitator's running order."""
+    text = PLAN_PATH.read_text(encoding="utf-8")
+    start = text.index("### Demo script\n\n1. Upload demo")
+    return text[start:text.index("**Rule stated while demoing:**", start)]
+
+
+def test_seg4_slides_present_in_plan_order_and_not_placeholders(reopened):
+    """All fifteen slides live between Segment 4's divider and Segment 5's,
+    in the plan's order — the opener, the capability table row by row, the
+    three NotebookLM scenarios, the chaining close — with no placeholder
+    left."""
+    segment = _segment_ranges(reopened)[SEG4_NAME]
+    assert len(segment) == len(SEG4_TITLES)
+    titles = [_slide_title(s) for s in segment]
+    assert titles == SEG4_TITLES
+    for slide in segment:
+        assert "[PLACEHOLDER]" not in _slide_text(slide)
+
+
+def test_every_capability_in_the_plan_has_a_slide_with_its_scenario(reopened):
+    """One slide per row of the plan's capability table, each carrying the
+    scenario the plan gave that capability."""
+    rows = _seg4_capability_rows()
+    assert len(rows) == len(SEG4_CAPABILITIES), (
+        f"plan lists {len(rows)} capabilities, the deck covers "
+        f"{len(SEG4_CAPABILITIES)}"
+    )
+    for (plan_name, scenario_cell, _), (name, title, token) in zip(
+            rows, SEG4_CAPABILITIES):
+        assert plan_name == name, f"plan capability {plan_name!r} is not {name!r}"
+        assert token.lower() in scenario_cell.lower(), (
+            f"{token!r} is not in the plan's scenario for {name!r}"
+        )
+        text = _slide_text(_seg4_slide(reopened, title))
+        assert token.lower() in text.lower(), (
+            f"{title!r} does not carry the plan's scenario ({token!r})"
+        )
+
+
+def test_gems_slide_states_the_level_3_link(reopened):
+    """The plan calls the Gem "the Level 3 move": a workspace that already
+    knows the Anchor Project, built out of the Lesson 1 prompts."""
+    text = _slide_text(_seg4_slide(reopened, SEG4_GEMS_TITLE))
+    assert "Level 3" in text
+    assert "Anchor Project" in text
+    # The ICC prompt and the reverse prompt from Lesson 1, promoted into the
+    # Gem's standing instructions.
+    lowered = text.lower()
+    assert "standing instructions" in lowered
+    assert "icc prompt" in lowered
+    assert "reverse prompt" in lowered
+    assert "Lesson 1" in text
+
+
+SEG4_LIVE_TITLES = [
+    "File and image upload", "Long context", SEG4_GEMS_TITLE, "Canvas",
+]
+
+
+def test_seg4_live_demo_cues_mark_exactly_the_plans_live_capabilities(reopened):
+    """The plan's Demo column decides which slides carry a cue: the four it
+    marks **Live**, and no others."""
+    live = [
+        name for name, _, demo in _seg4_capability_rows()
+        if demo.startswith("Live")
+    ]
+    titles = dict((name, title) for name, title, _ in SEG4_CAPABILITIES)
+    assert [titles[name] for name in live] == SEG4_LIVE_TITLES
+
+    for title in SEG4_TITLES:
+        slide = _seg4_slide(reopened, title)
+        cued = "LIVE DEMO" in _slide_text(slide)
+        assert cued == (title in SEG4_LIVE_TITLES), (
+            f"{title!r}: live-demo cue {'present' if cued else 'missing'}"
+        )
+        if cued:
+            notes = slide.notes_slide.notes_text_frame.text.lower()
+            assert "live" in notes, f"{title!r}: the cue is not mirrored in the notes"
+
+
+def test_seg4_notes_carry_the_demo_script(reopened):
+    """The facilitator's running order for the segment lives in the notes,
+    step for step with the plan's demo script."""
+    script = _seg4_demo_script().lower()
+    notes = " ".join(
+        _seg4_slide(reopened, t).notes_slide.notes_text_frame.text
+        for t in SEG4_TITLES
+    ).lower()
+    for token in ("pdf", "icc prompt", "reference files", "first chat",
+                  "one iteration", "notebooklm"):
+        assert token in script, f"{token!r} is not in the plan's demo script"
+        assert token in notes, f"{token!r} is not in the Segment 4 notes"
+    # The rule the plan has the facilitator state while demoing.
+    assert "anonymised" in notes and "second monitor" in notes
+
+
+def test_seg4_notes_carry_the_reverification_reminder(reopened):
+    """The plan's availability flag: the free tier moves, so every slide
+    that promises a capability tells the facilitator to check it the week
+    before, and the flag itself is on the opener slide."""
+    opener = _slide_text(_seg4_slide(reopened, SEG4_OPENER_TITLE))
+    assert "free tier at the time of writing" in opener.lower()
+    assert "September 2026" in opener
+
+    promised = [SEG4_OPENER_TITLE] + [t for _, t, _ in SEG4_CAPABILITIES]
+    for title in promised:
+        notes = _seg4_slide(reopened, title).notes_slide.notes_text_frame.text.lower()
+        assert "re-verify" in notes, f"{title!r}: no re-verification reminder"
+        assert "week before" in notes, f"{title!r}: the reminder has no deadline"
+
+
+def test_notebooklm_slides_carry_exactly_the_plans_three_scenarios(reopened):
+    """Three NotebookLM slides, one per scenario in the plan's order, each
+    flagged as the Lesson 3 tool."""
+    section = _plan_section("### NotebookLM at use-case level")
+    for (plan_scenario, title, token), number in zip(
+            SEG4_NOTEBOOK_SCENARIOS, range(1, 4)):
+        assert f"{number}. **{plan_scenario}**" in section, (
+            f"scenario {number} in the plan is not {plan_scenario!r}"
+        )
+        case_body = section[section.index(f"{number}. **{plan_scenario}**"):]
+        assert token.lower() in case_body.lower(), (
+            f"{token!r} is not in the plan's scenario {number}"
+        )
+        text = _slide_text(_seg4_slide(reopened, title))
+        assert token.lower() in text.lower(), (
+            f"{title!r} does not carry the plan's scenario ({token!r})"
+        )
+        assert "Lesson 3" in text, f"{title!r} does not flag the Lesson 3 tool"
+
+    # Exactly three: no fourth NotebookLM slide crept in.
+    notebook_slides = [
+        s for s in _segment_ranges(reopened)[SEG4_NAME]
+        if _slide_title(s).startswith("NotebookLM")
+    ]
+    assert len(notebook_slides) == len(SEG4_NOTEBOOK_TITLES)
+
+
+def test_notebooklm_stays_at_scenario_level(reopened):
+    """Scenarios today, the walkthrough in Lesson 3 — so the slides carry
+    no step-by-step of their own."""
+    for title in SEG4_NOTEBOOK_TITLES:
+        lowered = _slide_text(_seg4_slide(reopened, title)).lower()
+        for marker in ("step 1", "step 2", "click the", "click on",
+                       "sign in", "open the menu"):
+            assert marker not in lowered, f"{title!r} walks through {marker!r}"
+
+
+def test_notebooklm_slides_carry_no_lane_colour_of_their_own(reopened):
+    """Violet says "this is the Daily Driver's tool". NotebookLM is a
+    different product and the course does not open it until Lesson 3, so
+    none of its content blocks may carry it — the only violet left is what
+    add_content_slide paints on every lane slide (the chip and the accent
+    lead under the title)."""
+    from deck.lesson2 import template
+
+    violet = template.DAILY_DRIVER.color
+    chrome = _fill_count(
+        template.add_content_slide(
+            template.new_presentation(), "baseline", lane=template.DAILY_DRIVER,
+        ),
+        violet,
+    )
+    assert chrome, "add_content_slide paints no lane colour — the test is moot"
+
+    for title in SEG4_NOTEBOOK_TITLES:
+        assert _fill_count(_seg4_slide(reopened, title), violet) == chrome, (
+            f"{title!r} colours a content block as the Daily Driver's tool"
+        )
+    # Control: a capability that is the Daily Driver's does colour its blocks.
+    assert _fill_count(_seg4_slide(reopened, SEG4_GEMS_TITLE), violet) > chrome
+
+
+def test_chaining_slide_chains_what_the_segment_demonstrated(reopened):
+    """The closing slide is the seed of the assignment's workflow thinking:
+    the two chains the segment just built, and nothing new."""
+    text = _slide_text(_seg4_slide(reopened, SEG4_CHAIN_TITLE))
+    assert "Upload → Gem → Canvas" in text
+    for step in ("Upload", "Gem", "Canvas", "notebook"):
+        assert step.lower() in text.lower(), f"the chains lose {step!r}"
+    assert "workflow" in text.lower()
+    assert "assignment" in text.lower()
+
+
+def test_every_seg4_slide_has_speaker_notes(reopened):
+    for title in SEG4_TITLES:
+        slide = _seg4_slide(reopened, title)
+        assert slide.has_notes_slide, f"{title!r} has no notes slide"
+        assert slide.notes_slide.notes_text_frame.text.strip(), (
+            f"{title!r} has empty speaker notes"
+        )
+
+
+def test_segment_4_never_names_the_other_lane(reopened):
+    """The two lanes are demonstrated separately, so Segment 4 stays
+    entirely in the Daily Driver: the Sensitive Lane and its tool are not
+    named on a slide or in a note anywhere in the segment."""
+    for text in _segment_corpus(reopened, SEG4_NAME):
+        lowered = text.lower()
+        assert "copilot" not in lowered, "Segment 4 names Copilot"
+        assert "microsoft" not in lowered, "Segment 4 names the other ecosystem"
+        assert "sensitive lane" not in lowered, "Segment 4 names the Sensitive Lane"
+
+
+def test_seg4_names_youtube_without_linking_one(reopened):
+    """The plan's first scenario is a "YouTube link turned into a textual
+    source": the deck names YouTube — the banned thing is the link, not the
+    word — and carries no URL, where the temptation is greatest."""
+    slide = _seg4_slide(reopened, SEG4_NOTEBOOK_TITLES[0])
+    corpus = _slide_corpus(slide)
+    assert "YouTube" in corpus, "the plan's scenario is not recognisable"
+    assert "captions" in corpus.lower()
+    assert not re.search(r"https?://|www\.", corpus), (
+        "the YouTube scenario carries a link"
+    )
 
 
 # --- Deck-wide --------------------------------------------------------------

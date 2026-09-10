@@ -8,12 +8,12 @@ python -m deck.lesson2.build    # Lesson 2 → dist/lesson_2_deck.pptx
 ```
 
 Output goes to `dist/` (git-ignored — the source of truth is this package).
-Requires Python 3.11+ and `python-pptx`. Tests: `python -m pytest` (`tests/test_core.py` for the shared core, `tests/test_deck.py` for Lesson 1). After a build, `python -m deck.com_check` opens the decks in real PowerPoint (Windows + pywin32) — the check that catches what a python-pptx round-trip does not.
+Requires Python 3.11+ and `python-pptx`. Tests: `python -m pytest` (`tests/test_core.py` for the shared core, `tests/test_deck.py` for Lesson 1, `tests/test_lesson2_deck.py` for Lesson 2). After a build, `python -m deck.com_check` opens the decks in real PowerPoint (Windows + pywin32) — the check that catches what a python-pptx round-trip does not.
 
 ## Core vs. per-lesson template
 
 - `core.py` — **mechanics**, lesson-independent: presentation setup at 16:9, writing fonts and colours into the theme part, the master footer, `master_next_id()` (see the gotcha below), the `solid`/`outlined` shape styles, `style(run, ...)`, and the blank-slide, text-box and notes helpers. A lesson hands it a `core.Design` (fonts, theme colour scheme, canvas, footer text and colours) and gets a presentation back. Nothing here knows a palette or a layout.
-- `template.py` (Lesson 1) and `lesson2/template.py` (Lesson 2) — **design**, one per lesson: the colour constants, the `Design` handed to the core, and the slide builders and in-slide blocks segment modules call. Lesson 1's template defines the slide builders and in-slide blocks (`add_content_slide`, `add_section_divider`, `add_placeholder_slide`, `add_demo_cue`, `add_card`, `add_band`, `add_label`); ticket 03 gives Lesson 2's template the same call shapes so segment authors work the same way in either lesson. Lesson 1's template re-exports the core helpers segment modules use (`solid`, `add_bar`, `set_notes`) so segment modules keep calling `template.solid(...)`.
+- `template.py` (Lesson 1) and `lesson2/template.py` (Lesson 2) — **design**, one per lesson: the colour constants, the `Design` handed to the core, and the slide builders and in-slide blocks segment modules call. Both templates define the same slide builders and in-slide blocks with the same call shapes (`add_title_slide`, `add_section_divider`, `add_content_slide`, `add_placeholder_slide`, `add_demo_cue`, `add_card`, `add_band`, `add_label`), so segment authors work the same way in either lesson. Lesson 1's template re-exports the core helpers segment modules use (`solid`, `add_bar`, `set_notes`) so segment modules keep calling `template.solid(...)`.
 
 Adding a lesson means adding a sub-package like `lesson2/` (its own `template.py`, `build.py`, `segments/`), never editing the core for a design reason.
 
@@ -36,9 +36,19 @@ Add real slides with `template.add_content_slide(...)` (returns the slide for cu
 
 ## Lesson 2 — where slides come from
 
-- `lesson2/build.py` — session order per the Timing Overview in `lesson_2.md`; ticket 03 of the Lesson 2 effort adds the title slide, dividers and placeholders.
-- `lesson2/template.py` — Lesson 2's design on top of the core; ticket 03 replaces the provisional stand-ins with the real palette and builders.
-- `lesson2/segments/` — one module per segment, each exposing `add_slides(prs)`; tickets 04–08 each own one module (the table lands with ticket 03).
+- `lesson2/build.py` — session order per the Timing Overview in `lesson_2.md`: title slide, then per segment a divider + that segment's slides. Each `Segment` names the lane it lives in (Segment 3 → Sensitive Lane, Segment 4 → Daily Driver, the rest neutral) and the divider takes that lane's colour.
+- `lesson2/template.py` — the single source of visual truth for Lesson 2: a light paper canvas, Cambria headings over Calibri body, and two lane colours (teal = Sensitive Lane / Copilot Chat (Basic), violet = Daily Driver / Google Gemini) that mean the lane wherever they appear — the module docstring is the colour-coding contract. Builders take an optional `lane=template.SENSITIVE_LANE` / `template.DAILY_DRIVER`; `add_lane_tag` puts the lane chip on a custom slide. Same call shapes as Lesson 1, plus `lane=`.
+- `lesson2/segments/` — one module per segment, each exposing `add_slides(prs)`. Tickets 04–08 each replace the placeholders in exactly one module:
+
+| Module | Segment | Ticket |
+|---|---|---|
+| `seg1_recap_debrief.py` | 1 — Recap + assignment debrief | 04 |
+| `seg2_sensitive_data_rule.py` | 2 — The sensitive-data rule and data-protection principles | 05 |
+| `seg3_copilot_in_practice.py` | 3 — Copilot Chat (Basic) in practice (Sensitive Lane) | 06 |
+| `seg4_gemini_in_depth.py` | 4 — Gemini in depth (+ NotebookLM preview) (Daily Driver) | 07 |
+| `seg5_assignment_close.py` | 5 — Assignment briefing + close | 08 |
+
+Add real slides with `template.add_content_slide(..., lane=...)`, set speaker notes via `template.set_notes(slide, ...)`, mark live-demo cues with `template.add_demo_cue(..., lane=...)` on the slide and in its notes, and colour-code cards by lane with `fill=template.SENSITIVE_TINT` / `template.DAILY_TINT` (a lane's `.color` as fill gives a solid label block).
 
 ## Gotcha
 

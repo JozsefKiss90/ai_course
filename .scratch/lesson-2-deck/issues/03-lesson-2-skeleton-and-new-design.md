@@ -4,10 +4,16 @@
 
 **Blocked by:** 01 — Lesson 2 session plan document; 02 — Prefactor: shared deck mechanics.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Lesson 2 builds with its own command to its own output file; Lesson 1 build and tests untouched
-- [ ] The file opens cleanly in PowerPoint (COM check); title slide, five dividers in session order with duration and mode, placeholders per segment carrying their ticket number in notes
-- [ ] Master and theme define fonts, colours and a Lesson 2 footer; the palette and canvas differ from Lesson 1 and the lane colour-coding is documented in the template's docstring
-- [ ] Builders exist for title, divider, content, placeholder, demo cue, card, band, label; the README table maps each segment module to its ticket
-- [ ] Lesson 2 test file passes with structure tests (title, dividers, placeholders, slide count, master footer and theme fonts)
+- [x] Lesson 2 builds with its own command to its own output file; Lesson 1 build and tests untouched
+- [x] The file opens cleanly in PowerPoint (COM check); title slide, five dividers in session order with duration and mode, placeholders per segment carrying their ticket number in notes
+- [x] Master and theme define fonts, colours and a Lesson 2 footer; the palette and canvas differ from Lesson 1 and the lane colour-coding is documented in the template's docstring
+- [x] Builders exist for title, divider, content, placeholder, demo cue, card, band, label; the README table maps each segment module to its ticket
+- [x] Lesson 2 test file passes with structure tests (title, dividers, placeholders, slide count, master footer and theme fonts)
+
+## Comments
+
+**2026-09-10 (agent):** Implemented. `python -m deck.lesson2.build` writes `dist/lesson_2_deck.pptx` (35 slides: title, five dividers, 29 placeholders — 3/5/7/11/3 per segment, sized from the sub-sections and demo scripts in `lesson_2.md`); the Lesson 1 build, output and tests are untouched. Design: a warm paper canvas with Cambria headings over Calibri body, near-black ink type and hairlines — not Lesson 1's dark navy. The two accent colours are the two lanes: teal = Sensitive Lane / Copilot Chat (Basic), violet = Daily Driver / Google Gemini; the `deck/lesson2/template.py` docstring is the colour-coding contract. Builders take an optional `lane=`: the Segment 3 divider and slides carry teal, Segment 4 violet, the neutral segments neither (a test enforces this). The title slide carries a two-lane stripe and a lane legend. Placeholders have a dashed outline, the `[PLACEHOLDER]` tag, the gist, and "Replaced by ticket NN" on the slide and in the notes. All Lesson 1 builder call shapes are kept (`add_title_slide`, `add_section_divider`, `add_content_slide`, `add_placeholder_slide`, `add_demo_cue`, `add_card`, `add_band`, `add_label`) plus `add_lane_tag`; `tests/test_lesson2_deck.py` has 11 structure tests against a saved-and-reopened file with the plan's Timing Overview as the oracle, including a builder round-trip with the Lesson 1 call shapes. README maps each segment module to its ticket. Both decks open cleanly via `python -m deck.com_check`; sample slides were exported to PNG and checked (one pass fixed a divider block hiding the footer and a wrapping lane chip).
+
+**2026-09-10 (agent, after code review):** Two-axis review run. Standards: the placeholder titles and gists used the spaced term "use case" (CONTEXT.md avoids it; the Lesson 1 deck test bans it) — reworded to "scenario", and the Lesson 2 test file now carries the same terminology audit as Lesson 1 so it cannot recur. Note for ticket 09: `lesson_2.md` itself uses "use case" throughout, inherited from the source prompt. Spec: `add_content_slide` lacked Lesson 1's `compact=` parameter, so the call shapes were not identical — restored, with the same `COMPACT_HEADER_RISE` / `COMPACT_CONTENT_TOP` knobs. The lane colour test asserted that the neutral segments carry no lane colour, which contradicted the segment docstrings that tell tickets 05 and 08 to colour-code lanes where they name a tool — the test now guards only Segments 3 and 4 (own colour on every slide, never the other lane's). `Segment.modules` is a list as in the Lesson 1 build. Remaining judgement calls left as they are: the template deliberately duplicates Lesson 1's builder bodies (design lives per lesson by the README's rule), and the Segment 4 round-up slide merges the two slide-only and two mentioned capabilities — ticket 07 may split it.

@@ -25,6 +25,14 @@ def _slide_text(slide):
     )
 
 
+def _slide_corpus(slide):
+    """Everything a slide says: its visible text and its speaker notes."""
+    text = _slide_text(slide)
+    if slide.has_notes_slide:
+        text += "\n" + slide.notes_slide.notes_text_frame.text
+    return text
+
+
 @pytest.fixture(scope="module")
 def reopened():
     """Build the deck, save it, and reopen it the way PowerPoint would."""
@@ -87,7 +95,7 @@ def test_dividers_appear_in_session_order_after_the_title(reopened):
 EXPECTED_PLACEHOLDERS = {
     "Recap + assignment debrief": (0, "04"),  # ticket 04 landed
     "The sensitive-data rule and data-protection principles": (0, "05"),  # ticket 05 landed
-    "Copilot Chat (Basic) in practice": (7, "06"),
+    "Copilot Chat (Basic) in practice": (0, "06"),  # ticket 06 landed
     "Gemini in depth (+ NotebookLM preview)": (11, "07"),
     "Assignment briefing + close": (3, "08"),
 }
@@ -126,7 +134,8 @@ def test_placeholder_slides_name_their_ticket_on_the_slide_and_in_notes(reopened
 
 
 def test_total_slide_count(reopened):
-    # 1 title + 5 dividers + 3 Segment 1 + 5 Segment 2 slides + 21 placeholders
+    # 1 title + 5 dividers + 3 Segment 1 + 5 Segment 2 + 7 Segment 3 slides
+    #   + 14 placeholders
     assert len(reopened.slides) == 35
 
 
@@ -594,6 +603,305 @@ def test_seg2_notes_supersede_the_lesson_1_interim_rule(reopened):
         assert "couldn't publish" not in on_slide, f"{title!r} re-teaches the old rule"
 
 
+# --- Segment 3: Copilot Chat (Basic) in practice (ticket 06) -----------------
+
+SEG3_NAME = "Copilot Chat (Basic) in practice"
+
+# The compiled list of agents and apps available under the institutional
+# licence — the oracle for which tools this segment must introduce.
+TOOLS_PATH = PLAN_PATH.parent / ".scratch" / "copilot_free_to_use_tools.md"
+
+SCENARIOS_TITLE = "Four scenarios in the Sensitive Lane"
+LIMITS_TITLE = "Limits and guardrails"
+ACROBAT_TITLE = "Adobe Acrobat in Teams and Copilot"
+COACH_TITLE = "Prompt Coach — your own prompt, critiqued"
+STUDY_TITLE = "Study and Learn — concepts, flashcards, quizzes"
+CANVA_TITLE = "Canva in Teams — prototype the presentation"
+GENSPARK_TITLE = "genspark.ai — build the actual presentation"
+SEG3_TITLES = [
+    SCENARIOS_TITLE, LIMITS_TITLE, ACROBAT_TITLE, COACH_TITLE, STUDY_TITLE,
+    CANVA_TITLE, GENSPARK_TITLE,
+]
+
+
+def _seg3_demo_script():
+    """The plan's Segment 3 demo script — which step runs live."""
+    text = PLAN_PATH.read_text(encoding="utf-8")
+    start = text.index("**Demo script (which use case runs live):**")
+    return text[start:text.index("**Rule stated while demoing:**", start)]
+
+
+def _seg3_corpus(reopened):
+    """Segment 3's divider and slides, each as slide text plus its notes."""
+    slides = _segment_ranges(reopened)[SEG3_NAME]
+    all_slides = list(reopened.slides)
+    divider = all_slides[all_slides.index(slides[0]) - 1]
+    return [_slide_corpus(slide) for slide in [divider, *slides]]
+
+
+def test_seg3_slides_present_in_plan_order_and_not_placeholders(reopened):
+    """All seven slides live between Segment 3's divider and Segment 4's, in
+    the plan's order, with no placeholder left."""
+    segment = _segment_ranges(reopened)[SEG3_NAME]
+    assert len(segment) == len(SEG3_TITLES)
+    texts = [_slide_text(s) for s in segment]
+    positions = []
+    for title in SEG3_TITLES:
+        matches = [i for i, t in enumerate(texts) if title in t]
+        assert matches, f"{title!r} is not in Segment 3"
+        assert "[PLACEHOLDER]" not in texts[matches[0]]
+        positions.append(matches[0])
+    assert positions == sorted(positions)
+
+
+# The plan's four Sensitive Lane scenarios: the category, and a token from
+# the one-line prompt the plan gives it.
+SEG3_SCENARIOS = [
+    ("Internal administration", "decision log and action list"),
+    ("Unsubmitted proposals", "evaluation criteria"),
+    ("Personnel matters", "workload-distribution note"),
+    ("Strategic financial planning", "cost projection table"),
+]
+
+
+def test_scenarios_slide_carries_the_plans_four_scenarios_in_order(reopened):
+    plan = _plan_section("### Sensitive Lane use cases")
+    slide = _slide_by_title(reopened, SCENARIOS_TITLE)
+    tops = []
+    for category, prompt in SEG3_SCENARIOS:
+        assert category in plan, f"{category!r} is not one of the plan's scenarios"
+        assert prompt in plan, f"{prompt!r} is not in the plan's prompt for {category}"
+        shape = _shape_containing(slide, category)
+        assert prompt in shape.text_frame.text, (
+            f"{category!r} is not shown with its prompt"
+        )
+        tops.append(shape.top)
+    assert tops == sorted(tops), "the scenarios are out of the plan's order"
+
+
+def test_scenarios_slide_names_the_icc_prompt_shape(reopened):
+    """Each scenario is a routing example plus the prompt shape from
+    Lesson 1 — named, never re-taught."""
+    text = _slide_text(_slide_by_title(reopened, SCENARIOS_TITLE))
+    assert "ICC" in text
+    assert "Instruction · Context · Constraints" in text
+    assert "Lesson 1" in text
+
+
+def test_limits_slide_states_the_no_grounding_limit_and_the_rationale(reopened):
+    plan = _plan_section("### Limits and guardrails")
+    text = _slide_text(_slide_by_title(reopened, LIMITS_TITLE))
+    lowered = text.lower()
+    for token in ("SharePoint", "OneDrive"):
+        assert token in plan, f"{token!r} is not in the plan's limits"
+        assert token in text, f"{token!r} missing from the limits slide"
+    # The limit itself: it does not read the institution's files by itself.
+    assert "does not read the institution" in lowered
+    assert "paste or attach" in lowered
+    # The enterprise behaviour that makes this the Sensitive Lane.
+    assert "tenant" in lowered
+    assert "not used to train" in lowered
+    # And the rationale for reserving it.
+    assert "reserve it for the sensitive work" in lowered
+
+
+# One slide per tool in the compiled list, each introduced through
+# something a research manager actually does — the token is asserted
+# against the plan's tool table first.
+COMPILED_TOOLS = [
+    ("Adobe Acrobat", ACROBAT_TITLE, "Teams channel"),
+    ("Prompt Coach", COACH_TITLE, "Lesson 1 assignment"),
+    ("Study and Learn", STUDY_TITLE, "eligible costs"),
+    ("Canva", CANVA_TITLE, "multi-page"),
+    ("genspark.ai", GENSPARK_TITLE, "presentation"),
+]
+
+
+def test_every_tool_in_the_compiled_list_has_its_own_scenario_slide(reopened):
+    tools = TOOLS_PATH.read_text(encoding="utf-8")
+    plan = _plan_section("### One use case per tool in the compiled tool list")
+    segment = _segment_ranges(reopened)[SEG3_NAME]
+    for tool, title, scenario_token in COMPILED_TOOLS:
+        assert tool.lower() in tools.lower(), (
+            f"{tool!r} is not in the compiled tool list"
+        )
+        assert scenario_token.lower() in plan.lower(), (
+            f"{scenario_token!r} is not in the plan's table for {tool}"
+        )
+        slide = _slide_by_title(reopened, title)
+        assert slide in segment, f"{tool}: the slide is not inside Segment 3"
+        text = _slide_text(slide)
+        assert tool in text, f"{tool!r} is not named on its own slide"
+        assert scenario_token.lower() in text.lower(), (
+            f"{tool}: the slide does not say what the tool is for"
+        )
+
+
+# Acrobat's five free-to-use features, named as the compiled list names
+# them, and the paid capabilities that must be flagged as out of reach.
+ACROBAT_FREE = [
+    "High-quality viewing", "Central access to PDFs", "Streamline PDF review",
+    "Keep reviewers informed", "Collaborate with confidence",
+]
+ACROBAT_PAID = [
+    "Convert PDFs to Word", "combine multiple documents", "add a password",
+    "attributions", "meeting transcript",
+]
+
+
+def test_acrobat_slide_shows_the_free_features(reopened):
+    tools = TOOLS_PATH.read_text(encoding="utf-8").lower()
+    text = _slide_text(_slide_by_title(reopened, ACROBAT_TITLE)).lower()
+    assert "free to use" in text
+    for feature in ACROBAT_FREE:
+        assert feature.lower() in tools, (
+            f"{feature!r} is not a free-to-use feature in the compiled list"
+        )
+        assert feature.lower() in text, f"{feature!r} missing from the Acrobat slide"
+
+
+def test_acrobat_premium_and_ai_features_are_marked_not_available(reopened):
+    """Every paid capability appears only inside a block that says it is
+    not available under the institutional licence."""
+    tools = TOOLS_PATH.read_text(encoding="utf-8").lower()
+    slide = _slide_by_title(reopened, ACROBAT_TITLE)
+    assert "AI Assistant" in _slide_text(slide)
+    for capability in ACROBAT_PAID:
+        assert capability.lower() in tools, (
+            f"{capability!r} is not a paid capability in the compiled list"
+        )
+        shape = _shape_containing(slide, capability)
+        assert "not available" in shape.text_frame.text.lower(), (
+            f"{capability!r} is not marked as not available"
+        )
+
+
+# The plan runs three of Segment 3 on screen: the first Sensitive Lane
+# scenario, Prompt Coach, and Study and Learn.
+SEG3_LIVE_TITLES = [SCENARIOS_TITLE, COACH_TITLE, STUDY_TITLE]
+
+
+def test_live_demo_cues_mark_exactly_the_slides_the_plan_runs_live(reopened):
+    script = _seg3_demo_script()
+    for tool in ("Prompt Coach", "Study and Learn"):
+        assert f"{tool} live" in script, f"the plan does not run {tool} live"
+    assert "use case 1 live" in script, "the plan does not run scenario 1 live"
+
+    for title in SEG3_TITLES:
+        slide = _slide_by_title(reopened, title)
+        cued = "LIVE DEMO" in _slide_text(slide)
+        assert cued == (title in SEG3_LIVE_TITLES), (
+            f"{title!r}: live-demo cue {'present' if cued else 'missing'}"
+        )
+        if cued:
+            notes = slide.notes_slide.notes_text_frame.text.lower()
+            assert "live" in notes, f"{title!r}: the cue is not mirrored in the notes"
+
+
+def test_seg3_notes_carry_the_demo_script(reopened):
+    """The facilitator's running order for the segment lives in the notes,
+    step for step with the plan's demo script."""
+    script = _seg3_demo_script().lower()
+    notes = " ".join(
+        _slide_by_title(reopened, t).notes_slide.notes_text_frame.text
+        for t in SEG3_TITLES
+    ).lower()
+    for token in ("enterprise notice", "meeting notes", "prompt coach",
+                  "permission", "flashcards", "quiz", "slide only"):
+        assert token in script, f"{token!r} is not in the plan's demo script"
+        assert token in notes, f"{token!r} is not in the Segment 3 notes"
+    # The rule the facilitator states while demoing.
+    assert "anonymis" in notes and "check" in notes
+
+
+# The tools whose slide is shown rather than demonstrated. The plan wants
+# each of them to carry what the facilitator would type or do, not only
+# prose about the tool.
+SEG3_SLIDE_ONLY_TITLES = [ACROBAT_TITLE, CANVA_TITLE, GENSPARK_TITLE]
+
+# The shortest a "What you type" / "What you do" line can be and still be
+# something a participant could reproduce.
+REPRODUCIBLE_MIN_CHARS = 60
+
+
+def test_slide_only_tools_show_what_to_type_or_do(reopened):
+    """Two tools are demonstrated; the rest are shown as slides, and the
+    plan wants the prompt on those slides rather than a description of
+    one."""
+    plan = _plan_section("### One use case per tool in the compiled tool list")
+    assert "the prompt on the slide" in plan, (
+        "the plan no longer asks the slide-only tools to carry their prompt"
+    )
+    for title in [COACH_TITLE, *SEG3_SLIDE_ONLY_TITLES]:
+        slide = _slide_by_title(reopened, title)
+        blocks = [
+            sh for sh in slide.shapes
+            if sh.has_text_frame
+            and sh.text_frame.text.startswith(("What you type", "What you do"))
+        ]
+        assert len(blocks) == 1, f"{title!r}: {len(blocks)} what-you-do blocks"
+        body = blocks[0].text_frame.text
+        assert len(body) >= REPRODUCIBLE_MIN_CHARS, (
+            f"{title!r}: {body!r} is too thin to reproduce"
+        )
+
+
+def _fill_count(slide, color):
+    """How many shapes on the slide are filled with `color`."""
+    count = 0
+    for shape in slide.shapes:
+        try:
+            if shape.fill.type is not None and shape.fill.fore_color.rgb == color:
+                count += 1
+        except (AttributeError, TypeError):
+            continue
+    return count
+
+
+def test_tools_outside_the_tenant_carry_no_lane_colour_of_their_own(reopened):
+    """Teal says "this is the Sensitive Lane's tool". Canva and genspark.ai
+    sit outside the institutional tenant and say so on their own slides, so
+    none of their content blocks may carry it — the only teal left is what
+    add_content_slide paints on every lane slide (the chip and the accent
+    lead under the title)."""
+    from deck.lesson2 import template
+
+    teal = template.SENSITIVE_LANE.color
+    chrome = _fill_count(
+        template.add_content_slide(
+            template.new_presentation(), "baseline", lane=template.SENSITIVE_LANE,
+        ),
+        teal,
+    )
+    assert chrome, "add_content_slide paints no lane colour — the test is moot"
+
+    for title in (CANVA_TITLE, GENSPARK_TITLE):
+        assert _fill_count(_slide_by_title(reopened, title), teal) == chrome, (
+            f"{title!r} colours a content block as the Sensitive Lane's tool"
+        )
+    # Control: a tool that does run inside the tenant does colour its blocks.
+    assert _fill_count(_slide_by_title(reopened, STUDY_TITLE), teal) > chrome
+
+
+def test_every_seg3_slide_has_speaker_notes(reopened):
+    for title in SEG3_TITLES:
+        slide = _slide_by_title(reopened, title)
+        assert slide.has_notes_slide, f"{title!r} has no notes slide"
+        assert slide.notes_slide.notes_text_frame.text.strip(), (
+            f"{title!r} has empty speaker notes"
+        )
+
+
+def test_segment_3_never_names_the_other_lane(reopened):
+    """The two lanes are demonstrated separately, so Segment 3 stays
+    entirely in the Sensitive Lane: the Daily Driver and its tool are not
+    named on a slide or in a note anywhere in the segment."""
+    for text in _seg3_corpus(reopened):
+        lowered = text.lower()
+        assert "gemini" not in lowered, "Segment 3 names Gemini"
+        assert "daily driver" not in lowered, "Segment 3 names the Daily Driver"
+
+
 # --- Deck-wide --------------------------------------------------------------
 
 
@@ -602,10 +910,7 @@ def test_no_youtube_link_anywhere_in_the_deck(reopened):
     allowed — Segment 4 describes turning a YouTube link into a textual
     source — so what is banned is a link to one."""
     for i, slide in enumerate(reopened.slides):
-        corpus = _slide_text(slide)
-        if slide.has_notes_slide:
-            corpus += "\n" + slide.notes_slide.notes_text_frame.text
-        lowered = corpus.lower()
+        lowered = _slide_corpus(slide).lower()
         for marker in ("youtube.com", "youtu.be", "m.youtube"):
             assert marker not in lowered, f"{marker!r} on slide {i + 1}"
 
@@ -715,10 +1020,7 @@ FORBIDDEN_TERMS = [
 
 def test_terminology_audit_no_forbidden_synonyms(reopened):
     for i, slide in enumerate(reopened.slides):
-        corpus = _slide_text(slide)
-        if slide.has_notes_slide:
-            corpus += "\n" + slide.notes_slide.notes_text_frame.text
-        corpus = corpus.lower()
+        corpus = _slide_corpus(slide).lower()
         for term in FORBIDDEN_TERMS:
             assert term.lower() not in corpus, f"{term!r} on slide {i + 1}"
 

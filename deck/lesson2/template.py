@@ -6,8 +6,10 @@ colours and the footer stay uniform across segment modules. The builders
 and in-slide blocks keep the call shapes of deck/template.py (Lesson 1) —
 add_title_slide, add_section_divider, add_content_slide,
 add_placeholder_slide, add_demo_cue, add_card, add_band, add_label — so a
-segment author works the same way in either lesson. add_open_card is the
-one addition: a card whose text the caller writes run by run.
+segment author works the same way in either lesson. The additions are
+add_open_card, a card whose text the caller writes run by run, and the two
+blocks built on top of it and add_card: add_list_card (a heading over
+bulleted items) and add_detail_card (a bold lead over lines of detail).
 
 Visual language — deliberately not Lesson 1's dark navy: a light, warm
 paper canvas with near-black ink type, a serif heading face (Cambria) over
@@ -428,6 +430,47 @@ def add_card(slide, left, top, width, height, fill, heading, heading_color,
         run = para.add_run()
         run.text = body
         style(run, size=14, color=WHITE if dark else TEXT)
+    return card
+
+
+def add_list_card(slide, left, top, width, height, fill, heading, items,
+                  size=13):
+    """A card whose body is a short list rather than one line of prose.
+    add_card's heading over bulleted items, top-anchored so a half-full card
+    does not float its list down the middle."""
+    card = add_card(slide, left, top, width, height, fill, heading, INK)
+    tf = card.text_frame
+    tf.vertical_anchor = MSO_ANCHOR.TOP
+    tf.margin_top = Inches(0.16)
+    for item in items:
+        para = tf.add_paragraph()
+        para.space_before = Pt(5)
+        run = para.add_run()
+        run.text = f"·  {item}"
+        style(run, size=size, color=TEXT)
+    return card
+
+
+def add_detail_card(slide, left, top, width, height, edge, heading, lines,
+                    heading_size=13, line_size=11.5):
+    """A bold lead over one or more lines of detail, on add_open_card.
+    Top-anchored, so the leads line up across a row of cards whose detail
+    wraps differently. One line reads as a sentence under its lead; several
+    take bullets, because at that point they are a list."""
+    card = add_open_card(slide, left, top, width, height, edge)
+    tf = card.text_frame
+    tf.vertical_anchor = MSO_ANCHOR.TOP
+    tf.margin_top = Inches(0.14)
+    run = tf.paragraphs[0].add_run()
+    run.text = heading
+    style(run, size=heading_size, color=INK, font=HEADING_FONT, bold=True)
+    marker = "·  " if len(lines) > 1 else ""
+    for line in lines:
+        para = tf.add_paragraph()
+        para.space_before = Pt(3)
+        run = para.add_run()
+        run.text = f"{marker}{line}"
+        style(run, size=line_size, color=TEXT)
     return card
 
 

@@ -26,12 +26,11 @@ say so in one sentence rather than teaching the old rule again.
 """
 
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
-from pptx.util import Inches, Pt
+from pptx.util import Inches
 
 from deck.lesson2 import template
 from deck.lesson2.template import (
-    DAILY_DRIVER, HEADING_FONT, INK, MUTED, PANEL, SENSITIVE_LANE, SLATE, TEXT,
-    WHITE,
+    DAILY_DRIVER, INK, MUTED, PANEL, SENSITIVE_LANE, SLATE, TEXT, WHITE,
 )
 
 # The content area, in inches, as the two-column geometry every slide here
@@ -40,24 +39,6 @@ _LEFT = template.CONTENT_LEFT.inches
 _WIDTH = template.CONTENT_WIDTH.inches
 _COL_WIDTH = 5.95
 _RIGHT_COL = _LEFT + _COL_WIDTH + 0.23
-
-
-def _list_card(slide, left, top, width, height, fill, heading, items, size=13):
-    """A card whose body is a short list rather than one line of prose."""
-    card = template.add_card(
-        slide, Inches(left), Inches(top), Inches(width), Inches(height),
-        fill, heading, INK,
-    )
-    tf = card.text_frame
-    tf.vertical_anchor = MSO_ANCHOR.TOP
-    tf.margin_top = Inches(0.16)
-    for item in items:
-        para = tf.add_paragraph()
-        para.space_before = Pt(5)
-        run = para.add_run()
-        run.text = f"·  {item}"
-        template.style(run, size=size, color=TEXT)
-    return card
 
 
 def _run_row(slide, top, height, edge, runs, size=13):
@@ -73,28 +54,6 @@ def _run_row(slide, top, height, edge, runs, size=13):
         run = para.add_run()
         run.text = text
         template.style(run, size=size, color=color, bold=bold)
-    return card
-
-
-def _line_card(slide, left, top, width, height, edge, heading, line,
-               heading_size=13, line_size=11.5):
-    """A reference row: a bold lead over one line of detail, on the
-    template's open card. Top-anchored, so the leads line up across a row
-    of cards whose detail lines wrap differently."""
-    card = template.add_open_card(
-        slide, Inches(left), Inches(top), Inches(width), Inches(height), edge)
-    tf = card.text_frame
-    tf.vertical_anchor = MSO_ANCHOR.TOP
-    tf.margin_top = Inches(0.14)
-    run = tf.paragraphs[0].add_run()
-    run.text = heading
-    template.style(run, size=heading_size, color=INK, font=HEADING_FONT,
-                   bold=True)
-    para = tf.add_paragraph()
-    para.space_before = Pt(2)
-    run = para.add_run()
-    run.text = line
-    template.style(run, size=line_size, color=TEXT)
     return card
 
 
@@ -151,8 +110,9 @@ def _lane_column(slide, left, lane, answer, tool, covers):
     # label block both lines want the same axis.
     header.text_frame.paragraphs[1].alignment = PP_ALIGN.CENTER
 
-    _list_card(slide, left, _COVERS_TOP, _COL_WIDTH, _COVERS_HEIGHT,
-               lane.tint, "What goes here", covers)
+    template.add_list_card(
+        slide, Inches(left), Inches(_COVERS_TOP), Inches(_COL_WIDTH),
+        Inches(_COVERS_HEIGHT), lane.tint, "What goes here", covers)
 
 
 def _routing_example(slide, top, task, lane, reason):
@@ -342,8 +302,9 @@ def _directive_slide(prs):
         prs, "Institutional rules: the dean's directive as reference")
 
     for left, (heading, body) in zip((_LEFT, _RIGHT_COL), (_UMBRELLA, _FACULTY)):
-        _line_card(slide, left, _DOC_TOP, _COL_WIDTH, _DOC_HEIGHT, SLATE,
-                   heading, body, heading_size=15)
+        template.add_detail_card(
+            slide, Inches(left), Inches(_DOC_TOP), Inches(_COL_WIDTH),
+            Inches(_DOC_HEIGHT), SLATE, heading, [body], heading_size=15)
 
     template.add_label(
         slide, template.CONTENT_LEFT, Inches(2.50), template.CONTENT_WIDTH,
@@ -355,8 +316,9 @@ def _directive_slide(prs):
     for index, (heading, line) in enumerate(_KEY_POINTS):
         left = _LEFT if index % 2 == 0 else _RIGHT_COL
         top = _POINT_TOP + (index // 2) * _POINT_PITCH
-        _line_card(slide, left, top, _COL_WIDTH, _POINT_HEIGHT, INK,
-                   heading, line)
+        template.add_detail_card(
+            slide, Inches(left), Inches(top), Inches(_COL_WIDTH),
+            Inches(_POINT_HEIGHT), INK, heading, [line])
 
     template.add_label(
         slide, template.CONTENT_LEFT, Inches(5.88), template.CONTENT_WIDTH,
@@ -425,8 +387,9 @@ def _anonymise_slide(prs):
             Inches(0.54), lane.color, f"{lane.name} — anonymise first", WHITE,
         )
 
-    _list_card(slide, _LEFT, 3.22, _WIDTH, 1.70, PANEL,
-               "What anonymising removes or replaces", _ANONYMISE_ITEMS)
+    template.add_list_card(
+        slide, Inches(_LEFT), Inches(3.22), Inches(_WIDTH), Inches(1.70),
+        PANEL, "What anonymising removes or replaces", _ANONYMISE_ITEMS)
 
     template.add_card(
         slide, Inches(_LEFT), Inches(5.02), Inches(_WIDTH), Inches(1.02),

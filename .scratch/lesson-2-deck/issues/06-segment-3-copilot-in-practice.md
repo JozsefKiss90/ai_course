@@ -4,10 +4,38 @@
 
 **Blocked by:** 03 — Lesson 2 skeleton with a new design template.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Segment 3 placeholders replaced; slides in plan order; lane colour-coding applied
-- [ ] Every tool in the compiled list has a use-case slide; Acrobat's premium/AI features are marked as not available
-- [ ] Limits slide states the no-grounding limit and the reserve-for-sensitive rationale
-- [ ] Demo cues present on the slides the plan marks as live, mirrored in notes; the word "Gemini" appears nowhere in this segment's slides or notes (tested)
-- [ ] Speaker notes on every slide; deck rebuilds and tests pass
+- [x] Segment 3 placeholders replaced; slides in plan order; lane colour-coding applied
+- [x] Every tool in the compiled list has a use-case slide; Acrobat's premium/AI features are marked as not available
+- [x] Limits slide states the no-grounding limit and the reserve-for-sensitive rationale
+- [x] Demo cues present on the slides the plan marks as live, mirrored in notes; the word "Gemini" appears nowhere in this segment's slides or notes (tested)
+- [x] Speaker notes on every slide; deck rebuilds and tests pass
+
+## Comments
+
+**2026-09-10 (agent):** Implemented. `deck/lesson2/segments/seg3_copilot_in_practice.py` replaces the seven Segment 3 placeholders with the plan's seven slides, in its order. The deck still builds to 35 slides.
+
+Slide by slide. **Four scenarios in the Sensitive Lane** carries the plan's four categories as one row each — the category and its one-line prompt on the same line, over what is prepared before anything is pasted (names replaced by roles, constraints as roles and hours) — under a caption naming ICC as Instruction · Context · Constraints and the rule that the lane decides where a prompt goes, never how it is written. A live cue runs scenario 1. **Limits and guardrails** is the plan's four cards — the tenant boundary, the no-SharePoint/OneDrive-grounding limit, why general work stays out, and the anonymise-anyway rule — closing on the band "Reserve it for the sensitive work".
+
+Then one slide per tool from `.scratch/copilot_free_to_use_tools.md`, each opened by the piece of research-management work it is for and each showing what the facilitator types or does. **Adobe Acrobat**: the compiled list's five free features in its own words on the left, two "Not available" blocks on the right (Premium; the AI Assistant add-on), and the review steps below. **Prompt Coach**: the prompt you paste, what comes back, and the Lesson 1 meta-prompting link — run live. **Study and Learn**: understand / practise / check, the Education-account requirement, and why the quiz is how a presentation gets tested — run live. **Canva in Teams** and **genspark.ai**: prototype and build, with the chain read left to right on the genspark slide and the routing rule applied to every step of it.
+
+Notes carry the demo script step for step: the enterprise notice before the first slide, the three live steps with what to read aloud and when to cut, "slide only" and a time budget on the other four, and the rule stated while demoing — every output is checked, the tenant boundary buys confidentiality, not correctness.
+
+Tests: sixteen Segment 3 tests in `tests/test_lesson2_deck.py`. The plan and the compiled tool list are the oracles — the four scenarios and their prompts against the plan's scenario section, the tool table's framing token per tool, Acrobat's free and paid capabilities against the compiled list (every paid one asserted to sit inside a block that says "not available"), and the live cues against the plan's demo script. One test asserts neither "Gemini" nor "Daily Driver" appears on a slide, in a note, or on the divider anywhere in the segment. `EXPECTED_PLACEHOLDERS` for Segment 3 is now 0.
+
+Every slide was exported to PNG through real PowerPoint and read back. That caught what a python-pptx round-trip does not: two demo-cue bands whose text wrapped onto a second line and overflowed the band, a title that wrapped to two lines, and four cards sized taller than their content.
+
+**2026-09-10 (agent, after code review):** Two-axis review run; both axes reported.
+
+The material fix was the lane colour. `_tool_slide` painted every tool slide's scenario band teal, including Canva and genspark.ai — whose own slides say the work leaves the institutional tenant. Teal means "this is the Sensitive Lane's tool" in this deck, so it was asserting the opposite of the caution beside it. Those two slides are now slate throughout and the lane chip is their only teal; a test computes what `add_content_slide` itself paints and asserts neither slide exceeds it, with the Study and Learn slide as the control. This continues the narrowing ticket 05 started: a lane colour only where the slide names that lane's tool as where work goes.
+
+Second, the plan asks that the tools that are not demonstrated be "shown as slides with the prompt on the slide", and they carried prose only. Acrobat, Canva and genspark.ai now each have a "What you do" / "What you type" block — the review steps, the prototype steps, and a real genspark prompt — with a test that the block exists and is long enough to reproduce.
+
+Scope creep the review found and this removed: the genspark slide had a card briefing next week's assignment, which ticket 08 owns and which the slide's own notes contradicted ("Do not brief the assignment here"). It is now one caption pointing at Segment 5. The Study and Learn slide claimed the agent is "open to everyone in the Cohort" — a licence claim in neither the plan nor the compiled list; the slide now says only what the source says, and the notes tell the facilitator to confirm it in their own account. Factual drift fixed on the Acrobat slide: "reconciling four sets of tracked changes" became "four separate attachments", which is what the source describes, and the notes now flag that redact and export appear in the source's blurb but in none of its three tiers. The three slide-only tools' note budgets add up to the plan's 1.5 minutes rather than 100 seconds.
+
+Standards: `_list_card` and `_line_card` were near-copies of Segment 2's, and `deck/README.md` puts in-slide building blocks in `lesson2/template.py`. Both are now `template.add_list_card` and `template.add_detail_card` — one heading over bulleted items, one bold lead over lines of detail, bullets appearing once there is more than one line — taking EMU like every other builder, with Segment 2 calling them and its private copies deleted. The `heading_color` knob no caller used is gone, `_tool_slide`'s bare `size=` is now `band_size`, and the private inch-converting shim Segment 3 briefly had was inlined, because the module already calls `template.add_card(slide, Inches(left), ...)` directly. On the test side, the slide-text-plus-notes walk the YouTube, terminology and Segment 3 tests each did separately is now one `_slide_corpus`.
+
+Judgement calls left standing. The Canva slide keeps a tenant caution the plan attaches only to genspark: Canva is equally outside the tenant, and an outside-the-tenant tool taught inside the Sensitive Lane segment without the caution would be the gap. The Study and Learn slide keeps its assignment card — unlike the genspark one, the plan asks for it ("the tool that makes the assignment's 'educational presentation' testable").
+
+Left for ticket 09: `CONTEXT.md` and `course_roadmap.md` still say Canva is dropped from the Core Roster, which this segment contradicts. The effort's spec assigns that update to the integration ticket, so it is untouched here.

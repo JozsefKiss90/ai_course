@@ -4,10 +4,22 @@
 
 **Blocked by:** 04, 05, 06, 07, 08.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Zero placeholder slides; Lesson 2 deck regenerates in one run and opens cleanly in PowerPoint
-- [ ] Per-segment slide counts pinned and density-guarded against the plan's Timing Overview; total timing at most 60 minutes
-- [ ] Deck-wide tests: lane separation by segment, no YouTube URL, terminology audit, notes on every content slide, demo cues mirrored in notes, explicit fonts everywhere
-- [ ] All slides visually reviewed (exported images) for overflow and consistency; design confirmed distinct from Lesson 1
-- [ ] Roadmap Lesson 2 outline/assignment, CONTEXT.md Core Roster entry and the deck README updated; Lesson 1 build and tests still pass
+- [x] Zero placeholder slides; Lesson 2 deck regenerates in one run and opens cleanly in PowerPoint
+- [x] Per-segment slide counts pinned and density-guarded against the plan's Timing Overview; total timing at most 60 minutes
+- [x] Deck-wide tests: lane separation by segment, no YouTube URL, terminology audit, notes on every content slide, demo cues mirrored in notes, explicit fonts everywhere
+- [x] All slides visually reviewed (exported images) for overflow and consistency; design confirmed distinct from Lesson 1
+- [x] Roadmap Lesson 2 outline/assignment, CONTEXT.md Core Roster entry and the deck README updated; Lesson 1 build and tests still pass
+
+## Comments
+
+**2026-09-11 (agent):** Integration pass done; the Lesson 2 deck is presentation-ready. Zero placeholders, 40 slides (1 title + 5 dividers + 3/5/7/15/4), rebuilt in one run and COM-verified to open in real PowerPoint alongside Lesson 1.
+
+The audits are a ticket-09 integration section in `tests/test_lesson2_deck.py`, joining the deck-wide tests earlier tickets already left in the module (no YouTube URL, explicit fonts and sizes, terminology audit against the CONTEXT.md Avoid-lists, lane colour-coding, no re-teaching in the recap). New: zero placeholders anywhere; per-segment slide counts pinned and density-guarded at one slide per minute of that segment's Timing Overview duration; the durations shown on the dividers adding up to the 60 minutes the title slide promises; speaker notes on every content slide; every LIVE DEMO cue sitting in one of the two demo segments and mirrored in that slide's notes; and one spelling of *anonymise* deck-wide. Lane separation is now stated once, read off the `lane=` a segment declares in `deck/lesson2/build.py` rather than off two segment names — it replaces the per-segment `test_segment_3/4_never_names_the_other_lane`, which said the same thing twice. Segment 4 sits exactly at the density limit (15 slides / 15 min) by design: the plan's demo script runs five of its capability slides as one 1.5-minute batch. 146 tests pass, Lesson 1 included.
+
+Beyond the tests: the full text-and-notes dump read end-to-end for flow (the cross-references line up — Prompt Coach and Gems answer the debrief's captured problems, Segment 2's list is referenced by name in both demo segments, the chaining slide hands over to the assignment, Practice Week 1 → W3 and Lesson 3 → W4 throughout), and all 40 slides reviewed as exported PNGs: no overflow, cards and bands consistent segment to segment, and the paper/Cambria/two-lane look clearly not Lesson 1's navy. One inconsistency found and fixed — "anonymize-or-fictional" in the recap map, the single American spelling in a deck that says "anonymise" 45 times; corrected in `lesson_2.md` too, since the plan is the oracle. Note for later: Lesson 1's deck is American throughout ("anonymized"), so the two decks still differ from each other. Left alone deliberately — normalising Lesson 1 is outside this ticket and would churn a delivered deck.
+
+Docs: the roadmap's Lesson 2 outline now matches `lesson_2.md` and its assignment is the workflow-orchestration one (the "three real work tasks" wording is gone), the W2 row and the Session Outlines preamble point at the detailed plan, and the Core Roster note in both `CONTEXT.md` and the roadmap records Canva (Teams app, prototyping) and genspark.ai (the actual deck) as taught in one narrow role each, outside the roster and outside the tenant. `deck/README.md` gained "The plan is the oracle" and a "Before you present" checklist (tests → build + `com_check` → the PNG pass), and both lessons' module tables now read as complete.
+
+Two-axis review run; its real findings fixed: a vacuous element in the derived lane test (`other.tool` can never fail once its first word is checked), the timing test rewritten to read the durations off the built dividers instead of summing a constant against itself, `_is_divider`'s text heuristic replaced by a structural `_dividers()`, the demo-cue count pin dropped as a restatement of the two per-segment pins, `test_total_slide_count` derived from the per-segment pins instead of repeating them in a comment, the now-vacuous `test_placeholder_slides_name_their_ticket_on_the_slide_and_in_notes` retired with the rest of the placeholder scaffolding, and the CONTEXT.md change folded back into the Core Roster entry — a new ubiquitous-language term with its own Avoid-list was more than the ticket asked for and would have silently widened the deck-wide terminology audit. Both new guards mutation-checked: they fail when the deck breaks them.

@@ -56,7 +56,7 @@ _RECAP_ROWS = [
      "The first becomes the full two-lane rule; the second, the directive's "
      "“critical checking of every output”",
      "Segment 2"),
-    ("The anonymize-or-fictional Anchor Project rule",
+    ("The anonymise-or-fictional Anchor Project rule",
      "The institutional anonymise-before-upload rule for documents; the "
      "routing test in the assignment",
      "Segments 2 · 5"),

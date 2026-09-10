@@ -21,7 +21,7 @@ Adding a lesson means adding a sub-package like `lesson2/` (its own `template.py
 
 - `build.py` — session order: title slide, then per segment a divider + that segment's slides. Segment names/durations/modes mirror the Timing Overview in `lesson_1.md`.
 - `template.py` — the single source of visual truth for Lesson 1: fonts, colors, footer, and the slide builders (`add_content_slide`, `add_section_divider`, `add_placeholder_slide`, `add_demo_cue`) and the in-slide building blocks (`add_card`, `add_label`, `add_band`). Segment modules style their custom shapes with `template.solid(shape, color)` and `template.style(run, ...)` plus the color constants. The content area for custom shapes is `CONTENT_LEFT/TOP/WIDTH/HEIGHT`.
-- `segments/` — one module per segment, each exposing `add_slides(prs)`. Segment 1's two chart slides and Segment 2A's what-is-an-LLM slide embed images from `.scratch/` at build time, so those files are build inputs, not just reference material. Tickets 02–07 each replace the placeholders in exactly one module:
+- `segments/` — one module per segment, each exposing `add_slides(prs)`. Segment 1's two chart slides and Segment 2A's what-is-an-LLM slide embed images from `.scratch/` at build time, so those files are build inputs, not just reference material. The deck is complete: tickets 02–07 each replaced the placeholders in exactly one module, and ticket 08 was the integration pass.
 
 | Module | Ticket |
 |---|---|
@@ -38,7 +38,7 @@ Add real slides with `template.add_content_slide(...)` (returns the slide for cu
 
 - `lesson2/build.py` — session order per the Timing Overview in `lesson_2.md`: title slide, then per segment a divider + that segment's slides. Each `Segment` names the lane it lives in (Segment 3 → Sensitive Lane, Segment 4 → Daily Driver, the rest neutral) and the divider takes that lane's colour.
 - `lesson2/template.py` — the single source of visual truth for Lesson 2: a light paper canvas, Cambria headings over Calibri body, and two lane colours (teal = Sensitive Lane / Copilot Chat (Basic), violet = Daily Driver / Google Gemini) that mean the lane wherever they appear — the module docstring is the colour-coding contract. Builders take an optional `lane=template.SENSITIVE_LANE` / `template.DAILY_DRIVER`; `add_lane_tag` puts the lane chip on a custom slide. Same call shapes as Lesson 1, plus `lane=` and three additions: `add_open_card` — a card with an edge bar and an empty text frame, for rows whose text is several runs at their own sizes (`add_card` is the fixed heading/body version of the same block) — and the two blocks built on those, `add_list_card` (a heading over bulleted items) and `add_detail_card` (a bold lead over one or more lines of detail; several lines take bullets, one does not).
-- `lesson2/segments/` — one module per segment, each exposing `add_slides(prs)`. Tickets 04–08 each replace the placeholders in exactly one module:
+- `lesson2/segments/` — one module per segment, each exposing `add_slides(prs)`. The deck is complete: tickets 04–08 each replaced the placeholders in exactly one module, and ticket 09 was the integration pass.
 
 | Module | Segment | Ticket |
 |---|---|---|
@@ -49,6 +49,30 @@ Add real slides with `template.add_content_slide(...)` (returns the slide for cu
 | `seg5_assignment_close.py` | 5 — Assignment briefing + close | 08 |
 
 Add real slides with `template.add_content_slide(..., lane=...)`, set speaker notes via `template.set_notes(slide, ...)`, mark live-demo cues with `template.add_demo_cue(..., lane=...)` on the slide and in its notes, and colour-code cards by lane with `fill=template.SENSITIVE_TINT` / `template.DAILY_TINT` — or `fill=lane.tint` when the code loops over lanes (a lane's `.color` as fill gives a solid label block). A lane colour is only ever right where the slide names that lane's tool as where work goes.
+
+## The plan is the oracle
+
+`lesson_1.md` and `lesson_2.md` are the session plans, and the tests read them the way the decks do: segment names, durations and modes come from each plan's Timing Overview, and the segment tests assert the plan's content — its scenarios, its demo script, its assignment wording. Changing what a deck says starts in its plan; a slide the plan does not call for has nothing to test it against.
+
+Alongside the per-segment tests, each lesson's module carries tests that guard the deck as a whole. Some are grouped under the lesson's integration-pass heading (`tests/test_deck.py` ticket 08, `tests/test_lesson2_deck.py` ticket 09) — no placeholders left, per-segment slide counts pinned and held under one slide per minute of that segment's duration, the divider durations still adding up to the length the title slide promises, speaker notes on every content slide, every live-demo cue mirrored in its notes, one spelling of *anonymise* deck-wide — and the rest sit in the module's other deck-wide sections: the terminology audit against the Avoid-lists in `CONTEXT.md`, an explicit font and size on every run, and, for Lesson 2, no YouTube URL anywhere. Lesson 2's lane separation is stated once, in the integration section: a segment that names a lane in `lesson2/build.py` never names the other lane, the brand of its tool, or the words that give that lane away.
+
+## Before you present
+
+Three checks, in this order:
+
+1. `python -m pytest` — the whole suite, both lessons.
+2. `python -m deck.build && python -m deck.lesson2.build`, then `python -m deck.com_check` — a python-pptx round-trip is not proof that PowerPoint opens the file.
+3. A visual pass over exported slide images, which is the part no test covers — overflowing cards, a band running into the footer, a colour that says the wrong lane. Export them with PowerPoint's own renderer:
+
+   ```python
+   import win32com.client
+   app = win32com.client.Dispatch("PowerPoint.Application")
+   pres = app.Presentations.Open(r"C:\...\dist\lesson_2_deck.pptx", True, False, False)
+   pres.Export(r"C:\...\png_out", "PNG", 1280, 720)
+   pres.Close(); app.Quit()
+   ```
+
+Delivery-time content checks belong to the facilitator, not to the build: Lesson 2's Gemini free-tier capabilities and the dean's directive's version are re-verified the week before the session (see "Materials to Prepare" in `lesson_2.md`).
 
 ## Gotcha
 

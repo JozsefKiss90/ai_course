@@ -32,7 +32,9 @@ Every tool taught contributes to the knowledge management architecture. Nothing 
 | **Perfect Wiki** | Per-participant Wiki Sandbox — the single source of truth | Free tier (per-user; licence does not allow sharing) |
 | **Obsidian** | Personal Vault — visual thinking space (Graph View, Canvas) | Free |
 
-Not in the course: ChatGPT (mentioned once as an alternative to Gemini), Canva (dropped), Horizon Dashboard (moved to the Optional Use-Case Phase).
+Taught but outside the roster, in one narrow role each: **Canva** (through its Teams app) to prototype a presentation's structure, and **genspark.ai** to build the deck itself — both introduced in Lesson 2 for that session's presentation deliverable. Neither feeds the KM System, and both sit outside the institutional tenant, so only anonymised, non-sensitive content goes into them.
+
+Not in the course: ChatGPT (mentioned once as an alternative to Gemini), Horizon Dashboard (moved to the Optional Use-Case Phase).
 
 ---
 
@@ -72,7 +74,7 @@ Rhythm: teach, teach, practice, teach, teach, practice, teach, final.
 | Week | Session | Content |
 |------|---------|---------|
 | **W1** | Lesson 1 | LLM fundamentals, 7 Levels framework, prompt engineering, guided tool setup — **detailed plan in [`lesson_1.md`](lesson_1.md)** |
-| **W2** | Lesson 2 | The two-lane tool landscape: Copilot Chat and the sensitive-data rule; Gemini in depth |
+| **W2** | Lesson 2 | The two-lane tool landscape: Copilot Chat and the sensitive-data rule; Gemini in depth, NotebookLM previewed — **detailed plan in [`lesson_2.md`](lesson_2.md)** |
 | **W3** | Practice Week 1 | Optional facilitated drop-in; assignment work |
 | **W4** | Lesson 3 | Knowledge capture: NotebookLM + Perplexity as knowledge distillers; Wiki Sandbox setup with the four entity types |
 | **W5** | Lesson 4 | Obsidian: vault, linking, Graph View, Canvas; manual Markdown import from the wiki (feeling the pain the agent will remove) |
@@ -100,14 +102,15 @@ The weekly slot stays in calendars as an **optional facilitated drop-in**: no ag
 
 ## Session Outlines (Lessons 2–5 and Final)
 
-Only Lesson 1 is planned in detail. These outlines fix each session's goal, topics, and assignment; detailed plans are written lesson by lesson as the course runs.
+Lessons 1 and 2 are planned in detail (`lesson_1.md`, `lesson_2.md`). These outlines fix each session's goal, topics, and assignment; detailed plans are written lesson by lesson as the course runs, and a detailed plan supersedes its outline here.
 
 ### Lesson 2 — The Two-Lane Tool Landscape (W2)
 **Goal:** participants route every task to the correct lane and get consistently good results from both.
-- The sensitive-data rule: what *must* go to Copilot Chat, what must never
-- Copilot Chat (Basic) in practice: strengths, limits (no SharePoint/OneDrive grounding), enterprise guardrails
-- Gemini in depth: file uploads, long context, structured outputs; ICC prompting from Lesson 1 applied hands-on
-- **Assignment:** run three real work tasks through the correct lane; document prompts and results; draft the one-page description of your Anchor Project
+- Recap of Lesson 1 and the assignment debrief: 2–3 volunteers demo their Anchor Project and prompting work
+- The sensitive-data rule: what *must* go to Copilot Chat, what must never; the data-protection principles behind it, the dean's directive 1/2026 (III.26.) as reference, and the anonymise-before-upload rule
+- Copilot Chat (Basic) in practice: strengths, limits (no SharePoint/OneDrive grounding), enterprise guardrails, and one scenario per tool in the institutional licence — Adobe Acrobat, Prompt Coach, Study and Learn, Canva, genspark.ai
+- Gemini in depth: file and image upload, long context, Gems, Deep Research, Canvas and the free tier's boundaries; NotebookLM previewed at scenario level for Lesson 3
+- **Assignment:** chain every tool and capability introduced so far into one multi-step workflow orchestration — a blueprint giving the tool, input, output, guidelines and justification per step, with the lane stated per step, delivered as an educational presentation on a hand-picked topic. Outcome: Level 3 reached, the foundation for Level 4 laid.
 
 ### Lesson 3 — Knowledge Capture (W4)
 **Goal:** turn raw documents and research into wiki-ready knowledge; stand up the Wiki Sandbox.

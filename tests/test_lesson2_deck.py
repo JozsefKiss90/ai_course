@@ -87,18 +87,12 @@ def test_dividers_appear_in_session_order_after_the_title(reopened):
     assert positions[0] > 0
 
 
-# --- Placeholders per segment -----------------------------------------------
+# --- Segments as slide ranges ------------------------------------------------
 
-# Placeholder slides each segment carries until tickets 04–08 land, sized
-# from the slide inventory implied by lesson_2.md's segment plans, and the
-# ticket that replaces them.
-EXPECTED_PLACEHOLDERS = {
-    "Recap + assignment debrief": (0, "04"),  # ticket 04 landed
-    "The sensitive-data rule and data-protection principles": (0, "05"),  # ticket 05 landed
-    "Copilot Chat (Basic) in practice": (0, "06"),  # ticket 06 landed
-    "Gemini in depth (+ NotebookLM preview)": (0, "07"),  # ticket 07 landed
-    "Assignment briefing + close": (0, "08"),  # ticket 08 landed
-}
+# The five segments, in the order their dividers appear. Tickets 04–08 have
+# all landed, so no segment carries a placeholder any more — the integration
+# section below is where that is asserted deck-wide.
+SEGMENT_NAMES = [name for name, _, _ in TIMING_OVERVIEW]
 
 
 def _segment_ranges(reopened):
@@ -106,7 +100,7 @@ def _segment_ranges(reopened):
     all_slides = [_slide_text(s) for s in reopened.slides]
     starts = {
         name: next(i for i, t in enumerate(all_slides) if name in t)
-        for name in EXPECTED_PLACEHOLDERS
+        for name in SEGMENT_NAMES
     }
     ordered = sorted(starts.items(), key=lambda kv: kv[1])
     ranges = {}
@@ -115,28 +109,23 @@ def _segment_ranges(reopened):
     return ranges
 
 
-def test_each_segment_has_its_placeholder_slides(reopened):
-    for name, slides in _segment_ranges(reopened).items():
-        count = sum(1 for s in slides if "[PLACEHOLDER]" in _slide_text(s))
-        expected, _ = EXPECTED_PLACEHOLDERS[name]
-        assert count == expected, f"{name}: {count} placeholders, expected {expected}"
-
-
-def test_placeholder_slides_name_their_ticket_on_the_slide_and_in_notes(reopened):
-    for name, slides in _segment_ranges(reopened).items():
-        _, ticket = EXPECTED_PLACEHOLDERS[name]
-        for slide in slides:
-            if "[PLACEHOLDER]" not in _slide_text(slide):
-                continue
-            assert f"ticket {ticket}" in _slide_text(slide), name
-            notes = slide.notes_slide.notes_text_frame.text
-            assert f"ticket {ticket}" in notes, name
+def _dividers(reopened):
+    """The section dividers, found where they are rather than by what they
+    say: the slide immediately before each segment's first content slide."""
+    all_slides = list(reopened.slides)
+    return [
+        all_slides[all_slides.index(slides[0]) - 1]
+        for slides in _segment_ranges(reopened).values()
+    ]
 
 
 def test_total_slide_count(reopened):
-    # 1 title + 5 dividers + 3 Segment 1 + 5 Segment 2 + 7 Segment 3
-    #   + 15 Segment 4 + 4 Segment 5
-    assert len(reopened.slides) == 40
+    # The title slide, a divider per segment, and the per-segment counts
+    # pinned by EXPECTED_SEGMENT_SLIDE_COUNTS in the integration section.
+    expected = (
+        1 + len(TIMING_OVERVIEW) + sum(EXPECTED_SEGMENT_SLIDE_COUNTS.values())
+    )
+    assert len(reopened.slides) == expected
 
 
 # --- Segment 1: Recap + assignment debrief (ticket 04) -----------------------
@@ -913,14 +902,9 @@ def test_every_seg3_slide_has_speaker_notes(reopened):
         )
 
 
-def test_segment_3_never_names_the_other_lane(reopened):
-    """The two lanes are demonstrated separately, so Segment 3 stays
-    entirely in the Sensitive Lane: the Daily Driver and its tool are not
-    named on a slide or in a note anywhere in the segment."""
-    for text in _segment_corpus(reopened, SEG3_NAME):
-        lowered = text.lower()
-        assert "gemini" not in lowered, "Segment 3 names Gemini"
-        assert "daily driver" not in lowered, "Segment 3 names the Daily Driver"
+# Lane separation — that this segment never names the other lane — is
+# asserted for every lane-bound segment at once in the integration section
+# (test_every_lane_declared_segment_stays_in_its_lane).
 
 
 # --- Segment 4: Gemini in depth (+ NotebookLM preview) (ticket 07) -----------
@@ -1191,15 +1175,9 @@ def test_every_seg4_slide_has_speaker_notes(reopened):
         )
 
 
-def test_segment_4_never_names_the_other_lane(reopened):
-    """The two lanes are demonstrated separately, so Segment 4 stays
-    entirely in the Daily Driver: the Sensitive Lane and its tool are not
-    named on a slide or in a note anywhere in the segment."""
-    for text in _segment_corpus(reopened, SEG4_NAME):
-        lowered = text.lower()
-        assert "copilot" not in lowered, "Segment 4 names Copilot"
-        assert "microsoft" not in lowered, "Segment 4 names the other ecosystem"
-        assert "sensitive lane" not in lowered, "Segment 4 names the Sensitive Lane"
+# Lane separation — that this segment never names the other lane — is
+# asserted for every lane-bound segment at once in the integration section
+# (test_every_lane_declared_segment_stays_in_its_lane).
 
 
 def test_seg4_names_youtube_without_linking_one(reopened):
@@ -1548,6 +1526,135 @@ def test_terminology_audit_no_forbidden_synonyms(reopened):
         corpus = _slide_corpus(slide).lower()
         for term in FORBIDDEN_TERMS:
             assert term.lower() not in corpus, f"{term!r} on slide {i + 1}"
+
+
+# --- Integration pass: flow, timing, lane separation (ticket 09) --------------
+
+
+def test_no_placeholder_slides_remain_anywhere(reopened):
+    for i, slide in enumerate(reopened.slides):
+        assert "[PLACEHOLDER]" not in _slide_text(slide), f"slide {i + 1}"
+
+
+# Slides per segment, reviewed against the Timing Overview durations and
+# pinned. Segment 4 sits exactly at the density guard's limit on purpose:
+# the plan's demo script runs five of its capability slides as one
+# 1.5-minute batch, so 15 slides in 15 minutes is the plan's shape, not
+# drift. Growing a segment past its pin means changing lesson_2.md first.
+EXPECTED_SEGMENT_SLIDE_COUNTS = {
+    "Recap + assignment debrief": 3,
+    "The sensitive-data rule and data-protection principles": 5,
+    "Copilot Chat (Basic) in practice": 7,
+    "Gemini in depth (+ NotebookLM preview)": 15,
+    "Assignment briefing + close": 4,
+}
+
+
+def test_segment_slide_counts_fit_their_timings(reopened):
+    # The density guard fires if a later ticket grows a segment past one
+    # slide per minute of its TIMING_OVERVIEW duration (and bumps the pin).
+    minutes = {name: int(duration.split()[0]) for name, duration, _ in TIMING_OVERVIEW}
+    for name, slides in _segment_ranges(reopened).items():
+        expected = EXPECTED_SEGMENT_SLIDE_COUNTS[name]
+        assert len(slides) == expected, (
+            f"{name}: {len(slides)} slides, expected {expected}"
+        )
+        assert len(slides) <= minutes[name], f"{name}: over one slide per minute"
+
+
+def test_the_session_fits_the_hour(reopened):
+    """The durations the dividers show the room add up to the length the
+    title slide promises. The 60-minute cap is why the Session Template's
+    hands-on block is absent from this lesson, so a segment that grows has
+    to take its minutes from another one."""
+    shown = [
+        int(re.search(r"(\d+) min", _slide_text(divider)).group(1))
+        for divider in _dividers(reopened)
+    ]
+    assert len(shown) == len(TIMING_OVERVIEW)
+    promised = int(re.search(r"(\d+) minutes", _slide_text(reopened.slides[0])).group(1))
+    assert sum(shown) == promised, f"the dividers add up to {sum(shown)} minutes"
+    assert promised <= 60
+
+
+def test_every_content_slide_has_speaker_notes(reopened):
+    # Everything except the title slide and the five section dividers.
+    dividers = _dividers(reopened)
+    for i, slide in enumerate(reopened.slides):
+        if i == 0 or slide in dividers:
+            continue
+        assert slide.has_notes_slide, f"slide {i + 1} has no notes slide"
+        assert slide.notes_slide.notes_text_frame.text.strip(), (
+            f"slide {i + 1} has empty speaker notes"
+        )
+
+
+def test_every_live_demo_cue_sits_in_a_demo_segment_and_is_mirrored_in_notes(reopened):
+    """The lanes are demonstrated one at a time, so every switch to a live
+    tool belongs to Segment 3 or Segment 4 and no other segment opens one.
+    (How many each of those two runs is pinned in their own sections.) Each
+    switch is marked on its slide and repeated in that slide's notes, so a
+    facilitator reading only the notes still knows to switch."""
+    ranges = _segment_ranges(reopened)
+    demo_slides = ranges[SEG3_NAME] + ranges[SEG4_NAME]
+    cued = [
+        (i, s) for i, s in enumerate(reopened.slides) if "LIVE DEMO" in _slide_text(s)
+    ]
+    assert cued, "the deck cues no live demo at all"
+    for i, slide in cued:
+        assert slide in demo_slides, (
+            f"slide {i + 1}: a live demo outside the two demo segments"
+        )
+        assert slide.has_notes_slide, f"slide {i + 1} has no notes slide"
+        notes = slide.notes_slide.notes_text_frame.text
+        assert re.search(r"\blive\b", notes, re.IGNORECASE), (
+            f"slide {i + 1}: the demo is cued on the slide but not in its notes"
+        )
+
+
+# What naming a lane looks like on a slide, beyond the lane's own name and
+# the brand of its tool — the words that give a lane away and cannot be read
+# off template.Lane. NotebookLM belongs to the Daily Driver's vocabulary: it
+# is previewed in Segment 4 and has no business in Segment 3.
+LANE_TELLS = {
+    "Sensitive Lane": ("Microsoft",),
+    "Daily Driver": ("Gemini", "NotebookLM"),
+}
+
+
+def test_every_lane_declared_segment_stays_in_its_lane(reopened):
+    """The two lanes are demonstrated separately, so a segment that belongs
+    to one stays in it: Segment 3 never names Gemini or the Daily Driver,
+    Segment 4 never names Copilot or the Sensitive Lane — on a slide or in a
+    note, anywhere in the segment, divider included. Segments that belong to
+    neither lane — the recap, the rule, the assignment — may name both.
+
+    Which segments are bound is read off deck/lesson2/build.py rather than
+    written out here, so the rule holds for the deck rather than for two
+    segments named in a test."""
+    from deck.lesson2 import build, template
+
+    declared = [segment for segment in build.SEGMENTS if segment.lane]
+    assert len(declared) == 2, "the two demo segments are the lane-bound ones"
+    for segment in declared:
+        other = next(lane for lane in template.LANES if lane is not segment.lane)
+        forbidden = (other.name, other.tool.split()[0], *LANE_TELLS[other.name])
+        for text in _segment_corpus(reopened, segment.title):
+            lowered = text.lower()
+            for term in forbidden:
+                assert term.lower() not in lowered, (
+                    f"Segment {segment.number} names {term!r}"
+                )
+
+
+def test_one_spelling_of_anonymise_deck_wide(reopened):
+    """The deck follows lesson_2.md's British -ise throughout — the
+    institutional rule it quotes is spelled that way. A stray "anonymize"
+    two lines from "anonymise before upload" reads as a typo."""
+    for i, slide in enumerate(reopened.slides):
+        assert not re.search(r"anonymiz", _slide_corpus(slide), re.IGNORECASE), (
+            f"slide {i + 1}: the other spelling of anonymise"
+        )
 
 
 # --- Builders keep the Lesson 1 call shapes ----------------------------------

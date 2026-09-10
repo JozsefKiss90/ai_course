@@ -58,7 +58,7 @@ Google Gemini (free tier), the primary tool for all non-sensitive work: fundamen
 _Avoid_: Workhorse, main tool
 
 **Core Roster**:
-The five tool families taught in the course, each contributing to the KM System: the Copilot ecosystem (Chat, Agent Store, Agent Builder), Gemini, NotebookLM, Perplexity, Obsidian. ChatGPT is mentioned only as an alternative; Canva is dropped; the Horizon Dashboard belongs to the Optional Use-Case Phase.
+The five tool families taught in the course, each contributing to the KM System: the Copilot ecosystem (Chat, Agent Store, Agent Builder), Gemini, NotebookLM, Perplexity, Obsidian. ChatGPT is mentioned only as an alternative; the Horizon Dashboard belongs to the Optional Use-Case Phase. Canva (through its Teams app) and genspark.ai are taught in Teaching Session 2 in one narrow role each — prototyping a presentation's structure, and building the deck itself — but stay outside the roster: they serve that session's presentation deliverable, feed nothing into the KM System, and sit outside the institutional tenant, so only anonymised, non-sensitive content goes into either.
 _Avoid_: Tool ecosystem, satellite tools
 
 **Optional Use-Case Phase**:

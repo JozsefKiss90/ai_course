@@ -4,10 +4,18 @@
 
 **Blocked by:** 03 — Lesson 2 skeleton with a new design template.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Segment 1 placeholders replaced; slides in plan order
-- [ ] Recap map names every concept listed in the plan's recap section and pairs each with its Lesson 2 link; a test checks the pairs against the plan
-- [ ] No Lesson 1 definition is restated (the recap slides contain no explanation sentences for the concepts, only the link)
-- [ ] Debrief slide states volunteer count, time box and the four things to show
-- [ ] Speaker notes on every slide; the deck rebuilds and the new tests pass
+- [x] Segment 1 placeholders replaced; slides in plan order
+- [x] Recap map names every concept listed in the plan's recap section and pairs each with its Lesson 2 link; a test checks the pairs against the plan
+- [x] No Lesson 1 definition is restated (the recap slides contain no explanation sentences for the concepts, only the link)
+- [x] Debrief slide states volunteer count, time box and the four things to show
+- [x] Speaker notes on every slide; the deck rebuilds and the new tests pass
+
+## Comments
+
+**2026-09-10 (agent):** Implemented. `deck/lesson2/segments/seg1_recap_debrief.py` replaces the three Segment 1 placeholders with the recap map, the debrief format and the live capture slide, in the plan's order; the deck still builds to 35 slides and opens via `python -m deck.com_check`. The recap map is a two-column table, one row per row of `lesson_2.md`'s Part A table: the concept on the left, the Lesson 2 link on the right ending in the forward reference ("Segment 4", "Segments 3 · 4"), with a "Reference only — the Lesson 1 deck carries the explanations" caption; no cell explains anything. The debrief slide states the format band (2–3 volunteers · 4 minutes each, questions included · screen-shared from your own Gemini), the four assignment items as numbered cards with one facilitator question each, and an audience-facing time-box band. The capture slide is four tagged, deliberately empty rows (Anchor Project / ICC / Ask-me-first / Meta-prompt) over the read-back routing (Segment 2 · Segment 3 · Segment 4 · Practice Week 1). Speaker notes carry the facilitation script: the pace of the map, the pre-session volunteer ask plus a backup, the 3-minute chat check and the cut at 4, one question per item, and where an unfinished assignment goes.
+
+Tests: seven Segment 1 tests in `tests/test_lesson2_deck.py`. The pairing test reads the Part A table out of `lesson_2.md` at test time and, per row, asserts the concept and its link sit in shapes at the same `top` with the concept to the left, and that the slide keeps every segment the plan's row points to; a second test bans definition wording and multi-sentence prose on the recap slide. `EXPECTED_PLACEHOLDERS` for Segment 1 is now 0.
+
+**2026-09-10 (agent, after code review):** Two-axis review run. Standards: `_cell` hand-rebuilt the template's card (and had drifted to a 0.07 edge bar) — now `_edged_card` at the template's 0.09, and the capture slide's read-back card goes through it instead of being a third hand-built card; the debrief number badges and the capture tags were the same block twice, now one `_solid_label`; `0.6` literals replaced by `_LEFT = template.CONTENT_LEFT.inches`; the capture slide's "lane" vocabulary renamed to tags/rows, since in this deck "lane" means the Sensitive Lane / Daily Driver and nothing else; data constants made private as in the Lesson 1 segment modules. Spec: card 2 now says "One of the three ICC prompts" (the plan's tie to the Lesson 1 assignment); the timing band was reworded to address the room rather than print the facilitator's own script; the notes no longer narrow the plan's 2–3 volunteers to 2 (three at four minutes is exactly the twelve) and now carry the plan's reason for not correcting a volunteer mid-demo — the two-lane rule is not in force until Segment 2. Test hardening: the slide-order test is bounded to Segment 1's divider range, `"cut"` tightened to `"cut at 4"`, and the segment-reference regex made explicit instead of relying on `a`/`n`/`d` sitting in a character class. Judgement call left standing: the recap test parses the plan's table at test time rather than transcribing it — the ticket asks for a check "against the plan", and a seven-row transcription would itself be the thing that drifts; a comment in the test file records this.

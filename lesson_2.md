@@ -85,28 +85,51 @@ Three worked routing examples, one line each, for the slide:
 - "Explain the eligible cost categories in Horizon Europe" → Daily Driver (public knowledge)
 - "Draft a workload plan for the three administrators in my unit" → Sensitive Lane (personnel information)
 
-### Data-protection principles (≈2 min)
+### AI data safety and ethical use: the framework (≈1.5 min)
 
-The general principles, stated once, as the reasons behind the rule:
-- **Personal data** — anything that identifies a person (names, roles combined with units, contact details, evaluations) is protected under GDPR; entering it into an external AI tool is a data transfer that needs a legal basis
-- **Confidential institutional data** — unsubmitted proposals, internal financial planning, unpublished results and raw data are institutional assets; external public AI platforms may retain inputs and may use them as training data
-- **Purpose and minimisation** — only the data the task needs, only for the task's purpose; the context-window lesson ("more context is not better context") and data minimisation point the same way
-- **Human responsibility** — the tool assists; the person signs
+The reasons behind the rule, stated once. AI data safety and ethical use mean protecting sensitive information, preventing algorithmic bias, and keeping human control over automated systems. As AI scales, balancing rapid innovation against robust risk management stops being an aspiration and becomes an operational requirement [1, 2, 3]. Responsible AI rests on four pillars, and the slide draws them as one block:
 
-### Institutional rules: the dean's directive as reference (≈3 min)
+| Pillar | What it governs |
+|--------|-----------------|
+| **Data governance** | What may be collected, where it is allowed to travel, and who is accountable for it |
+| **Algorithmic fairness** | Training and outputs actively filtered for systemic bias |
+| **Transparency and explainability** | What data was used, and how a given automated decision was reached |
+| **Human control** | Automated systems supplement human judgement; they never take over the responsibility |
 
-Two documents are named, cited, and not reproduced. The slide carries the titles and the key points as one-liners; the notes say where each point lives in the document.
+Where this is written down for us — two documents, cited and never reproduced, carried as a compact reference strip on the same slide:
 
 - **Umbrella rule:** Rector's directive 4/2025. (X. 28.) on the use of artificial intelligence in education at ELTE.
-- **Faculty-level rule:** Dean's directive 1/2026 (III.26.) of the ELTE Faculty of Informatics — *Use of artificial intelligence in education, research and administration* — the faculty supplement to the rector's directive and to the EU AI Act (Regulation (EU) 2024/1689). Version 1.0, effective 26 March 2026, review expected 1 July 2026 — check for a newer version the week before delivery.
+- **Faculty-level rule:** Dean's directive 1/2026 (III.26.) of the ELTE Faculty of Informatics — *Use of artificial intelligence in education, research and administration* — the faculty supplement to the rector's directive and to the EU AI Act (Regulation (EU) 2024/1689). Human oversight and final responsibility, transparency and documentation of AI use, no sensitive data into external AI tools without explicit permission, and critical checking of every output before use. Version 1.0, effective 26 March 2026, review expected 1 July 2026 — check for a newer version the week before delivery.
 
-Key points of the dean's directive, as brief reference points:
-1. **Human oversight and final responsibility** — AI is an assistive tool only; the human user carries the final responsibility for content, correctness, and ethical and legal compliance (section 2)
-2. **Transparency and documentation of AI use** — where AI was used, which tool, when, for what, in which part of the work (sections 2, 4, 5)
-3. **No sensitive, personal or unpublished data into external AI tools without explicit permission** — including unpublished results and raw data, personal data of students, researchers and partners, and results of industrial research (sections 2, 4)
-4. **AI in institutional administration is allowed** — scheduling, reports, data analysis, documentation — within the institutional data-protection and data-security rules (section 6)
-5. **Critical checking of every output** — every AI-generated material is checked critically; the author takes responsibility for the content (sections 4, 6)
-6. **Consequences of breaches** — handled under the institution's disciplinary and ethical rules; uploading embargoed research data can carry legal liability; uploading personal data without explicit permission is a GDPR breach (section 7)
+### Key pillars of data safety (≈1.5 min)
+
+The four practices the pillars come down to in daily work:
+
+- **Data minimisation** — collect and process only the information a clear, designated purpose actually needs [4]; the context-window lesson ("more context is not better context") and data minimisation point the same way
+- **Privacy by design** — data protection built into the design of a system from the start, rather than bolted on afterwards [4]
+- **Anonymisation** — masking or removing personally identifiable information (PII) safeguards people against breaches and unapproved tracking [2, 4, 5]
+- **Regulatory compliance** — deployments align with [the GDPR](https://digital-strategy.ec.europa.eu/en/library/ethics-guidelines-trustworthy-ai) and the EU AI Act in Europe, and with equivalents such as the CCPA elsewhere [1]
+
+### Ethical AI principles (≈1.5 min)
+
+- **Fairness and non-discrimination** — training and prompting actively filter out systemic bias, or the model replicates historical inequalities as if they were findings [6, 7]
+- **Transparency** — anyone affected by an automated outcome is owed clear insight into what data was tracked and how the decision was reached [7, 8]
+- **Accountability** — responsibility for a system's behaviour, its audits and its performance tracking is assigned before the tool is launched [7, 9]
+- **Human oversight** — the model supplements human judgement rather than displacing human responsibility [1, 9]; the tool assists, the person signs, and every output is critically checked before use
+
+### Sources (≈30 s)
+
+The reading list behind the three previous slides, on the slide so the room can photograph it. Not read out. Two further sources consulted while drafting were recorded video talks; the deck's no-YouTube-links rule keeps them off the slide, so the list is nine written sources.
+
+1. European Commission — *Ethics guidelines for trustworthy AI* — https://digital-strategy.ec.europa.eu/en/library/ethics-guidelines-trustworthy-ai
+2. Harvard DCE — *Ethics in AI: why it matters* — https://professional.dce.harvard.edu/blog/ethics-in-ai-why-it-matters/
+3. Salesforce Trailhead — *Data ethics, privacy and practical implementation* — https://trailhead.salesforce.com/content/learn/modules/data-fundamentals-for-ai/know-data-ethics-privacy-and-practical-implementation
+4. TrustCloud — *Ethical AI and data privacy practices* — https://www.trustcloud.ai/ai/boost-trust-with-powerful-ethical-ai-and-data-privacy-practices/
+5. Alation — *Data ethics in AI: 6 key principles* — https://www.alation.com/blog/data-ethics-in-ai-6-key-principles-for-responsible-machine-learning/
+6. SDAIA — *AI principles* — https://sdaia.gov.sa/en/SDAIA/about/Documents/ai-principles.pdf
+7. Transcend — *AI ethics* — https://transcend.io/blog/ai-ethics
+8. ADP — *AI and data ethics: 5 principles to consider* — https://www.adp.ca/en/resources/articles-and-insights/articles/a/ai-and-data-ethics-5-principles-to-consider.aspx
+9. UNESCO — *Recommendation on the ethics of artificial intelligence* — https://www.unesco.org/en/artificial-intelligence/recommendation-ethics
 
 ### The anonymise-before-upload rule (≈1 min)
 
@@ -215,22 +238,101 @@ NotebookLM is the Lesson 3 tool; today only three use cases, no walkthrough. Not
 
 ## Segment 5 — Assignment Briefing + Close (8 min)
 
+The assignment *is* a chain, so the briefing is the chain, not a description of one. The blueprint is authored here in full and the slides render it: a roadmap of the whole route, then the eight steps in three screenfuls. Nobody has to invent an orchestration from the sentence "produce a blueprint"; they run this route on a topic of their own and write down what they skipped or changed, and why.
+
+Two rules shape the route. First, the only required step is the one that handles sensitive data (step 2), and it is required only when the participant's own material contains sensitive data; every other step is optional, so a participant whose topic does not need a step skips it and says so. Second, every step names where its input comes from and where its output goes, so the chain reads as a chain: nothing is produced without a later step that consumes it.
+
 ### Assignment slide (as it will appear)
 
 **Assignment: your first workflow orchestration**
 
-Chain all the tools and capabilities introduced in the course so far into a multi-step workflow orchestration.
+Chain the tools the course has introduced so far into one multi-step workflow orchestration, and run it end to end on a topic you pick.
 
-1. **Blueprint:** produce a blueprint of the tool chaining and the workflow steps — for each step, the tool, the input, the output, detailed guidelines for running it, and a justification for why that tool at that step.
-2. **Deliverable:** a presentation on a hand-picked topic, designed for educational purposes and intended to facilitate learning outcomes.
+1. **Deliverable:** a presentation on a hand-picked topic, designed for educational purposes and intended to facilitate learning outcomes.
+2. **Blueprint:** the roadmap on the next four slides, adapted to your topic. For each step you run: the tool, the input, the output and how you ran it. For each step you skip or change: one line saying why.
 3. **Routing:** every step that touches sensitive data is routed to the correct lane; documents are anonymised before upload; the blueprint states the lane per step.
 
 **Outcome:** Level 3 achieved — you work in a persistent, domain-aware workspace; foundation for Level 4 established — the right tool per step, chained.
 
+### The roadmap (≈2 min)
+
+Eight steps in three phases. Prepare (steps 1–2): fix the topic and make your own material safe to upload. Gather (steps 3–4): fill what your material does not cover and collect what the presentation must say. Produce (steps 5–8): outline, learning material, visuals, deck. Prompt Coach is not a step: it is the helper you run any prompt through before you use it, at whichever step you are on.
+
+```mermaid
+flowchart LR
+  classDef sensitive fill:#DFF1EF,stroke:#0E7C7B,stroke-width:2px,color:#1C242B
+  classDef daily fill:#EBE6F7,stroke:#6A4CBC,stroke-width:2px,color:#1C242B
+  classDef neutral fill:#FFFFFF,stroke:#3E4C59,stroke-width:2px,color:#1C242B
+  classDef out fill:#1C242B,stroke:#1C242B,stroke-width:2px,color:#FFFFFF
+
+  S1["1 · Frame the topic<br/>Gemini — Guided Learning · optional"]:::daily
+  S2["2 · Anonymise your own material<br/>No AI tool: Word or Excel, by hand · required if sensitive"]:::neutral
+  S3["3 · Research the topic<br/>Gemini — Deep Research · optional"]:::daily
+  S4["4 · Collect what the presentation must cover<br/>NotebookLM · optional"]:::daily
+  S5["5 · Draft the outline<br/>Gemini — Gem + Canvas · optional"]:::daily
+  S6["6 · Add the learning material<br/>Study and Learn · optional"]:::sensitive
+  S7["7 · Make the visuals<br/>Gemini — image generation · optional"]:::daily
+  S8["8 · Build the presentation<br/>Canva → genspark.ai · optional tools"]:::neutral
+  OUT["The presentation<br/>+ blueprint + AI-use log"]:::out
+  PC["Any step · improve the prompt first<br/>Prompt Coach"]:::sensitive
+
+  S1 --> S5
+  S2 --> S4
+  S2 --> S5
+  S3 --> S4
+  S4 --> S5
+  S5 --> S6 --> S8
+  S5 --> S7 --> S8
+  S8 --> OUT
+  PC -.-> S3
+  PC -.-> S5
+```
+
+The diagram is part of the deliverable, not decoration: a chain that cannot be drawn has not been thought through. The Mermaid source above is the starting point. Fork it, redraw it for your own chain, and hand it in with the step table.
+
+**Which steps are required:** only step 2, and only when your own material contains sensitive data. If you use no material of your own, or only public material, skip it and say so. Every other step is optional: skip the ones your topic does not need, and write one line in the blueprint saying why.
+
+**The gate that is not a step:** check every output before it becomes the next step's input, and log the tool, the date and what it was used for. The dean's directive's critical-checking and transparency points are per step, not per project, and that log is the AI-use declaration on the presentation's last slide.
+
+**Why Adobe Acrobat is not in the chain:** the Acrobat app in Teams needs system-administrator approval, which participants cannot obtain, and the course has no institutional PDFs in Teams to review. Anonymisation is manual work in Word or Excel, and it happens before any file reaches any AI tool, so no AI tool can do it.
+
+### The blueprint, step by step
+
+| # | Step | Tool | Lane | Required | In | Out |
+|---|------|------|------|----------|----|-----|
+| 1 | Frame the topic | Gemini · Guided Learning | Daily Driver | Optional | A topic idea, your audience, the length of the presentation | A topic statement and three learning outcomes → steps 5, 6, 7 |
+| 2 | Anonymise your own material | No AI tool · Word or Excel, by hand | None (manual) | Required if the material contains sensitive data | Your own documents: notes, tables, call texts, reports | Files that may be uploaded anywhere → steps 4, 5 |
+| 3 | Research the topic | Gemini · Deep Research | Daily Driver | Optional | One research question: what your material does not cover, or the topic itself | A cited briefing, saved as a file → step 4 |
+| 4 | Collect what the presentation must cover | NotebookLM | Daily Driver | Optional | The files from step 2 and the briefing from step 3 | A coverage list, each point with its source → step 5 |
+| 5 | Draft the outline | Gemini · a Gem with file upload, long context and Canvas | Daily Driver | Optional | The outcomes from step 1, the coverage list from step 4, the files from step 2 | A section-by-section outline → steps 6, 7, 8 |
+| 6 | Add the learning material | Study and Learn · Copilot Chat (Basic) | Sensitive Lane | Optional | The outline from step 5, one learning outcome at a time | An explanation, a flashcard set and a quiz per outcome → step 8 |
+| 7 | Make the visuals | Gemini · image generation | Daily Driver | Optional | One section of the outline from step 5 and a one-sentence description of its diagram | One image per section that needs one → step 8 |
+| 8 | Build the presentation | Canva (Teams app) → genspark.ai | Outside both lanes | Optional tools, required output | The outline (5), the learning material (6), the visuals (7) | The finished presentation and a short video excerpt: the deliverable |
+
+**Step 1 — Frame the topic.** *How:* open Guided Learning and give it the ask-me-first prompt from Lesson 1: before you answer, ask me what you need to know. Answer its questions. Keep only outcomes you can observe: "decide whether a cost is eligible and say why" is one, "understand eligible costs" is not. Stop at three. *Output goes to:* step 5 (the outline), step 6 (the learning material) and step 7 (the visuals) are all built against these three outcomes.
+
+**Step 2 — Anonymise your own material.** *How:* work on a copy. Go through each file by hand in Word or Excel with the Lesson 1 anonymisation checklist: replace names, IDs, amounts, dates and anything that identifies a person, a project or a partner. Record per file: anonymised, public, or not usable. No AI tool is involved, because nothing may reach an AI tool before this step is done. *Output goes to:* step 4 (the notebook) and step 5 (the Gem's reference files). If you use no material of your own, skip this step and say so in the blueprint.
+
+**Step 3 — Research the topic.** *How:* write one research question, not five. If you have your own material, ask what it does not cover; if not, ask about the topic itself. Ask for a source per claim. Open at least three of the sources and check they say what the report says. The free tier limits reports per month, so write the question before you spend one. *Output goes to:* step 4, as one more file in the notebook.
+
+**Step 4 — Collect what the presentation must cover.** *How:* one notebook per topic. Add the files from step 2 and the briefing from step 3, then ask: what does a newcomer need to know about this, and which source says it? Drop any answer without a citation. If NotebookLM is not available to you this fortnight, upload the same files to Gemini, ask the same question, and say so in your blueprint. *Output goes to:* step 5, as the list of what the outline has to contain.
+
+**Step 5 — Draft the outline.** *How:* build a Gem first: the topic statement and the three outcomes as its instructions, the files from step 2 as its reference files; long context means it reads all of them. Ask for an outline in Canvas, then edit one section at a time instead of regenerating the whole thing. Tag each section with the outcome it serves and cut any section that serves none. *Output goes to:* step 6 (learning material), step 7 (visuals) and step 8 (the deck).
+
+**Step 6 — Add the learning material.** *How:* one outcome at a time. Ask for an explanation and read it as a learner would; then flashcards on the key terms; then a five-question quiz. Drop any question that can be answered without having seen the presentation. Needs a Microsoft 365 Education account; no Copilot licence. *Output goes to:* step 8, as its own section of the deck.
+
+**Step 7 — Make the visuals.** *How:* describe the relationship you want shown, not the picture: "three stages, each feeding the next, the middle one highlighted". Read the labels in the result; text inside generated images is often wrong, and the fix is to regenerate, not to patch. Not every section needs an image. *Output goes to:* step 8.
+
+**Step 8 — Build the presentation.** *How:* prototype the slide structure in Canva and let a colleague comment on it before any content goes in. Cut a 20–40 second video excerpt in Canva for the opening. Then give the outline, the learning material and the visuals to genspark.ai and build the deck. Rehearse once out loud. Put the AI-use log on the last slide. Both tools sit outside the institutional tenant: only content that passed step 2 goes into them. *Output goes to:* nowhere. This is the deliverable.
+
+**Prompt Coach, at any step.** Before you run a prompt in steps 3 to 6, paste it into Prompt Coach with one sentence about the job it has to do, ask for a critique and an improved version, and keep the improved one only if you can say what changed. Copilot Chat (Basic), Sensitive Lane; nothing but the prompt goes in.
+
 ### Effort and where the work is shown (≈2 min)
 
 - Expect 3–4 hours across the two weeks; the blueprint first, then the presentation
-- Tools to chain from: Copilot Chat (Basic) with Prompt Coach and Study and Learn, Adobe Acrobat for the PDF sources, Canva for the prototype, genspark.ai for the deck; Gemini with upload, Gems, Deep Research, Canvas; NotebookLM at use-case level if the free tier supports it
+- Eight steps is the recommended route, not a quota: only step 2 is required, and only when your material contains sensitive data; skip any other step and say why
+- The tools to chain from are the steps' tools — Gemini with Guided Learning, Deep Research, a Gem, file upload, long context, Canvas and image generation; NotebookLM if the free tier supports it; Copilot Chat (Basic) with Study and Learn, and Prompt Coach at any step; Canva for the prototype and the excerpt, genspark.ai for the deck
+- Done looks like a blueprint that says what went in, what came out and why any step was skipped, a presentation that teaches something, and an AI-use log
 - Show the work at Practice Week 1's drop-in (W3) for troubleshooting, and at the Lesson 3 debrief (W4) — 2–3 volunteers present blueprint and presentation
 
 ### Close (≈1 min)

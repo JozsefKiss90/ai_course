@@ -356,13 +356,15 @@ def test_seg1_notes_carry_the_time_keeping_script(reopened):
 # --- Segment 2: The sensitive-data rule (ticket 05) --------------------------
 
 ROUTING_TITLE = "The two-lane rule: one routing question"
-PRINCIPLES_TITLE = "Data-protection principles — why the rule exists"
-DIRECTIVE_TITLE = "Institutional rules: the dean's directive as reference"
+FRAMEWORK_TITLE = "AI data safety and ethical use — the framework"
+DATA_SAFETY_TITLE = "Key pillars of data safety"
+ETHICS_TITLE = "Ethical AI principles"
+SOURCES_TITLE = "Sources"
 ANONYMISE_TITLE = "Anonymise before upload"
 NEVER_TITLE = "What must never enter Gemini"
 SEG2_TITLES = [
-    ROUTING_TITLE, PRINCIPLES_TITLE, DIRECTIVE_TITLE, ANONYMISE_TITLE,
-    NEVER_TITLE,
+    ROUTING_TITLE, FRAMEWORK_TITLE, DATA_SAFETY_TITLE, ETHICS_TITLE,
+    SOURCES_TITLE, ANONYMISE_TITLE, NEVER_TITLE,
 ]
 
 CONTEXT_PATH = PLAN_PATH.parent / "CONTEXT.md"
@@ -377,8 +379,8 @@ def _plan_section(heading):
 
 
 def test_seg2_slides_present_in_plan_order_and_not_placeholders(reopened):
-    """All five slides live between Segment 2's divider and Segment 3's, in
-    the plan's order, with no placeholder left."""
+    """All seven slides live between Segment 2's divider and Segment 3's,
+    in the plan's order, with no placeholder left."""
     segment = _segment_ranges(reopened)[
         "The sensitive-data rule and data-protection principles"]
     texts = [_slide_text(s) for s in segment]
@@ -464,71 +466,58 @@ def test_routing_slide_colour_codes_both_lanes(reopened):
     assert str(template.DAILY_DRIVER.color) in fills
 
 
-def test_principles_slide_carries_the_plans_four_principles(reopened):
-    text = _slide_text(_slide_by_title(reopened, PRINCIPLES_TITLE)).lower()
-    for principle in ("personal data", "confidential institutional data",
-                      "purpose and minimisation", "human responsibility"):
-        assert principle in text, f"{principle!r} missing from the principles slide"
-    assert "gdpr" in text
-    assert "the person signs" in text
+# The four pillars of the plan's framework table. Each is asserted against
+# the plan first, so the slide cannot drift from what the plan authors.
+FRAMEWORK_PILLARS = [
+    "Data governance", "Algorithmic fairness",
+    "Transparency", "Human control",
+]
 
 
-def test_directive_slide_names_the_dean_directive_and_its_rector_parent(reopened):
-    text = _slide_text(_slide_by_title(reopened, DIRECTIVE_TITLE))
+def test_framework_slide_draws_the_plans_four_pillars(reopened):
+    plan = _plan_section("### AI data safety and ethical use: the framework")
+    slide = _slide_by_title(reopened, FRAMEWORK_TITLE)
+    text = _slide_text(slide)
+    assert "PILLARS OF TRUSTWORTHY AI" in text, "the pillars block has no heading"
+
+    lefts = []
+    for pillar in FRAMEWORK_PILLARS:
+        assert pillar in plan, f"{pillar!r} is not a pillar in the plan"
+        shape = _shape_containing(slide, pillar)
+        lefts.append(shape.left)
+    # Drawn as one row, in the plan's order — the block, not a list.
+    assert lefts == sorted(lefts), "the pillars are not laid out left to right"
+    assert len(set(lefts)) == len(lefts), "two pillars share a column"
+
+    lowered = text.lower()
+    assert "sensitive information" in lowered
+    assert "algorithmic bias" in lowered
+    assert "human control" in lowered
+
+
+def test_framework_slide_keeps_the_directives_as_a_reference_strip(reopened):
+    """The two institutional documents are cited on the framework slide —
+    titles and the directive's headline rules, never the document."""
+    text = _slide_text(_slide_by_title(reopened, FRAMEWORK_TITLE))
     assert "1/2026 (III.26.)" in text, "the dean's directive is not cited"
     assert "4/2025. (X. 28.)" in text, "the rector-level parent is not named"
     lowered = text.lower()
     assert "rector" in lowered and "dean" in lowered
+    # The rules the recap map promises this segment delivers.
+    assert "human oversight" in lowered
+    assert "explicit permission" in lowered
+    assert "critical checking of every output" in lowered
 
 
-# The six key points of the dean's directive, as tokens that must appear
-# both in the plan's directive subsection and on the slide. The slide is a
-# set of reference points, so each is asserted to stay one short line.
-DIRECTIVE_KEY_POINTS = [
-    "Human oversight and final responsibility",
-    "Transparency and documentation of AI use",
-    "explicit permission",
-    "AI in institutional administration is allowed",
-    "Critical checking of every output",
-    "Consequences of breaches",
-]
-
-KEY_POINT_MAX_CHARS = 170
-
-# The section of the directive each key point lives in, as the plan gives
-# it. One entry per distinct reference, so a wrong number fails here.
+# The section references the plan attaches to the directive's key points.
+# They belong to the facilitator, not to the slide.
 _KEY_POINT_SECTIONS = ["2", "2, 4, 5", "2, 4", "6", "4, 6", "7"]
 
 
-def test_directive_slide_stays_at_key_point_level(reopened):
-    """Six key points, each a short line rather than a paragraph — the
-    directive is the reference, the slide is the pointer."""
-    plan = _plan_section("### Institutional rules: the dean's directive as reference")
-    slide = _slide_by_title(reopened, DIRECTIVE_TITLE)
-    seats = []
-    for point in DIRECTIVE_KEY_POINTS:
-        assert point in plan, f"{point!r} is not a key point in the plan"
-        shape = _shape_containing(slide, point)
-        body = shape.text_frame.text
-        assert len(body) <= KEY_POINT_MAX_CHARS, (
-            f"{point!r}: {len(body)} chars — a paragraph, not a key point"
-        )
-        assert body.count(". ") <= 1, f"{point!r}: prose, not a one-liner"
-        seats.append((shape.top, shape.left))
-    assert len(set(seats)) == len(seats), "two key points share a position"
-
-
 def test_directive_section_references_live_in_the_notes_not_on_the_slide(reopened):
-    """Every section reference the plan attaches to a key point is in the
-    notes, and none is on the slide — the slide points at the document, the
-    facilitator holds the page numbers."""
-    plan = _plan_section("### Institutional rules: the dean's directive as reference")
-    planned = set(re.findall(r"\(sections? ([\d, ]+)\)", plan))
-    assert planned == set(_KEY_POINT_SECTIONS), (
-        f"the plan gives {sorted(planned)}, the test knows {_KEY_POINT_SECTIONS}"
-    )
-
-    slide = _slide_by_title(reopened, DIRECTIVE_TITLE)
+    """The slide points at the documents; the facilitator holds the page
+    numbers."""
+    slide = _slide_by_title(reopened, FRAMEWORK_TITLE)
     assert "section" not in _slide_text(slide).lower()
     notes = slide.notes_slide.notes_text_frame.text.lower()
     for reference in _KEY_POINT_SECTIONS:
@@ -536,6 +525,101 @@ def test_directive_section_references_live_in_the_notes_not_on_the_slide(reopene
         assert f"{word} {reference}" in notes, (
             f"the notes do not place a key point at {word} {reference}"
         )
+
+
+# The plan's four data-safety practices and four ethical principles, as the
+# lead of each card. Both slides take the same 2×2 shape.
+DATA_SAFETY_PILLARS = [
+    "Data minimisation", "Privacy by design", "Anonymisation",
+    "Regulatory compliance",
+]
+ETHICAL_PRINCIPLES = [
+    "Fairness and non-discrimination", "Transparency", "Accountability",
+    "Human oversight",
+]
+
+
+@pytest.mark.parametrize("title, heading, leads", [
+    (DATA_SAFETY_TITLE, "### Key pillars of data safety", DATA_SAFETY_PILLARS),
+    (ETHICS_TITLE, "### Ethical AI principles", ETHICAL_PRINCIPLES),
+])
+def test_quad_slide_carries_the_plans_four_items(reopened, title, heading, leads):
+    plan = _plan_section(heading)
+    slide = _slide_by_title(reopened, title)
+    seats = []
+    for lead in leads:
+        assert lead in plan, f"{lead!r} is not in the plan's {heading!r}"
+        shape = _shape_containing(slide, lead)
+        seats.append((shape.top, shape.left))
+    assert len(set(seats)) == len(seats), "two cards share a position"
+    assert seats == sorted(seats), "the cards are out of the plan's order"
+
+
+def test_data_safety_slide_keeps_the_lesson_1_and_gdpr_anchors(reopened):
+    text = _slide_text(_slide_by_title(reopened, DATA_SAFETY_TITLE))
+    lowered = text.lower()
+    assert "gdpr" in lowered
+    assert "eu ai act" in lowered
+    assert "personally identifiable information" in lowered
+    # The Lesson 1 tie-back: minimisation and curation want the same thing.
+    assert "more context is not better context" in lowered
+
+
+def test_ethics_slide_closes_on_human_responsibility(reopened):
+    text = _slide_text(_slide_by_title(reopened, ETHICS_TITLE))
+    assert "the person signs" in text.lower()
+    assert "critical checking of every output" in text.lower()
+
+
+# Every bracketed source marker used on the three content slides has to
+# resolve to a numbered entry on the sources slide.
+def _cited_numbers(slide):
+    numbers = set()
+    for chunk in re.findall(r"\[([\d,\s–-]+)\]", _slide_text(slide)):
+        parts = re.findall(r"(\d+)\s*[–-]\s*(\d+)|(\d+)", chunk)
+        for low, high, single in parts:
+            if single:
+                numbers.add(int(single))
+            else:
+                numbers.update(range(int(low), int(high) + 1))
+    return numbers
+
+
+def test_every_source_marker_resolves_to_the_sources_slide(reopened):
+    """The bracketed numbers on the framework, data-safety and ethics
+    slides point at entries that exist — a claim can always be traced."""
+    sources = _slide_by_title(reopened, SOURCES_TITLE)
+    listed = _cited_numbers(sources)
+    assert listed == set(range(1, 10)), f"the sources slide lists {sorted(listed)}"
+
+    cited = set()
+    for title in (FRAMEWORK_TITLE, DATA_SAFETY_TITLE, ETHICS_TITLE):
+        cited |= _cited_numbers(_slide_by_title(reopened, title))
+    assert cited, "no slide cites a source"
+    assert cited <= listed, f"unresolved markers: {sorted(cited - listed)}"
+
+
+def test_sources_slide_matches_the_plans_reading_list(reopened):
+    """One row per source in the plan's list, each carrying a live link to
+    the address the plan gives."""
+    plan = _plan_section("### Sources")
+    planned = re.findall(r"^\d+\. (.+?) — (https?://\S+)$", plan, re.MULTILINE)
+    assert len(planned) == 9, f"the plan lists {len(planned)} sources"
+
+    slide = _slide_by_title(reopened, SOURCES_TITLE)
+    addresses = {
+        run.hyperlink.address
+        for shape in slide.shapes if shape.has_text_frame
+        for para in shape.text_frame.paragraphs for run in para.runs
+        if run.hyperlink.address
+    }
+    for _, url in planned:
+        assert url in addresses, f"{url} is not linked from the sources slide"
+
+
+def test_sources_slide_also_names_the_institutional_documents(reopened):
+    text = _slide_text(_slide_by_title(reopened, SOURCES_TITLE))
+    assert "4/2025. (X. 28.)" in text and "1/2026 (III.26.)" in text
 
 
 def test_anonymise_slide_binds_every_upload_in_either_lane(reopened):
@@ -1193,30 +1277,80 @@ def test_seg4_names_youtube_without_linking_one(reopened):
     )
 
 
-# --- Segment 5: Assignment briefing + close (ticket 08) ----------------------
+# --- Segment 5: Assignment briefing + close (tickets 08, 10, 12) -------------
 
 SEG5_NAME = "Assignment briefing + close"
 
 SEG5_ASSIGNMENT_TITLE = "Assignment: your first workflow orchestration"
+SEG5_ROADMAP_TITLE = "The roadmap: eight steps, end to end"
+SEG5_BLUEPRINT_TITLES = [
+    "The blueprint · steps 1–3",
+    "The blueprint · steps 4–6",
+    "The blueprint · steps 7–8",
+]
 SEG5_OUTCOME_TITLE = "The outcome, on the 7 Levels map"
 SEG5_EFFORT_TITLE = "Effort and where the work is shown"
 SEG5_CLOSE_TITLE = "Next: Practice Week 1 and Lesson 3"
 
 SEG5_TITLES = [
-    SEG5_ASSIGNMENT_TITLE, SEG5_OUTCOME_TITLE, SEG5_EFFORT_TITLE,
-    SEG5_CLOSE_TITLE,
+    SEG5_ASSIGNMENT_TITLE, SEG5_ROADMAP_TITLE, *SEG5_BLUEPRINT_TITLES,
+    SEG5_OUTCOME_TITLE, SEG5_EFFORT_TITLE, SEG5_CLOSE_TITLE,
 ]
 
 LESSON1_PATH = PLAN_PATH.parent / "lesson_1.md"
 
 ASSIGNMENT_SECTION = "### Assignment slide (as it will appear)"
+ROADMAP_SECTION = "### The roadmap (≈2 min)"
+BLUEPRINT_SECTION = "### The blueprint, step by step"
 EFFORT_SECTION = "### Effort and where the work is shown"
 CLOSE_SECTION = "### Close (≈1 min)"
+
+# The two labels a step carries when it is in neither lane: the absence of
+# any AI tool, and a tool outside the tenant with its clearance condition.
+SEG5_NO_TOOL = "No lane"
+SEG5_NO_LANE = "Outside both lanes · anonymised content only"
 
 
 def _seg5_slide(reopened, title):
     """The Segment 5 slide with exactly this title."""
     return _segment_slide(reopened, SEG5_NAME, title)
+
+
+def _blueprint_slides(reopened):
+    return [_seg5_slide(reopened, title) for title in SEG5_BLUEPRINT_TITLES]
+
+
+def _blueprint_text(reopened):
+    """Everything the three blueprint slides show, joined — the blueprint
+    is split across slides for room, so what it says is what the three of
+    them say together."""
+    return "\n".join(_slide_text(s) for s in _blueprint_slides(reopened))
+
+
+def _blueprint_corpus(reopened):
+    """The blueprint slides' text and notes. The full instruction for a
+    step does not fit a card and lives in the notes, so a test about the
+    instructions has to read those too."""
+    return "\n".join(_slide_corpus(s) for s in _blueprint_slides(reopened))
+
+
+def _blueprint_steps_from_plan():
+    """The rows of the blueprint table in lesson_2.md, as dicts keyed by the
+    table's own column names. The plan authors the chain; the slides render
+    it, so the steps are read out of the plan rather than transcribed
+    here."""
+    section = _plan_section(BLUEPRINT_SECTION)
+    header, steps = None, []
+    for line in section.splitlines():
+        line = line.strip()
+        if not line.startswith("|") or set(line) <= set("|- "):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if header is None:
+            header = cells
+            continue
+        steps.append(dict(zip(header, cells)))
+    return steps
 
 
 def _seven_levels_from_lesson_1():
@@ -1239,9 +1373,10 @@ def _seven_levels_from_lesson_1():
 
 
 def test_seg5_slides_present_in_plan_order_and_not_placeholders(reopened):
-    """All four slides live after Segment 5's divider, in the plan's order —
-    the assignment, the outcome on the 7 Levels map, the effort and its two
-    venues, the close — with no placeholder left."""
+    """All eight slides live after Segment 5's divider, in the plan's order
+    — the assignment, the roadmap, the blueprint in three screenfuls, the
+    outcome on the 7 Levels map, the effort and its two venues, the close —
+    with no placeholder left."""
     segment = _segment_ranges(reopened)[SEG5_NAME]
     assert len(segment) == len(SEG5_TITLES)
     assert [_slide_title(s) for s in segment] == SEG5_TITLES
@@ -1256,8 +1391,8 @@ def test_seg5_slides_present_in_plan_order_and_not_placeholders(reopened):
 SEG5_ASSIGNMENT_ELEMENTS = [
     ("chain", "multi-step workflow orchestration"),
     ("blueprint", "the tool, the input, the output"),
-    ("blueprint", "detailed guidelines"),
-    ("blueprint", "justification"),
+    ("blueprint", "how you ran it"),
+    ("blueprint", "skip or change"),
     ("deliverable", "hand-picked topic"),
     ("deliverable", "educational purposes"),
     ("deliverable", "learning outcomes"),
@@ -1268,8 +1403,8 @@ SEG5_ASSIGNMENT_ELEMENTS = [
 
 
 def test_assignment_slide_carries_every_element_of_the_plans_assignment(reopened):
-    """The plan's three numbered items, whole, on the one slide the room is
-    told to screenshot."""
+    """The plan's three numbered items, whole, on the slide that opens the
+    segment."""
     plan = _plan_section(ASSIGNMENT_SECTION).lower()
     text = _slide_text(_seg5_slide(reopened, SEG5_ASSIGNMENT_TITLE)).lower()
     for element, token in SEG5_ASSIGNMENT_ELEMENTS:
@@ -1277,36 +1412,235 @@ def test_assignment_slide_carries_every_element_of_the_plans_assignment(reopened
         assert token in text, f"the assignment slide drops the {element}: {token!r}"
 
 
-def test_assignment_is_one_screenshot(reopened):
-    """The assignment is on one slide and says so: no other Segment 5 slide
-    carries a piece of it, and the slide carries the screenshot cue."""
-    assignment = _seg5_slide(reopened, SEG5_ASSIGNMENT_TITLE)
-    assert "Screenshot this slide" in _slide_text(assignment)
-    others = [
-        s for s in _segment_ranges(reopened)[SEG5_NAME]
-        if _slide_title(s) != SEG5_ASSIGNMENT_TITLE
-    ]
-    for token in ("hand-picked topic", "detailed guidelines"):
-        for slide in others:
-            assert token not in _slide_text(slide).lower(), (
-                f"{token!r} is split off the assignment slide onto "
-                f"{_slide_title(slide)!r}"
-            )
+def test_the_assignment_points_at_the_blueprint_rather_than_describing_one(reopened):
+    """The fix ticket 10 exists for: the briefing is the chain, not a slide
+    about producing one. The assignment slide sends the room to the roadmap
+    that follows, and the roadmap is what they are told to screenshot."""
+    assignment = _slide_text(_seg5_slide(reopened, SEG5_ASSIGNMENT_TITLE))
+    assert "roadmap on the next four slides" in assignment.lower(), (
+        "the assignment does not point at the blueprint that follows it"
+    )
+    roadmap = _slide_text(_seg5_slide(reopened, SEG5_ROADMAP_TITLE))
+    assert "Screenshot this slide" in roadmap
+    assert "Screenshot" not in assignment, (
+        "the screenshot cue is on the assignment slide, not on the roadmap"
+    )
 
 
-def test_assignment_slide_shows_a_worked_blueprint_row(reopened):
-    """One row of the blueprint, filled in, so its shape is unambiguous: the
-    four columns the plan asks a step to carry, and a row that names a real
-    tool and routes it to a lane CONTEXT.md defines."""
-    text = _slide_text(_seg5_slide(reopened, SEG5_ASSIGNMENT_TITLE))
-    for column in ("STEP", "TOOL", "LANE", "WHY"):
-        assert column in text, f"the blueprint example has no {column!r} column"
-    assert "Gemini" in text, "the example row names no tool"
-    lanes = [name for name in ("Sensitive Lane", "Daily Driver") if name in text]
-    assert lanes, "the example row routes to no lane"
+def test_roadmap_slide_draws_every_step_of_the_plans_blueprint(reopened):
+    """The roadmap is the plan's Mermaid diagram, drawn: one card per step,
+    numbered, each naming the tool it runs in, a card for Prompt Coach
+    beside the steps, and a terminal card for the deliverable."""
+    steps = _blueprint_steps_from_plan()
+    assert len(steps) == 8, f"the plan's blueprint has {len(steps)} steps"
+    text = _slide_text(_seg5_slide(reopened, SEG5_ROADMAP_TITLE))
+    for step in steps:
+        assert f"STEP {step['#']}" in text, f"step {step['#']} is not on the roadmap"
+    assert "STEP 9" not in text
+    assert "Prompt Coach" in text, "Prompt Coach is not on the roadmap"
+    assert "The presentation" in text, "the chain ends nowhere"
+
+
+def test_roadmap_shows_the_chain_crossing_lanes(reopened):
+    """The routing argument the picture makes: both lanes appear in the
+    roadmap's key, in their own colours, and the steps in neither lane
+    are keyed too."""
+    from deck.lesson2 import template
+
+    slide = _seg5_slide(reopened, SEG5_ROADMAP_TITLE)
+    text, fills = _slide_text(slide), _fills(slide)
+    for lane in (template.SENSITIVE_LANE, template.DAILY_DRIVER):
+        assert lane.name in text, f"the roadmap's key omits {lane.name!r}"
+        assert str(lane.color) in fills, f"{lane.name!r} is keyed in no colour"
+    assert "No lane" in text, "the steps in neither lane are unkeyed"
+    assert "inherits a lane" in text, (
+        "the roadmap draws the lane changes but never says what they mean"
+    )
+
+
+def test_roadmap_says_which_steps_are_required(reopened):
+    """Only the step that handles sensitive data is required, and only when
+    the participant's material contains any; every other step says it is
+    optional on its own card, so the route reads as a recommendation with
+    one rule in it rather than a quota."""
+    steps = _blueprint_steps_from_plan()
+    required = [s["#"] for s in steps if s["Required"].startswith("Required")]
+    assert required == ["2"], f"required steps in the plan: {required}"
+    assert "sensitive data" in steps[1]["Required"]
+    plan = _plan_section(ROADMAP_SECTION)
+    assert "only step 2" in plan, "the plan's roadmap never says which step is required"
+    text = _slide_text(_seg5_slide(reopened, SEG5_ROADMAP_TITLE))
+    assert "Only step 2 is required" in text
+    assert text.count("Optional") >= len(steps) - 1, (
+        "the optional steps are not tagged optional on their cards"
+    )
+    assert "Required if sensitive data" in text
+
+
+def test_roadmap_and_plan_agree_on_the_gate_that_is_not_a_step(reopened):
+    """Checking and logging are per step, not per project, so they are a
+    gate across the whole chain rather than another card."""
+    plan = _plan_section(ROADMAP_SECTION)
+    text = _slide_text(_seg5_slide(reopened, SEG5_ROADMAP_TITLE))
+    for token in ("check every output", "log the tool"):
+        assert token in plan, f"{token!r} is not in the plan's roadmap section"
+        assert token in text, f"the roadmap slide drops {token!r}"
+    assert "AI-use declaration" in text
+
+
+def test_the_plan_hands_out_a_mermaid_source_for_the_chain(reopened):
+    """The diagram is part of the deliverable, so the plan carries a source
+    participants can fork — and the deck says so rather than leaving it in
+    a file nobody opens."""
+    plan = _plan_section(ROADMAP_SECTION)
+    assert "```mermaid" in plan, "the plan draws no diagram"
+    assert "flowchart" in plan
+    steps = _blueprint_steps_from_plan()
+    for step in steps:
+        assert f'S{step["#"]}[' in plan, f"step {step['#']} is not in the diagram"
+    assert "PC[" in plan, "Prompt Coach is not in the diagram"
+    notes = _slide_corpus(_seg5_slide(reopened, SEG5_ROADMAP_TITLE))
+    assert "Mermaid" in notes, "the facilitator is never told the source exists"
+
+
+# The three fields every blueprint row shows: what goes in and where from,
+# what to do, what comes out and where to. The full instruction is a
+# paragraph per step and lives in the speaker notes and the handout.
+SEG5_BLUEPRINT_FIELDS = ["IN", "DO", "OUT"]
+
+
+def test_blueprint_slides_carry_every_step_with_all_of_its_fields(reopened):
+    """The blueprint the plan authors, rendered: every step, with its tool,
+    its lane, whether it is required, what goes in, what to do and what
+    comes out."""
+    steps = _blueprint_steps_from_plan()
+    text = _blueprint_text(reopened)
+    for step in steps:
+        assert f"{step['#']} · {step['Step']}" in text, (
+            f"step {step['#']} ({step['Step']!r}) is not in the blueprint"
+        )
+        assert step["Tool"] in text, f"step {step['#']} names no tool"
+        assert step["Required"] in text, f"step {step['#']} does not say if it is required"
+    for field in SEG5_BLUEPRINT_FIELDS:
+        found = len(re.findall(rf"\b{re.escape(field)}\b", text))
+        assert found == len(steps), (
+            f"the {field!r} field is on {found} steps, not {len(steps)}"
+        )
+    assert "WHY THIS TOOL" not in text, "the justification boxes are back"
+
+
+def test_every_step_says_where_its_output_goes_and_its_input_comes_from(reopened):
+    """The chain has to read as a chain: every step but the last names the
+    step that takes its output, and every step that consumes an earlier
+    result names the step it came from — in the plan's table and on the
+    slides, so nobody has to guess how one result reaches the next step."""
+    steps = _blueprint_steps_from_plan()
+    text = _blueprint_text(reopened)
+    for step in steps[:-1]:
+        assert "→ step" in step["Out"], (
+            f"step {step['#']}'s output names no step that takes it"
+        )
+        assert step["Out"] in text, f"step {step['#']}'s OUT is not on the slide"
+    assert "deliverable" in steps[-1]["Out"]
+    for step in steps[3:]:
+        assert "step" in step["In"].lower() or "(5)" in step["In"], (
+            f"step {step['#']}'s input names no step it comes from"
+        )
+
+
+def test_every_step_states_its_lane(reopened):
+    """The assignment's third item is routing per step, so the blueprint
+    states a lane on every row — either one CONTEXT.md defines, the
+    absence of any AI tool, or the explicit absence of both lanes, which
+    carries the clearance condition."""
+    from deck.lesson2 import template
+
     context = CONTEXT_PATH.read_text(encoding="utf-8")
-    for lane in lanes:
+    steps = _blueprint_steps_from_plan()
+    text = _blueprint_text(reopened)
+    lanes = {
+        "Sensitive Lane": template.SENSITIVE_LANE.name,
+        "Daily Driver": template.DAILY_DRIVER.name,
+        "None (manual)": SEG5_NO_TOOL,
+        "Outside both lanes": SEG5_NO_LANE,
+    }
+    for lane in ("Sensitive Lane", "Daily Driver"):
         assert f"**{lane}**" in context, f"{lane!r} is not a CONTEXT.md lane"
+    for step in steps:
+        expected = lanes[step["Lane"]]
+        assert expected in text, f"step {step['#']} states no lane"
+    assert text.count(SEG5_NO_TOOL) == 1, "more than one step uses no AI tool, or none does"
+    assert text.count(SEG5_NO_LANE) == 1, (
+        "more than one step sits outside both lanes, or none does"
+    )
+
+
+def test_the_anonymisation_step_uses_no_ai_tool_and_acrobat_is_out(reopened):
+    """Anonymisation happens before any file reaches any AI tool, so the
+    step that does it names no AI tool — and Adobe Acrobat, which needs
+    administrator approval participants cannot get, is out of the chain
+    and the plan says why."""
+    steps = _blueprint_steps_from_plan()
+    step2 = steps[1]
+    assert step2["Step"] == "Anonymise your own material"
+    assert step2["Tool"].startswith("No AI tool")
+    plan = _plan_section(BLUEPRINT_SECTION)
+    assert "Acrobat" not in plan
+    assert "Acrobat" not in _blueprint_text(reopened)
+    roadmap = _plan_section(ROADMAP_SECTION)
+    assert "Why Adobe Acrobat is not in the chain" in roadmap
+
+
+def test_the_full_instructions_reach_the_facilitator_notes(reopened):
+    """The full instruction is a paragraph per step; it does not fit a
+    card, so it has to be somewhere a facilitator reading only the notes
+    still finds it."""
+    corpus = _blueprint_corpus(reopened)
+    section = _plan_section(BLUEPRINT_SECTION)
+    for step in _blueprint_steps_from_plan():
+        assert f"Step {step['#']} — {step['Step']}" in section, (
+            f"the plan writes no instructions for step {step['#']}"
+        )
+        assert f"Step {step['#']} — {step['Step']}" in corpus, (
+            f"step {step['#']}'s instructions never reach the notes"
+        )
+    assert corpus.count("How:") == 8
+    assert "Why this tool here" not in corpus
+    assert "Prompt Coach, at any step" in section
+    assert "Prompt Coach, at any step" in corpus
+
+
+# Every tool the course has introduced and still chains, and the place it
+# is used. The assignment says "the tools the course has introduced so
+# far", so this is what that sentence has to cash out as. Adobe Acrobat is
+# taught in Segment 3 but is not in the chain — see the test above.
+SEG5_CHAIN_TOOLS = [
+    "Copilot Chat (Basic)", "Prompt Coach", "Study and Learn",
+    "Canva", "genspark.ai",
+    "Gemini", "Guided Learning", "Deep Research", "a Gem", "file upload",
+    "long context", "Canvas", "image generation", "NotebookLM",
+]
+
+
+def test_the_blueprint_chains_every_tool_the_course_has_taught(reopened):
+    """"All the tools so far" is a memory test unless the chain names them,
+    so every tool the plan's blueprint uses appears on a blueprint slide,
+    in the step it belongs to."""
+    plan = _plan_section(BLUEPRINT_SECTION)
+    text = _blueprint_text(reopened)
+    for tool in SEG5_CHAIN_TOOLS:
+        assert tool in plan, f"{tool!r} is in no step of the plan's blueprint"
+        assert tool in text, f"the blueprint never names {tool!r}"
+
+
+def test_the_deliverable_is_produced_by_the_chain(reopened):
+    """The chain has to end in the thing the assignment asks for, and the
+    steps that make it teach have to be in it — otherwise the roadmap is a
+    tour of tools rather than a route to a deliverable."""
+    corpus = _blueprint_corpus(reopened) + _slide_corpus(
+        _seg5_slide(reopened, SEG5_ROADMAP_TITLE))
+    for token in ("flashcard", "quiz", "video excerpt", "learning outcome"):
+        assert token in corpus.lower(), f"the chain never produces {token!r}"
 
 
 def test_outcome_slide_states_level_3_achieved_and_level_4_founded(reopened):
@@ -1324,20 +1658,14 @@ def test_outcome_slide_states_level_3_achieved_and_level_4_founded(reopened):
     for number in (2, 3, 4):
         assert f"Level {number}" in text, f"Level {number} is not on the map"
         assert levels[number] in text, f"Level {number} is unnamed"
+    assert "step 5 of the roadmap" in text, "the Gem is credited to the wrong step"
 
 
-# The plan's effort bullet, its two venues, and every tool it tells
-# participants to chain from — each asserted against the plan's own section
-# before it is looked for on the slide.
+# The plan's effort bullet and its two venues, each asserted against the
+# plan's own section before it is looked for on the slide.
 SEG5_EFFORT_TOKENS = [
     "3–4 hours", "blueprint first",
     "Practice Week 1", "W3", "Lesson 3 debrief", "W4", "2–3 volunteers",
-]
-
-SEG5_CHAIN_TOOLS = [
-    "Copilot Chat (Basic)", "Prompt Coach", "Study and Learn",
-    "Adobe Acrobat", "Canva for the prototype", "genspark.ai",
-    "Gemini", "Gems", "Deep Research", "Canvas", "NotebookLM",
 ]
 
 
@@ -1352,14 +1680,15 @@ def test_effort_slide_states_the_effort_and_both_venues(reopened):
         assert token in text, f"{token!r} is only in the notes"
 
 
-def test_effort_slide_lists_every_tool_the_plan_chains_from(reopened):
-    """The assignment chains what the course has taught, so the slide names
-    all of it — otherwise "all the tools so far" is a memory test."""
+def test_effort_slide_says_what_done_looks_like(reopened):
+    """Eight steps is a route, not a quota, and the three things that get
+    handed in are checkable rather than a feeling — both are the plan's
+    words, and both are what stops the room optimising the wrong half."""
     plan = _plan_section(EFFORT_SECTION)
     text = _slide_text(_seg5_slide(reopened, SEG5_EFFORT_TITLE))
-    for tool in SEG5_CHAIN_TOOLS:
-        assert tool in plan, f"{tool!r} is not in the plan's tool list"
-        assert tool in text, f"the effort slide does not name {tool!r}"
+    for token in ("not a quota", "only step 2 is required", "AI-use log"):
+        assert token in plan, f"{token!r} is not in the plan's effort section"
+        assert token in text, f"the effort slide drops {token!r}"
 
 
 # The close's terms, each asserted to be CONTEXT.md's ubiquitous language
@@ -1389,8 +1718,8 @@ def test_close_promises_no_new_material_in_the_practice_week(reopened):
 
 
 def test_segment_5_names_both_lanes(reopened):
-    """Segments 3 and 4 each stay in one lane; the assignment chains across
-    both, so this one names both tools and both lanes."""
+    """Segments 3 and 4 each stay in one lane; the chain crosses both, so
+    this one names both tools and both lanes."""
     corpus = "\n".join(_segment_corpus(reopened, SEG5_NAME)).lower()
     for token in ("sensitive lane", "daily driver", "copilot", "gemini"):
         assert token in corpus, f"Segment 5 never names {token!r}"
@@ -1543,10 +1872,10 @@ def test_no_placeholder_slides_remain_anywhere(reopened):
 # drift. Growing a segment past its pin means changing lesson_2.md first.
 EXPECTED_SEGMENT_SLIDE_COUNTS = {
     "Recap + assignment debrief": 3,
-    "The sensitive-data rule and data-protection principles": 5,
+    "The sensitive-data rule and data-protection principles": 7,
     "Copilot Chat (Basic) in practice": 7,
     "Gemini in depth (+ NotebookLM preview)": 15,
-    "Assignment briefing + close": 4,
+    "Assignment briefing + close": 8,
 }
 
 

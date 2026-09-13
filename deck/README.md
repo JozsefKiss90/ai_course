@@ -38,7 +38,7 @@ Add real slides with `template.add_content_slide(...)` (returns the slide for cu
 
 - `lesson2/build.py` — session order per the Timing Overview in `lesson_2.md`: title slide, then per segment a divider + that segment's slides. Each `Segment` names the lane it lives in (Segment 3 → Sensitive Lane, Segment 4 → Daily Driver, the rest neutral) and the divider takes that lane's colour.
 - `lesson2/template.py` — the single source of visual truth for Lesson 2: a light paper canvas, Cambria headings over Calibri body, and two lane colours (teal = Sensitive Lane / Copilot Chat (Basic), violet = Daily Driver / Google Gemini) that mean the lane wherever they appear — the module docstring is the colour-coding contract. Builders take an optional `lane=template.SENSITIVE_LANE` / `template.DAILY_DRIVER`; `add_lane_tag` puts the lane chip on a custom slide. Same call shapes as Lesson 1, plus `lane=` and three additions: `add_open_card` — a card with an edge bar and an empty text frame, for rows whose text is several runs at their own sizes (`add_card` is the fixed heading/body version of the same block) — and the two blocks built on those, `add_list_card` (a heading over bulleted items) and `add_detail_card` (a bold lead over one or more lines of detail; several lines take bullets, one does not).
-- `lesson2/segments/` — one module per segment, each exposing `add_slides(prs)`. The deck is complete: tickets 04–08 each replaced the placeholders in exactly one module, and ticket 09 was the integration pass.
+- `lesson2/segments/` — one module per segment, each exposing `add_slides(prs)`. The deck is complete: tickets 04–08 each replaced the placeholders in exactly one module, ticket 09 was the integration pass, ticket 10 reworked Segment 5 so that it renders the assignment's workflow orchestration — the roadmap and the blueprint the plan authors — instead of describing one, ticket 12 redefined that route as eight steps with only the anonymisation step required, every step naming where its input comes from and where its output goes, Adobe Acrobat and the justification boxes dropped, and ticket 11 replaced Segment 2's data-protection-principles and dean's-directive slides with the AI data safety and ethics framework: the four pillars of trustworthy AI, the four pillars of data safety, the four ethical principles, and the sources behind them, with the two institutional directives folded into the framework slide as a reference strip.
 
 | Module | Segment | Ticket |
 |---|---|---|
@@ -46,7 +46,7 @@ Add real slides with `template.add_content_slide(...)` (returns the slide for cu
 | `seg2_sensitive_data_rule.py` | 2 — The sensitive-data rule and data-protection principles | 05 |
 | `seg3_copilot_in_practice.py` | 3 — Copilot Chat (Basic) in practice (Sensitive Lane) | 06 |
 | `seg4_gemini_in_depth.py` | 4 — Gemini in depth (+ NotebookLM preview) (Daily Driver) | 07 |
-| `seg5_assignment_close.py` | 5 — Assignment briefing + close | 08 |
+| `seg5_assignment_close.py` | 5 — Assignment briefing + close | 08, 10, 12 |
 
 Add real slides with `template.add_content_slide(..., lane=...)`, set speaker notes via `template.set_notes(slide, ...)`, mark live-demo cues with `template.add_demo_cue(..., lane=...)` on the slide and in its notes, and colour-code cards by lane with `fill=template.SENSITIVE_TINT` / `template.DAILY_TINT` — or `fill=lane.tint` when the code loops over lanes (a lane's `.color` as fill gives a solid label block). A lane colour is only ever right where the slide names that lane's tool as where work goes.
 

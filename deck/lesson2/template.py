@@ -109,6 +109,10 @@ DESIGN = Design(
         "dk2": INK,
         "accent1": SENSITIVE_LANE.color,
         "accent2": DAILY_DRIVER.color,
+        # Live links keep the deck's palette instead of PowerPoint's stock
+        # hyperlink blue; the underline is enough of an affordance.
+        "hlink": SLATE,
+        "folHlink": SLATE,
     },
     canvas=CANVAS,
     footer_text=FOOTER_TEXT,

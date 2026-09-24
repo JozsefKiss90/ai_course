@@ -1,19 +1,20 @@
 # Deck build
 
-One package, two lessons, one set of mechanics. Regenerate a deck any time with:
+One package, three lessons, one set of mechanics. Regenerate a deck any time with:
 
 ```
 python -m deck.build            # Lesson 1 → dist/lesson_1_deck.pptx
 python -m deck.lesson2.build    # Lesson 2 → dist/lesson_2_deck.pptx
+python -m deck.lesson3.build    # Lesson 3 → dist/lesson_3_deck.pptx
 ```
 
 Output goes to `dist/` (git-ignored — the source of truth is this package).
-Requires Python 3.11+ and `python-pptx`. Tests: `python -m pytest` (`tests/test_core.py` for the shared core, `tests/test_deck.py` for Lesson 1, `tests/test_lesson2_deck.py` for Lesson 2). After a build, `python -m deck.com_check` opens the decks in real PowerPoint (Windows + pywin32) — the check that catches what a python-pptx round-trip does not.
+Requires Python 3.11+ and `python-pptx`. Tests: `python -m pytest` (`tests/test_core.py` for the shared core, `tests/test_deck.py` for Lesson 1, `tests/test_lesson2_deck.py` for Lesson 2, `tests/test_lesson3_deck.py` for Lesson 3). After a build, `python -m deck.com_check` opens the decks in real PowerPoint (Windows + pywin32) — the check that catches what a python-pptx round-trip does not.
 
 ## Core vs. per-lesson template
 
 - `core.py` — **mechanics**, lesson-independent: presentation setup at 16:9, writing fonts and colours into the theme part, the master footer, `master_next_id()` (see the gotcha below), the `solid`/`outlined` shape styles, `style(run, ...)`, and the blank-slide, text-box and notes helpers. A lesson hands it a `core.Design` (fonts, theme colour scheme, canvas, footer text and colours) and gets a presentation back. Nothing here knows a palette or a layout.
-- `template.py` (Lesson 1) and `lesson2/template.py` (Lesson 2) — **design**, one per lesson: the colour constants, the `Design` handed to the core, and the slide builders and in-slide blocks segment modules call. Both templates define the same slide builders and in-slide blocks with the same call shapes (`add_title_slide`, `add_section_divider`, `add_content_slide`, `add_placeholder_slide`, `add_demo_cue`, `add_card`, `add_band`, `add_label`), so segment authors work the same way in either lesson. Lesson 1's template re-exports the core helpers segment modules use (`solid`, `add_bar`, `set_notes`) so segment modules keep calling `template.solid(...)`.
+- `template.py` (Lesson 1), `lesson2/template.py` (Lesson 2) and `lesson3/template.py` (Lesson 3) — **design**, one per lesson: the colour constants, the `Design` handed to the core, and the slide builders and in-slide blocks segment modules call. Both templates define the same slide builders and in-slide blocks with the same call shapes (`add_title_slide`, `add_section_divider`, `add_content_slide`, `add_placeholder_slide`, `add_demo_cue`, `add_card`, `add_band`, `add_label`), so segment authors work the same way in either lesson. Lesson 1's template re-exports the core helpers segment modules use (`solid`, `add_bar`, `set_notes`) so segment modules keep calling `template.solid(...)`.
 
 Adding a lesson means adding a sub-package like `lesson2/` (its own `template.py`, `build.py`, `segments/`), never editing the core for a design reason.
 
@@ -50,18 +51,34 @@ Add real slides with `template.add_content_slide(...)` (returns the slide for cu
 
 Add real slides with `template.add_content_slide(..., lane=...)`, set speaker notes via `template.set_notes(slide, ...)`, mark live-demo cues with `template.add_demo_cue(..., lane=...)` on the slide and in its notes, and colour-code cards by lane with `fill=template.SENSITIVE_TINT` / `template.DAILY_TINT` — or `fill=lane.tint` when the code loops over lanes (a lane's `.color` as fill gives a solid label block). A lane colour is only ever right where the slide names that lane's tool as where work goes.
 
+## Lesson 3 — where slides come from
+
+- `lesson3/build.py` — session order per the Timing Overview in `lesson_3.md`: title slide, then per segment a divider + that segment's slides. Segment 2 declares the Daily Driver, Segment 3 the local non-lane; the divider takes that colour. `BUFFER_MINUTES` is the plan's 2-minute buffer row, which the dividers do not show but the 90-minute title slide includes.
+- `lesson3/template.py` — the single source of visual truth for Lesson 3: a cool grey-blue canvas, Georgia headings over Arial body, a vertical accent bar beside each title, numbered-disc dividers. Two accent colours, and they mean the same thing wherever they appear: amber = Daily Driver (every tool that calls a cloud model: NotebookLM, Copilot for Obsidian, Perplexity), green = local (Obsidian, Smart Connections: nothing leaves the machine). The Sensitive Lane is not demonstrated in this lesson and has no colour. Same call shapes as Lesson 2 (`lane=template.DAILY_DRIVER` / `template.LOCAL`, `DAILY_TINT` / `LOCAL_TINT`), plus `add_table` — a grid of white row cards with a header line, one edge bar per row — for the plan's tables, `add_badge` / `add_numbered_rows` for step lists (a numbered badge beside a text card, with an optional trailing cell for a timing), and a long title shrinks itself to stay on one line.
+- `lesson3/segments/` — one module per segment, each exposing `add_slides(prs)`. The deck is complete: tickets 02–06 each own one module, ticket 07 was the integration pass.
+
+| Module | Segment | Ticket |
+|---|---|---|
+| `seg1_recap_debrief.py` | 1 — Recap + assignment debrief | 02 |
+| `seg2_km_system_notebooklm.py` | 2 — The KM System redrawn + NotebookLM in depth (Daily Driver) | 03 |
+| `seg3_obsidian_vault.py` | 3 — Obsidian: the Personal Vault and its two plugins (local) | 04 |
+| `seg4_hands_on_block.py` | 4 — Hands-on block: notebook + vault | 05 |
+| `seg5_assignment_close.py` | 5 — Assignment briefing + close | 06 |
+
+Two Lesson 3 rules the tests hold deck-wide: a colour appears only on a slide that names a tool of that kind (amber needs a cloud tool named, green a local one), and the Obsidian plugin is always "Copilot for Obsidian", never bare "Copilot" — CONTEXT.md's Avoid-list for the vault plugins.
+
 ## The plan is the oracle
 
-`lesson_1.md` and `lesson_2.md` are the session plans, and the tests read them the way the decks do: segment names, durations and modes come from each plan's Timing Overview, and the segment tests assert the plan's content — its scenarios, its demo script, its assignment wording. Changing what a deck says starts in its plan; a slide the plan does not call for has nothing to test it against.
+`lesson_1.md`, `lesson_2.md` and `lesson_3.md` are the session plans, and the tests read them the way the decks do: segment names, durations and modes come from each plan's Timing Overview, and the segment tests assert the plan's content — its scenarios, its demo script, its assignment wording. Changing what a deck says starts in its plan; a slide the plan does not call for has nothing to test it against.
 
-Alongside the per-segment tests, each lesson's module carries tests that guard the deck as a whole. Some are grouped under the lesson's integration-pass heading (`tests/test_deck.py` ticket 08, `tests/test_lesson2_deck.py` ticket 09) — no placeholders left, per-segment slide counts pinned and held under one slide per minute of that segment's duration, the divider durations still adding up to the length the title slide promises, speaker notes on every content slide, every live-demo cue mirrored in its notes, one spelling of *anonymise* deck-wide — and the rest sit in the module's other deck-wide sections: the terminology audit against the Avoid-lists in `CONTEXT.md`, an explicit font and size on every run, and, for Lesson 2, no YouTube URL anywhere. Lesson 2's lane separation is stated once, in the integration section: a segment that names a lane in `lesson2/build.py` never names the other lane, the brand of its tool, or the words that give that lane away.
+Alongside the per-segment tests, each lesson's module carries tests that guard the deck as a whole. Some are grouped under the lesson's integration-pass heading (`tests/test_deck.py` ticket 08, `tests/test_lesson2_deck.py` ticket 09, `tests/test_lesson3_deck.py` ticket 07) — no placeholders left, per-segment slide counts pinned and held under one slide per minute of that segment's duration, the divider durations still adding up to the length the title slide promises, speaker notes on every content slide, every live-demo cue mirrored in its notes, one spelling of *anonymise* deck-wide — and the rest sit in the module's other deck-wide sections: the terminology audit against the Avoid-lists in `CONTEXT.md`, an explicit font and size on every run, and, for Lesson 2, no YouTube URL anywhere. Lesson 2's lane separation is stated once, in the integration section: a segment that names a lane in `lesson2/build.py` never names the other lane, the brand of its tool, or the words that give that lane away.
 
 ## Before you present
 
 Three checks, in this order:
 
 1. `python -m pytest` — the whole suite, both lessons.
-2. `python -m deck.build && python -m deck.lesson2.build`, then `python -m deck.com_check` — a python-pptx round-trip is not proof that PowerPoint opens the file.
+2. `python -m deck.build && python -m deck.lesson2.build && python -m deck.lesson3.build`, then `python -m deck.com_check` — a python-pptx round-trip is not proof that PowerPoint opens the file.
 3. A visual pass over exported slide images, which is the part no test covers — overflowing cards, a band running into the footer, a colour that says the wrong lane. Export them with PowerPoint's own renderer:
 
    ```python

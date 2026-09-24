@@ -2,7 +2,7 @@
 
 python-pptx round-trips do not catch everything PowerPoint rejects (the
 master shape-id gotcha in README.md was found this way), so run this after
-a build: `python -m deck.com_check dist/lesson_1_deck.pptx dist/lesson_2_deck.pptx`.
+a build: `python -m deck.com_check dist/lesson_1_deck.pptx dist/lesson_2_deck.pptx dist/lesson_3_deck.pptx`.
 Windows with PowerPoint and pywin32 only; exits non-zero if any file fails.
 """
 
@@ -32,4 +32,4 @@ def main(paths):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:] or ["dist/lesson_1_deck.pptx", "dist/lesson_2_deck.pptx"]))
+    sys.exit(main(sys.argv[1:] or ["dist/lesson_1_deck.pptx", "dist/lesson_2_deck.pptx", "dist/lesson_3_deck.pptx"]))

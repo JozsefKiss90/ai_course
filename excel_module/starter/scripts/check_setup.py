@@ -1,0 +1,198 @@
+"""Setup check for the Excel for Finance module.
+
+Run it from the project folder with:
+
+    uv run python scripts/check_setup.py
+
+It checks that Python and every library import, reads the fictional sample
+budget, and writes output/setup_check.xlsx with LIVE Excel formulas next to
+the values Python calculated, so you can open the file in Excel and see that
+both agree.
+"""
+
+from __future__ import annotations
+
+import importlib
+import platform
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / "data" / "sample_budget.csv"
+OUTPUT_DIR = ROOT / "output"
+WORKBOOK = OUTPUT_DIR / "setup_check.xlsx"
+REPORT = ROOT / "setup_report_python.txt"
+
+# Horizon Europe flat rate for indirect costs (AGA, Article 6.2.E):
+# 25% of eligible direct costs, excluding subcontracting (among others).
+INDIRECT_RATE = 0.25
+EXCLUDED_FROM_INDIRECT_BASE = {"B"}  # B = subcontracting
+
+LIBRARIES = [
+    "pandas",
+    "openpyxl",
+    "xlsxwriter",
+    "numpy",
+    "numpy_financial",
+    "matplotlib",
+    "ipykernel",
+    "pytest",
+]
+
+lines: list[str] = []
+failures = 0
+
+
+def report(ok: bool, label: str, detail: str = "") -> None:
+    global failures
+    status = "PASS" if ok else "FAIL"
+    if not ok:
+        failures += 1
+    line = f"[{status}] {label}" + (f" - {detail}" if detail else "")
+    lines.append(line)
+    print(line)
+
+
+def check_python() -> None:
+    version = sys.version_info
+    report(
+        version >= (3, 12),
+        "Python version",
+        f"{platform.python_version()} ({sys.executable})",
+    )
+
+
+def check_libraries() -> None:
+    for name in LIBRARIES:
+        try:
+            module = importlib.import_module(name)
+            report(True, f"Library {name}", getattr(module, "__version__", "installed"))
+        except Exception as exc:  # noqa: BLE001 - we want to report any import problem
+            report(False, f"Library {name}", f"{type(exc).__name__}: {exc}")
+
+
+def build_budget():
+    import pandas as pd
+
+    budget = pd.read_csv(DATA)
+    budget["cost_eur"] = budget["quantity"] * budget["unit_cost_eur"]
+    direct = budget["cost_eur"].sum()
+    base = budget.loc[
+        ~budget["category_code"].isin(EXCLUDED_FROM_INDIRECT_BASE), "cost_eur"
+    ].sum()
+    indirect = round(base * INDIRECT_RATE, 2)
+    totals = {
+        "direct": float(direct),
+        "indirect_base": float(base),
+        "indirect": float(indirect),
+        "total": float(direct + indirect),
+    }
+    report(True, "Read sample budget with pandas", f"{len(budget)} cost lines")
+    return budget, totals
+
+
+def write_workbook(budget, totals) -> None:
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+    from openpyxl.utils import get_column_letter
+
+    OUTPUT_DIR.mkdir(exist_ok=True)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Budget"
+
+    headers = ["Code", "Category", "Item", "Quantity", "Unit", "Unit cost (EUR)", "Cost (EUR)"]
+    ws.append(headers)
+    for cell in ws[1]:
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor="1F4E78")
+
+    first = 2
+    for i, row in enumerate(budget.itertuples(index=False), start=first):
+        ws.append([
+            row.category_code,
+            row.category,
+            row.item,
+            row.quantity,
+            row.unit,
+            row.unit_cost_eur,
+            f"=D{i}*F{i}",  # live Excel formula, not a pasted value
+        ])
+    last = first + len(budget) - 1
+
+    r = last + 2
+    summary = [
+        ("Total direct costs", f"=SUM(G{first}:G{last})", totals["direct"]),
+        ("Base for indirect costs (excl. subcontracting)",
+         f'=G{r}-SUMIF(A{first}:A{last},"B",G{first}:G{last})', totals["indirect_base"]),
+        ("Indirect costs (25% flat rate)", f"=ROUND(G{r + 1}*0.25,2)", totals["indirect"]),
+        ("TOTAL estimated eligible costs", f"=G{r}+G{r + 2}", totals["total"]),
+    ]
+    ws.cell(row=r - 1, column=7, value="Excel formula").font = Font(bold=True)
+    ws.cell(row=r - 1, column=8, value="Python value").font = Font(bold=True)
+    ws.cell(row=r - 1, column=9, value="Match?").font = Font(bold=True)
+    for offset, (label, formula, value) in enumerate(summary):
+        row_no = r + offset
+        ws.cell(row=row_no, column=3, value=label).font = Font(bold=True)
+        ws.cell(row=row_no, column=7, value=formula)
+        ws.cell(row=row_no, column=8, value=value)
+        ws.cell(row=row_no, column=9, value=f'=IF(ROUND(G{row_no}-H{row_no},2)=0,"OK","CHECK")')
+
+    for col in range(1, 10):
+        ws.column_dimensions[get_column_letter(col)].width = 16
+    ws.column_dimensions["C"].width = 46
+    for row in ws.iter_rows(min_row=2, min_col=6, max_col=8):
+        for cell in row:
+            cell.number_format = "#,##0.00"
+
+    notes = wb.create_sheet("About")
+    notes["A1"] = "Generated by scripts/check_setup.py - fictional data for training only."
+    notes["A2"] = "Indirect costs: 25% flat rate on direct costs excluding subcontracting (AGA Art. 6.2.E)."
+    notes["A3"] = "Open the Budget sheet: column G holds live formulas, column H the values Python computed."
+
+    try:
+        wb.save(WORKBOOK)
+    except PermissionError:
+        report(False, "Write Excel workbook", f"{WORKBOOK.name} is open in Excel - close it and run again")
+        return
+    report(True, "Write Excel workbook with live formulas", str(WORKBOOK.relative_to(ROOT)))
+
+    # Read it back to prove the round trip works.
+    from openpyxl import load_workbook
+
+    check = load_workbook(WORKBOOK)["Budget"]
+    report(str(check[f"G{first}"].value).startswith("="), "Formulas survived the round trip", check[f"G{first}"].value)
+
+
+def check_financial_functions() -> None:
+    import numpy_financial as npf
+
+    # Same as Excel =PMT(5%/12, 60, -20000): monthly payment on a 20,000 EUR loan.
+    payment = npf.pmt(0.05 / 12, 60, -20000)
+    report(abs(payment - 377.42) < 0.01, "Excel-style financial function (PMT)", f"{payment:,.2f} EUR/month")
+
+
+def main() -> int:
+    print("Excel for Finance - Python setup check\n")
+    check_python()
+    check_libraries()
+    if failures:
+        print("\nA library is missing. Run `uv sync` in this folder, then try again.")
+    else:
+        budget, totals = build_budget()
+        write_workbook(budget, totals)
+        check_financial_functions()
+        print(
+            f"\nBudget check: direct {totals['direct']:,.2f} EUR, "
+            f"indirect {totals['indirect']:,.2f} EUR, total {totals['total']:,.2f} EUR"
+        )
+
+    verdict = "ALL PYTHON CHECKS PASSED" if failures == 0 else f"{failures} CHECK(S) FAILED"
+    print(f"\n{verdict}")
+    lines.append(verdict)
+    REPORT.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return 0 if failures == 0 else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

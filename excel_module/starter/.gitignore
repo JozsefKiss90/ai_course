@@ -1,0 +1,18 @@
+# Python environment and caches (rebuilt by `uv sync`)
+.venv/
+__pycache__/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Generated files - rebuilt by the scripts, never committed
+output/*
+!output/.gitkeep
+setup_report*.txt
+
+# Excel lock files created while a workbook is open
+~$*.xlsx
+~$*.xlsm
+
+# Never put real institutional data in this repository.
+# (This line only keeps a folder out of Git. AI agents can still READ it.)
+private/

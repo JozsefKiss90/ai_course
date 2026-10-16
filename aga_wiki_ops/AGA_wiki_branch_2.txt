@@ -1,0 +1,783 @@
+
+
+---
+
+
+
+# 📋 AGA Wiki Implementation Handoff & Status Report
+
+
+
+**To:** Incoming Implementation Guide Agent / Operator
+
+
+
+**From:** Orchestration / Execution Session
+
+
+
+**Date:** 2026-09-28
+
+
+
+**Current Phase:** Milestone M2 — Meta Nodes & Structural Spine
+
+
+
+**Target Vault Path:** `wiki/aga/`
+
+
+
+**Ontology Version:** `1.0` (Ratified)
+
+
+
+---
+
+
+
+## 1. Executive Summary & Current State
+
+
+
+We are currently executing **Milestone M2 (Meta nodes / structural spine)** for the **AGA — Annotated Grant Agreement (V2.0, 01.04.2025)** Knowledge Graph.
+
+
+
+* **Completed:**
+
+* **`T-L1-SRC-01`** is successfully executed by **G5 (Node Author)**.
+
+
+
+
+
+* The foundational source node **`wiki/aga/sources/SRC - AGA V2.0.md`** has been generated and validated.
+
+
+
+
+
+* `index.md` and `log.md` entries for `T-L1-SRC-01` have been emitted.
+
+
+
+
+
+
+
+
+
+* **Current Status:**
+
+* **`T-L1-WORK-01`** (Primary work node: `WORK - AGA.md`) is now **unblocked**.
+
+
+
+
+
+* All remaining Layer 1 tickets (`T-L1-INTRO-01`, `T-L1-CHAP1-01` through `T-L1-CHAP6-01`, `T-L1-ANNEX5-01`) are currently **blocked by `T-L1-WORK-01**`.
+
+
+
+
+
+
+
+
+
+
+
+---
+
+
+
+## 2. Immediate Next Steps (Task Protocol)
+
+
+
+Your immediate task is to guide the operator through executing **`T-L1-WORK-01`**, followed by the remaining M2 structural backbone tickets in order.
+
+
+
+### Step 1: Execute Ticket `T-L1-WORK-01`
+
+
+
+1. **NotebookLM Pass:**
+
+* Query in NotebookLM notebook **"AGA v2.0"**:
+
+> *"Within AGA V2.0 only: what is the overall structural organization of the EU Grant Agreement (Introductory, Chapters 1-6, Annex 5)? Quote pages."*
+
+> 
+
+
+
+
+
+* Save output as Note **`T-L1-WORK-01/Q1`**.
+
+
+
+
+
+
+
+
+
+2. **Invoke G5 (Node Author):**
+
+* Feed ticket **`T-L1-WORK-01`**, Note **`T-L1-WORK-01/Q1`**, and schema `WIKI_SCHEMA.md` to **G5**.
+
+
+
+
+
+
+
+
+
+3. **Commit Output:**
+
+* Save output file to `wiki/aga/structure/WORK - AGA.md`.
+
+
+
+
+
+* Append proposed lines to `index.md` and `log.md`.
+
+
+
+
+
+
+
+
+
+
+
+---
+
+
+
+### Step 2: Unblock and Execute Remaining Layer 1 Spine Tickets
+
+
+
+Once `WORK - AGA.md` is committed, all structural chapter/section tickets become unblocked. Execute them in the following order:
+
+
+
+| Order | Ticket ID | Target Locator / Scope | Node Limit | Output Target |
+
+| --- | --- | --- | --- | --- |
+
+| 1 | `T-L1-INTRO-01` | Intro Section (pp. 10–28)
+
+
+
+ | ≤ 4 nodes
+
+
+
+ | `Introduction.md`, `Annotations.md`, `Preamble.md`, `Data Sheet.md`<br> |
+
+| 2 | `T-L1-CHAP1-01` | Chapter 1 (pp. 29–31)
+
+
+
+ | ≤ 3 nodes
+
+
+
+ | `Chapter 1 - General.md`, `Art 1...`, `Art 2...`<br> |
+
+| 3 | `T-L1-CHAP2-01` | Chapter 2 (pp. 32–33)
+
+
+
+ | ≤ 3 nodes
+
+
+
+ | `Chapter 2 - Action.md`, `Art 3...`, `Art 4...`<br> |
+
+| 4 | `T-L1-CHAP3-01` | Chapter 3 (pp. 34–146)
+
+
+
+ | ≤ 7 nodes
+
+
+
+ | `Chapter 3 - Grant.md`, `Art 5`, `Art 6`, Sub-sections 6.2
+
+
+
+ |
+
+| 5 | `T-L1-CHAP4-SEC1-01` | Chap 4, Sec 1 (pp. 147–175)
+
+
+
+ | ≤ 6 nodes
+
+
+
+ | `Chapter 4...`, `Section 4.1...`, `Art 7–10`<br> |
+
+| 6 | `T-L1-CHAP4-SEC2-01` | Chap 4, Sec 2 (pp. 176–199)
+
+
+
+ | ≤ 9 nodes
+
+
+
+ | `Section 4.2...`, `Art 11–18`<br> |
+
+| 7 | `T-L1-CHAP4-SEC3-01` | Chap 4, Sec 3 (pp. 200–274)
+
+
+
+ | ≤ 9 nodes
+
+
+
+ | `Section 4.3...`, `Art 19–26`<br> |
+
+| 8 | `T-L1-CHAP5-01` | Chapter 5 (pp. 275–318)
+
+
+
+ | ≤ 10 nodes
+
+
+
+ | `Chapter 5...`, `Art 27–35`<br> |
+
+| 9 | `T-L1-CHAP6-01` | Chapter 6 (pp. 319–346)
+
+
+
+ | ≤ 10 nodes
+
+
+
+ | `Chapter 6...`, `Art 36–44`<br> |
+
+| 10 | `T-L1-ANNEX5-01` | Annex 5 (pp. 347–431)
+
+
+
+ | ≤ 7 nodes
+
+
+
+ | `Annex 5...`, Sections 1–6
+
+
+
+ |
+
+
+
+---
+
+
+
+## 3. Post-Spine Audit & Transition to Milestone M3
+
+
+
+Once all L1 tickets are processed:
+
+
+
+1. **Trigger G7 (Wiki Maintainer) for Lint Pass:**
+
+* Run Dataview check on `Graph Health Dashboard.md`.
+
+
+
+
+
+* Confirm **Structure Coverage = 100%** (every article has a structure node).
+
+
+
+
+
+
+
+
+
+2. **Take Snapshot S2:**
+
+* Follow `templates/Snapshot Template.md` and log snapshot metrics in `log.md`.
+
+
+
+
+
+
+
+
+
+3. **Proceed to Milestone M3 (Canonical Anchors):**
+
+* Switch executing gem to **G2 (Topic Analysis)** on Chapters 1–6 to identify ~40 canonical anchor concepts (e.g., *Beneficiary, Eligible Cost, Daily Rate, Subcontractor*) before leaf tickets (M4) begin.
+
+
+
+
+
+
+
+
+
+
+
+---
+
+
+
+## 4. Key Operating Rules to Enforce
+
+
+
+* **Node Batch Cap:** Never exceed **15 nodes per ticket pass**.
+
+
+
+
+
+* **Source Citations:** Every generated node must contain at least 1 `source_ref` with verbatim quote + exact page number.
+
+
+
+
+
+* **Automation Boundary:** Gems **never** directly write to `index.md`, `log.md`, or `WIKI_SCHEMA.md`. Apply their proposed update lines manually or via G7.
+
+
+
+
+
+* **Smart Connections Check:** Check for duplicate files (≥0.85 score) after each batch. 
+
+Acknowledge and accepted. I am ready to serve as your Implementation Guide Agent & Operator for the AGA Wiki Implementation (Milestone M2: Meta Nodes & Structural Spine).
+
+🟢 Current Status & Operations Checklist
+Vault Path Target: wiki/aga/
+
+Ontology Version: 1.0
+
+Completed: T-L1-SRC-01 (wiki/aga/sources/SRC - AGA V2.0.md)
+
+Immediate Active Target: T-L1-WORK-01 (WORK - AGA.md)
+
+📍 Immediate Step: Executing T-L1-WORK-01
+To execute T-L1-WORK-01, please complete Step 1.1 in NotebookLM and provide the output note:
+
+Query in NotebookLM notebook "AGA v2.0":
+
+"Within AGA V2.0 only: what is the overall structural organization of the EU Grant Agreement (Introductory, Chapters 1-6, Annex 5)? Quote pages."
+
+Paste or attach the result as Note T-L1-WORK-01/Q1.
+
+Once you paste the note content here, I will immediately run G5 (Node Author) to generate the complete Markdown file for wiki/aga/structure/WORK - AGA.md, along with the proposed update lines for index.md and log.md.
+
+Innen: AGA Wiki Milestone M2 Handoff
+I am executing T-L1-WORK-01 using G5 (Node Author), grounded in the provided NotebookLM note T-L1-WORK-01/Q1 and SRC - AGA V2.0.md.   
+PDF
+
+Here are the output file and proposed registry entries:
+
+Markdown
+---
+node_id: "WORK - AGA"
+title: "EU Grant Agreement (AGA V2.0) — Structural Spine"
+node_type: "work"
+layer: 1
+status: "seed"
+certainty: "high"
+canonical_owner: "agent"
+domain: "governance"
+programme_scope: ["all"]
+article: "All"
+pages: "10-430"
+ticket_id: "T-L1-WORK-01"
+created_by: "G5"
+created_at: 2026-09-28
+updated_at: 2026-09-28
+source_refs:
+  - "AGA V2.0 | pp. 10-430 | Overall structural organization of the EU Grant Agreement"
+relations:
+  governed_by: []
+  anchored_to:
+    - "[[SRC - AGA V2.0]]"
+  defines: []
+  requires: []
+  conflicts_with: []
+  derives_from: []
+  applies_to: []
+  child_nodes:
+    - "[[Introduction]]"
+    - "[[Preamble]]"
+    - "[[Data Sheet]]"
+    - "[[Chapter 1 - General]]"
+    - "[[Chapter 2 - Action]]"
+    - "[[Chapter 3 - Grant]]"
+    - "[[Chapter 4 - Grant Implementation]]"
+    - "[[Chapter 5 - Consequences of Non-Compliance]]"
+    - "[[Chapter 6 - Final Provisions]]"
+    - "[[Annex 5 - Specific Rules]]"
+query_hooks:
+  - "What is the primary structural division of the EU Grant Agreement?"
+  - "Where are the general provisions and action definitions located in the AGA?"
+  - "How are the chapters and annexes arranged in the AGA V2.0?"
+  - "What main parts constitute the core legal text of the Grant Agreement?"
+---
+
+# EU Grant Agreement (AGA V2.0) — Structural Spine
+
+## Summary
+The primary structural spine for the EU Grant Agreement under AGA V2.0, spanning introductory elements, core legal text (Chapters 1–6, Articles 1–44), and programmatic annexes (Annex 5)[cite: 1].
+
+## Structural Breakdown
+
+### 1. Introductory & Contextual Framework
+- [[Introduction]] (pp. 10–16): Regulatory framework, grant types, corporate approach[cite: 1].
+- [[Preamble]] (pp. 17–20): Contracting parties and contractual annexes[cite: 1].
+- [[Data Sheet]] (pp. 21–28): Project data, grant amounts, funding rates, reporting, eligibility options[cite: 1].
+
+### 2. Core Legal Text: Chapters 1–6
+- [[Chapter 1 - General]] (pp. 29–31): Subject of the Agreement (Art 1), Definitions (Art 2)[cite: 1].
+- [[Chapter 2 - Action]] (pp. 32–33): Action (Art 3), Duration and Starting Date (Art 4)[cite: 1].
+- [[Chapter 3 - Grant]] (pp. 34–146): Grant (Art 5), Cost Eligibility (Art 6)[cite: 1].
+- [[Chapter 4 - Grant Implementation]] (pp. 147–274): Consortium (Sec 1, Art 7–10), Action Execution (Sec 2, Art 11–18), Grant Administration (Sec 3, Art 19–26)[cite: 1].
+- [[Chapter 5 - Consequences of Non-Compliance]] (pp. 275–318): Rejections/Reductions (Sec 1, Art 27–28), Suspension/Termination (Sec 2, Art 29–32), Damages/Sanctions (Sec 3, Art 33–34), Force Majeure (Sec 4, Art 35)[cite: 1].
+- [[Chapter 6 - Final Provisions]] (pp. 319–346): Final Provisions (Art 36–44)[cite: 1].
+
+### 3. Programmatic Annex
+- [[Annex 5 - Specific Rules]] (pp. 347–430): Programmatic conditions (Confidentiality/Security, Ethics, Values, IPR, Communication, Procurement, Partnerships, ERC)[cite: 1].
+
+## MGA Text vs Annotation Notes
+The AGA structural hierarchy mirrors the EU Model Grant Agreement (MGA) layout, using grey text boxes for MGA provisions and annotated bold/underlined terms for detailed guidance[cite: 8].
+Proposed index.md lines
+Markdown
+- [[WORK - AGA]] — Primary work node defining the structural spine of AGA V2.0
+Proposed log.md line
+Markdown
+## [2026-09-28] ingest | T-L1-WORK-01 — Primary work node WORK - AGA.md created (1 node)
+Pending links
+[[Introduction]]
+
+[[Preamble]]
+
+[[Data Sheet]]
+
+[[Chapter 1 - General]]
+
+[[Chapter 2 - Action]]
+
+[[Chapter 3 - Grant]]
+
+[[Chapter 4 - Grant Implementation]]
+
+[[Chapter 5 - Consequences of Non-Compliance]]
+
+[[Chapter 6 - Final Provisions]]
+
+[[Annex 5 - Specific Rules]]
+
+Unresolved
+None.
+
+Next Action & Step 2 Unblocking
+With WORK - AGA.md created, all remaining L1 spine tickets are now unblocked.
+
+The next ticket in sequence is T-L1-INTRO-01 (Introductory Section, pp. 10–28).
+
+Operator Action Required:
+Query NotebookLM notebook "AGA v2.0":
+
+"Within pp. 10-28 only: details and breakdown of the Introduction, Preamble, and Data Sheet. Quote exact page numbers."
+
+Paste the NotebookLM response as Note T-L1-INTRO-01/Q1 when ready.
+
+I am executing ticket T-L1-INTRO-01 using G5 (Node Author) based on the input note T-L1-INTRO-01/Q1 and grounded in SRC - AGA V2.0.md.   
+MD
++ 4
+
+Per the ticket constraints (Node limit ≤4 nodes), here are the 4 generated Layer-1 structural nodes along with the proposed registry updates:
+
+Markdown
+---
+id: "introduction"
+title: "Introduction"
+aliases: ["EU Grants Regulatory Framework"]
+node_type: "section"
+layer: 1
+article: "Introduction"
+page_start: 10
+page_end: 16
+programme_scope: [all]
+cost_category: ""
+budget_relevance: "none"
+status: "canonical"
+certainty: "high"
+canonical_owner: "source"
+source_refs:
+  - "Introduction | p. 10 | 'EU grants operate via sui generis private law contractual arrangements called EU Grant Agreements'"
+parent_nodes:
+  - "[[WORK - AGA]]"
+child_nodes: []
+related_nodes:
+  - "[[Preamble]]"
+  - "[[Data Sheet]]"
+anchors: []
+tags: ["structure", "introduction", "framework", "participants"]
+ticket_id: "T-L1-INTRO-01"
+created_by: "G5"
+created: 2026-09-28
+updated: 2026-09-28
+ontology_version: "1.0"
+---
+
+# Introduction (pp. 10–16)
+
+## Overview
+The Introduction section outlines the legal and contextual framework of EU Grant Agreements, explaining their sui generis private law contractual nature and hierarchy under the EU Financial Regulation[cite: 2].
+
+## Key Elements & Structural Features
+- **EU Grants Regulatory Framework (p. 10):** Governs relationships between the EU Financial Regulation, EU Programme Regulations, and Model Grant Agreements (MGAs)[cite: 2].
+- **Model Grant Agreement Focus (p. 10):** Focuses on the EU General MGA as the corporate baseline for program-specific MGAs[cite: 2].
+- **Formatting Conventions (pp. 10–11):** 
+  - Grey Text Boxes: MGA official text (bold/underlined terms annotated)[cite: 2].
+  - Green Text: Examples; Red Text: Lists; Orange Text: Exceptions; Purple Text: Programme-specific rules[cite: 2].
+- **Participant Roles Breakdown (pp. 12–16):** Defines operational and contractual distinctions for Coordinators, Beneficiaries, Affiliated Entities, Subcontractors, Suppliers, In-Kind Contributors, and FSTP Recipients[cite: 2].
+- **Summary Matrix Table (p. 16):** Tabular mapping of participant types, execution rights, eligibility rules, and Annex 1 requirements[cite: 2].
+Markdown
+---
+id: "preamble"
+title: "Preamble"
+aliases: ["Contracting Parties"]
+node_type: "section"
+layer: 1
+article: "Preamble"
+page_start: 17
+page_end: 20
+programme_scope: [all]
+cost_category: ""
+budget_relevance: "none"
+status: "canonical"
+certainty: "high"
+canonical_owner: "source"
+source_refs:
+  - "Preamble | p. 17 | 'Defines the binding components of the contract'"
+parent_nodes:
+  - "[[WORK - AGA]]"
+child_nodes: []
+related_nodes:
+  - "[[Introduction]]"
+  - "[[Data Sheet]]"
+anchors: []
+tags: ["structure", "preamble", "contracting-parties", "annexes"]
+ticket_id: "T-L1-INTRO-01"
+created_by: "G5"
+created: 2026-09-28
+updated: 2026-09-28
+ontology_version: "1.0"
+---
+
+# Preamble (pp. 17–20)
+
+## Overview
+The Preamble identifies the contracting parties (Granting Authority, Coordinator, Beneficiaries) and establishes the formal binding components and annexes of the Grant Agreement[cite: 2].
+
+## Core Components
+- **Contracting Parties (pp. 17–18):** Establishes the legal relations between the Granting Authority and the Consortium (or single mono-beneficiary)[cite: 2].
+- **Signature Mechanics (p. 18):** Direct signature by Coordinator; accession via Annex 3 forms for other beneficiaries[cite: 2].
+- **Binding Contract Components (pp. 17–18):**
+  1. Preamble
+  2. Terms and Conditions (including the Data Sheet)
+  3. Annex 1 (Description of the Action)
+  4. Annex 2 (Estimated Budget) & Annex 2a (Unit Costs)
+  5. Annex 3 (Accession Forms) & Annex 3a (Joint Liability Declarations)
+  6. Annex 4 (Model Financial Statements)
+  7. Annex 5 (Specific Rules)[cite: 2].
+- **Participant Register Data (p. 19):** Legal entity data auto-populated from the Portal Participant Register managed by LEARs[cite: 2].
+Markdown
+---
+id: "data-sheet"
+title: "Data Sheet"
+aliases: ["Grant Data Sheet"]
+node_type: "section"
+layer: 1
+article: "Data Sheet"
+page_start: 21
+page_end: 28
+programme_scope: [all]
+cost_category: ""
+budget_relevance: "high"
+status: "canonical"
+certainty: "high"
+canonical_owner: "source"
+source_refs:
+  - "Data Sheet | p. 21 | 'Summarizes all selected project options flagged in the Grant Agreement using automated IT labels'"
+parent_nodes:
+  - "[[WORK - AGA]]"
+child_nodes: []
+related_nodes:
+  - "[[Introduction]]"
+  - "[[Preamble]]"
+anchors: []
+tags: ["structure", "data-sheet", "reporting", "payments", "options"]
+ticket_id: "T-L1-INTRO-01"
+created_by: "G5"
+created: 2026-09-28
+updated: 2026-09-28
+ontology_version: "1.0"
+---
+
+# Data Sheet (pp. 21–28)
+
+## Overview
+The Data Sheet serves as the project-specific summary containing automated IT-generated options, grant parameters, reporting schedules, payment conditions, and applicable cost eligibility rules[cite: 2].
+
+## Structure & Key Points
+- **Function & Design (p. 21):** Automated IT label summaries; red brackets represent programme/action pre-selected options, green brackets indicate project-selected options[cite: 2].
+- **Point 1 — General Data (p. 21):** Summary of call ID, topic, acronym, duration, starting date, and linked actions[cite: 2].
+- **Point 2 — Participants (pp. 21–22):** Participant list table (COO, BEN, AE, AP roles, PIC, maximum grant amounts, entry/exit dates)[cite: 2].
+- **Point 3 — Grant Options (pp. 22–23):** Maximum grant amount, funding rates, forms of funding, budget flexibility caps, and specific cost eligibility flags[cite: 2].
+- **Point 4 — Reporting, Payments & Recoveries (pp. 24–27):** Schedules for continuous/periodic reporting, payment deadlines, pre-financing, Mutual Insurance Mechanism (MIM) retentions, CFS thresholds, and recovery liability rules[cite: 2].
+- **Points 5 & 6 — Legal/Administrative Provisions (pp. 27–28):** Applicable law regimes, dispute forums, Annex 5 applicability flags, and document retention / audit time-limits (3 or 5 years)[cite: 2].
+Markdown
+---
+id: "annotations"
+title: "Annotations & Formatting Conventions"
+aliases: ["AGA Conventions"]
+node_type: "section"
+layer: 1
+article: "Introduction"
+page_start: 10
+page_end: 11
+programme_scope: [all]
+cost_category: ""
+budget_relevance: "none"
+status: "canonical"
+certainty: "high"
+canonical_owner: "source"
+source_refs:
+  - "Introduction | pp. 10-11 | 'Contains the official text of the MGA articles, with annotated legal concepts underlined and bolded'"
+parent_nodes:
+  - "[[Introduction]]"
+child_nodes: []
+related_nodes:
+  - "[[WORK - AGA]]"
+anchors: []
+tags: ["structure", "formatting", "conventions", "mga"]
+ticket_id: "T-L1-INTRO-01"
+created_by: "G5"
+created: 2026-09-28
+updated: 2026-09-28
+ontology_version: "1.0"
+---
+
+# Annotations & Formatting Conventions (pp. 10–11)
+
+## Overview
+Defines the visual, structural, and legal conventions used throughout the Annotated Grant Agreement to distinguish MGA legal text from legal commentary, examples, and program-specific rules[cite: 2].
+
+## Key Conventions
+- **Grey Text Boxes:** Contain official MGA text with key concepts bolded and underlined[cite: 2].
+- **Color Coding:**
+  - **Green:** Practical examples[cite: 2].
+  - **Red:** Structured lists[cite: 2].
+  - **Orange:** Specific cases and exceptions[cite: 2].
+  - **Purple:** Programme-specific rules[cite: 2].
+- **Versioning:** Maintained as a living corporate document with version history and hyperlinks[cite: 2].
+Proposed index.md lines
+Markdown
+- [[Introduction]] — Structure node for AGA Introduction (pp. 10–16)
+- [[Preamble]] — Structure node for Contracting Parties & Contract Components (pp. 17–20)
+- [[Data Sheet]] — Structure node for Project Options & Payment/Reporting Schedules (pp. 21–28)
+- [[Annotations]] — Structure node for AGA formatting conventions & MGA text distinctions (pp. 10–11)
+Proposed log.md line
+Markdown
+## [2026-09-28] ingest | T-L1-INTRO-01 — Introductory section nodes created (4 nodes)
+Pending links
+[[Chapter 1 - General]]
+
+[[Chapter 2 - Action]]
+
+[[Chapter 3 - Grant]]
+
+Unresolved
+None.
+
+🟢 Next Action: Proceeding to T-L1-CHAP1-01
+With T-L1-INTRO-01 complete, the next ticket in sequence is T-L1-CHAP1-01 (Chapter 1 - General, Articles 1–2, pp. 29–31).
+
+Operator Action Required:
+Query NotebookLM notebook "AGA v2.0":
+
+"Within pp. 29-31 only: breakdown of Chapter 1 General, Article 1 (Subject of the Agreement), and Article 2 (Definitions). Quote page numbers."
+
+Paste the output as Note T-L1-CHAP1-01/Q1 when ready.
+
+Where should I place the created .md files?
+
+A WIKI_SCHEMA.md vault-fájlfa struktúrája (és a típus-könyvtár hozzárendelési szabályok) alapján az alábbiak szerint kell elhelyezned a létrehozott .md fájlokat a wiki/aga/ mappán belül:   
+MD
++ 1
+
+📂 Célmappák és Fájlok Helye
+wiki/aga/structure/  (Minden Layer-1 struktúranód ide kerül):   
+MD
++ 1
+
+📄 wiki/aga/structure/WORK - AGA.md
+
+📄 wiki/aga/structure/Introduction.md
+
+📄 wiki/aga/structure/Preamble.md
+
+📄 wiki/aga/structure/Data Sheet.md
+
+📄 wiki/aga/structure/Annotations.md
+
+wiki/aga/sources/ (A forrásnódok helye):   
+MD
++ 1
+
+📄 wiki/aga/sources/SRC - AGA V2.0.md (Már korábban létrehozva az M2 kezdetén)
+
+📋 Registry frissítések a gyökérben (wiki/aga/)
+Miután bemásoltad a fájlokat a fenti mappákba, a gyökérkönyvtárban lévő jegyzékfájlokhoz manuálisan fűzd hozzá a javasolt sorokat:   
+MD
++ 1
+
+1. wiki/aga/index.md
+Markdown
+- [[WORK - AGA]] — Primary work node defining the structural spine of AGA V2.0
+- [[Introduction]] — Structure node for AGA Introduction (pp. 10–16)
+- [[Preamble]] — Structure node for Contracting Parties & Contract Components (pp. 17–20)
+- [[Data Sheet]] — Structure node for Project Options & Payment/Reporting Schedules (pp. 21–28)
+- [[Annotations]] — Structure node for AGA formatting conventions & MGA text distinctions (pp. 10–11)
+2. wiki/aga/log.md
+Markdown
+## [2026-09-28] ingest | T-L1-WORK-01 — Primary work node WORK - AGA.md created (1 node)
+## [2026-09-28] ingest | T-L1-INTRO-01 — Introductory section nodes created (4 nodes)
+🟢 Következő Lépés: T-L1-CHAP1-01
+A fájlok elhelyezése és az index.md / log.md frissítése után készen állunk a T-L1-CHAP1-01 (Chapter 1 - General, Articles 1–2, pp. 29–31) jegy végrehajtására.
+
+Futtasd le a következő lekérdezést az "AGA v2.0" NotebookLM jegyzetfüzetben:
+
+"Within pp. 29-31 only: breakdown of Chapter 1 General, Article 1 (Subject of the Agreement), and Article 2 (Definitions). Quote page numbers."
+
+Majd illeszd be a kapott választ T-L1-CHAP1-01/Q1 néven, és elkészítem a Chapter 1 struktúranódjait!

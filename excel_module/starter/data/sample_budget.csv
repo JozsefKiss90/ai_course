@@ -1,0 +1,9 @@
+category_code,category,item,quantity,unit,unit_cost_eur,source_note
+A,Personnel,Postdoctoral researcher (fictional),24,person-month,4200,Fictional rate for training only
+A,Personnel,Research assistant (fictional),12,person-month,2600,Fictional rate for training only
+B,Subcontracting,External audit certificate (CFS),1,lot,6000,Fictional quote
+C1,Travel and subsistence,Conference trip (EU),3,trip,1400,Fictional estimate
+C1,Travel and subsistence,Consortium meeting,4,trip,900,Fictional estimate
+C2,Equipment,Laptop for data analysis,2,unit,1800,Fictional quote
+C3,Other goods and services,Open-access publication fee,2,article,2200,Fictional estimate
+C3,Other goods and services,Survey software licence,1,year,1200,Fictional quote

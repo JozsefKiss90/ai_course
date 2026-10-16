@@ -1,0 +1,16 @@
+[project]
+name = "excel-finance-starter"
+version = "0.1.0"
+description = "Starter workspace for the Excel for Finance module: Python + Excel + AI coding agents"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas>=2.2",          # tables (DataFrames) - the Python equivalent of an Excel sheet
+    "openpyxl>=3.1",        # read/write .xlsx, keeps formulas, styles, multiple sheets
+    "xlsxwriter>=3.2",      # write richly formatted .xlsx with native Excel charts
+    "numpy>=2.0",           # fast numeric arrays (used by pandas)
+    "numpy-financial>=1.0", # NPV, IRR, PMT, FV - Excel's financial functions in Python
+    "matplotlib>=3.9",      # charts as images
+    "ipykernel>=6.29",      # lets VS Code run Jupyter notebooks (.ipynb) in this environment
+    "pytest>=8.0",          # automatic checks ("tests") for budget rules
+]

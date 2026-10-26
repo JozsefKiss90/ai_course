@@ -1,0 +1,13 @@
+category_code;category;item;quantity;unit;unit_cost_eur;source_note
+A;Personnel;Project coordinator;12;person-month;4600;Fictional salary estimate
+A;Personnel;Field researcher;18;person-month;3900;Fictional salary estimate
+A;Personnel;Data analyst;10;person-month;4200;Fictional salary estimate
+B;Equipment;Portable insect camera;6;unit;1250;Fictional supplier quote
+B;Equipment;Environmental sensor kit;8;unit;780;Fictional supplier quote
+B;Equipment;Field tablet;4;unit;950;Fictional market estimate
+C;Travel;Regional field visit;15;trip;320;Fictional travel estimate
+C;Travel;Research conference attendance;3;trip;1450;Fictional travel estimate
+C;Travel;Partner coordination meeting;4;trip;680;Fictional travel estimate
+D;Services;Cloud data hosting;24;month;180;Fictional service estimate
+D;Services;Public outreach workshop;5;event;850;Fictional event estimate
+D;Services;Scientific poster printing;20;unit;45;Fictional printing quote

@@ -1,0 +1,5 @@
+# The agent never reads a filled-in Planning Workbook
+
+Budget templating skills build and rebuild only blank Planning Workbooks. An agent asks for Shape Parameters (counts and choices) and never asks for, writes or reads Human Inputs (names, countries, titles, rates, effort, amounts). It therefore never opens a workbook a human has started filling in, not even to make a small structural change. Unsubmitted proposals and consortium data are confidential, and filled workbooks leak identifiers through channels a "just look at the structure" read cannot avoid: cell comments, document properties, pivot caches and save paths (all seen when a real budget workbook was sanitised in November 2026). The convenience of letting the agent edit a live workbook was rejected in favour of this hard boundary. Every country-, rate- or name-dependent value must be derived by formulas from human-filled cells.
+
+**Consequences**: post-handover changes to a workbook's shape cannot be delegated to the agent; see ADR-0002.

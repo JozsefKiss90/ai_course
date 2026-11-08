@@ -5,7 +5,13 @@
    Then add the scenario's Table rows (e.g. a late partner, another trip), as a human would.
 3. Recalculate and read the Transfer Views, Check Summaries and Checks panel back; Excel closes the copy
    without saving.
-4. Compare with the reference model, which works from the scenario inputs alone.
+4. Compare with the reference model, which works from the scenario inputs alone. With the Golden
+   Scenario at its own Shape Parameters, compare its signed-off figures too: with the workbook, and
+   with the reference model, so a mistake model and workbook share still fails.
+
+The scenario is the profile version's Golden Scenario (``verify/golden.py``), scaled to the build's
+Shape Parameters where they differ; only a profile version without one falls back to the provisional
+scenario.
 
 The copy is deleted afterwards, also on failure, and the deletion is verified. The deliverable
 itself is never opened by Excel or re-saved.
@@ -23,12 +29,14 @@ from typing import TYPE_CHECKING
 from budget_engine.layout import Cell, Key
 from budget_engine.verify.excel import recalculate_and_read
 from budget_engine.verify.reference import expected_check_summaries, expected_guards, expected_names, expected_transfer_view
-from budget_engine.verify.scenario import Scenario, provisional_scenario
+from budget_engine.verify.golden import synthetic_scenario
+from budget_engine.verify.scenario import Scenario
 
 if TYPE_CHECKING:
     from budget_engine.build import BuildResult
 
 TOLERANCE = 0.005  # half a cent
+REFERENCE_MODEL = "(reference model)"  # location of a figure where the reference model leaves the Golden Scenario
 
 
 class CopyNotDeleted(RuntimeError):
@@ -56,6 +64,8 @@ class SyntheticCheckReport:
     copy_path: Path
     copy_deleted: bool
     checks_panel: tuple[tuple[str, object], ...] = ()  # (guard id, status read back), "overall" last
+    pinned_figures: int = 0  # figures also compared with the Golden Scenario's signed-off ones
+    ownership: str = ""  # how the report describes the scenario; empty: from human_owned
 
     @property
     def figures_compared(self) -> int:
@@ -66,7 +76,9 @@ class SyntheticCheckReport:
         return self.figures_compared > 0 and not self.mismatches and self.copy_deleted
 
     def to_markdown(self) -> str:
-        ownership = "human-owned Golden Scenario" if self.human_owned else "PROVISIONAL, not human-owned"
+        ownership = self.ownership or (
+            "human-owned Golden Scenario" if self.human_owned else "PROVISIONAL, not human-owned"
+        )
         lines = [
             "# Synthetic Check report",
             "",
@@ -76,6 +88,7 @@ class SyntheticCheckReport:
             f"- {self.scenario_provenance}",
             f"- Table rows added after the build: {', '.join(self.table_rows_added) or 'none'}",
             f"- Figures compared: {self.figures_compared}",
+            *([f"- Figures pinned to the Golden Scenario: {self.pinned_figures}"] if self.pinned_figures else []),
             f"- Differing figures: {len(self.mismatches)}",
             f"- Disposable copy deleted: {'yes' if self.copy_deleted else 'NO'}",
         ]
@@ -106,7 +119,7 @@ def _fmt(value: object) -> str:
 def run_synthetic_check(result: BuildResult, scenario: Scenario | None = None) -> SyntheticCheckReport:
     """Run the Synthetic Check on a freshly built workbook and return its report."""
     if scenario is None:
-        scenario = provisional_scenario(result.profile, result.shape, result.layout)
+        scenario = synthetic_scenario(result.profile, result.shape, result.layout)
     missing = set(result.layout.inputs) - set(scenario.inputs)
     if missing:
         raise ValueError(f"scenario {scenario.name!r} has no value for {sorted(missing)[:5]}")
@@ -120,6 +133,8 @@ def run_synthetic_check(result: BuildResult, scenario: Scenario | None = None) -
         **expected_guards(result.profile, result.shape, entries, summaries),
         **expected_names(result.shape, scenario.inputs, scenario.added_inputs),
     }
+    drift = _drift(scenario.pinned, expected)
+    expected |= scenario.pinned  # the workbook answers to the signed-off figures where there are some
     outputs = result.layout.outputs
 
     workdir = Path(tempfile.mkdtemp(prefix="synthetic-check-"))
@@ -139,13 +154,26 @@ def run_synthetic_check(result: BuildResult, scenario: Scenario | None = None) -
         human_owned=scenario.human_owned,
         figures=tuple(_figure_name(k) for k in keys),
         table_rows_added=tuple(r.description for r in scenario.late_rows),
-        mismatches=tuple(_compare(keys, expected, outputs, actual)),
+        mismatches=(*drift, *_compare(keys, expected, outputs, actual)),
         copy_path=copy,
         copy_deleted=not workdir.exists(),
         checks_panel=tuple(
             (key[1], actual.get(cell)) for key, cell in outputs.items() if key[0] == "guard" and key[2] == "status"
         ),
+        pinned_figures=len(scenario.pinned),
+        ownership=scenario.ownership,
     )
+
+
+def _drift(pinned: dict[Key, float], model: dict[Key, float | str]) -> list[Mismatch]:
+    """Signed-off figures the reference model does not reproduce."""
+    mismatches = []
+    for key, want in sorted(pinned.items()):
+        got = model.get(key)
+        diff = got - want if isinstance(got, float) else None
+        if diff is None or abs(diff) > TOLERANCE:
+            mismatches.append(Mismatch(_figure_name(key), REFERENCE_MODEL, want, got, diff))
+    return mismatches
 
 
 def _figure_name(key: Key) -> str:

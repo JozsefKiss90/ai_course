@@ -1,7 +1,7 @@
 """Task List (optional): task codes under each work package, with blank titles for a human to fill.
 
-Built only when the Shape Parameters give tasks per WP. It is an Excel Table, so a human can add a
-task row; that task gets no staff effort rows until a rebuild.
+Built only when the Shape Parameters give tasks per WP; a WP given 0 tasks has no rows here. It is
+an Excel Table, so a human can add a task row; that task gets no staff effort rows until a rebuild.
 """
 
 from __future__ import annotations
@@ -22,10 +22,10 @@ def build_task_list(ctx: BuildContext) -> None:
     ws = ctx.wb.create_sheet(SHEET)
     ws["A1"] = "Task List"
     ws["A1"].font = TITLE
-    ws["A2"] = "Enter each task title. Effort is planned per task on the staff effort sheet."
+    ws["A2"] = f"Enter each task title. Effort is planned per {ctx.shape.effort_grain} on the staff effort sheet."
     for col, header in zip("ABC", HEADERS):
         put_header(ws, f"{col}{HEADER_ROW}", header)
-    units = ctx.shape.effort_units
+    units = ctx.shape.task_units
     for i, (wp, task) in enumerate(units):
         row = FIRST_DATA_ROW + i
         put_derived(ws, f"A{row}", task)

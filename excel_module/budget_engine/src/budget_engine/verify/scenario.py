@@ -1,13 +1,15 @@
-"""The provisional scenario: obviously fake Human Inputs, scaled to the build's Shape Parameters.
+"""Synthetic Check scenarios, and the provisional scenario: obviously fake Human Inputs, scaled to the
+build's Shape Parameters.
 
-PROVISIONAL, NOT HUMAN-OWNED. Until ticket 15 pins the profile's Golden Scenario, the Synthetic
-Check fills its disposable copy with these values, and its expected figures come from the reference
-model alone. A shared mistake in the reference model and the workbook would pass unnoticed.
+PROVISIONAL, NOT HUMAN-OWNED. The Synthetic Check uses the provisional scenario only for a profile
+version without a Golden Scenario (``verify/golden.py``); its expected figures come from the
+reference model alone. The tests also use it to stress corners the Golden Scenario does not reach:
+a late AE in a spare block, rows appended to the Tables, every travel band, blank entries.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from budget_engine.layout import Key, Layout
 from budget_engine.methods import equipment_depreciation, itemised_list, travel_planner
@@ -20,7 +22,7 @@ InputValue = str | float | None
 
 PROVENANCE = (
     "Provisional scenario, not human-owned: expected figures come from the reference model only, "
-    "not from a hand-computed Golden Scenario (replaced when ticket 15 pins the Golden Scenario)."
+    "not from a Golden Scenario (this profile version has none yet)."
 )
 
 
@@ -31,6 +33,8 @@ class Scenario:
     human_owned: bool
     inputs: dict[Key, InputValue]  # None: left blank on purpose
     late_rows: tuple[LateRow, ...] = ()
+    pinned: dict[Key, float] = field(default_factory=dict)  # signed-off Golden Scenario figures, keyed like outputs
+    ownership: str = ""  # for the report; empty: from human_owned
 
     @property
     def table_rows(self) -> tuple[TableRowAddition, ...]:

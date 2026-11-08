@@ -1,8 +1,11 @@
 """Seam 1: build + Synthetic Check, recalculated in real Excel via COM.
 
-Every workbook comes from the build entry point. The check fills a disposable copy with the
-provisional scenario, recalculates it in Excel and compares the Transfer View with the reference
-model. These tests need Microsoft Excel and are marked ``excel``.
+Every workbook comes from the build entry point. By default the check fills a disposable copy with
+the HE Golden Scenario (exact at its own Shape Parameters, else scaled), recalculates it in Excel
+and compares the figures with the reference model and, at the Golden shape, with the signed-off
+figures. Tests that stress corners the Golden Scenario does not reach (a late AE in a spare block,
+appended Table rows, every travel band) pass the provisional scenario explicitly.
+These tests need Microsoft Excel and are marked ``excel``.
 """
 
 import hashlib
@@ -28,6 +31,81 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def provisional(result):
+    from budget_engine.verify.scenario import provisional_scenario
+
+    return provisional_scenario(result.profile, result.shape, result.layout)
+
+
+def stressed(result):
+    """The Synthetic Check on the provisional scenario, which fills every block and appends Table rows."""
+    return run_synthetic_check(result, provisional(result))
+
+
+# --- The HE Golden Scenario (ticket 15) -----------------------------------------------------------
+
+
+@pytest.fixture
+def golden():
+    from budget_engine.profiles import load_profile
+    from budget_engine.verify.golden import load_golden
+
+    return load_golden(load_profile("he-lump-sum", "1.0"))
+
+
+def test_the_golden_shape_build_matches_the_signed_off_figures_after_recalculation(tmp_path, golden):
+    result = build(golden.shape_parameters, tmp_path / "planning.xlsx", synthetic_check=True)
+
+    report = result.synthetic_check
+    assert report is not None and report.passed, report.to_markdown() if report else None
+    assert report.human_owned and report.scenario == "Golden Scenario he-lump-sum 1.0"
+    assert report.pinned_figures > 100
+    assert {"BE2 WP2 F total", "ls total total", "wps all F all total"} <= set(report.figures)
+    assert dict(report.checks_panel)["overall"] == "OK"
+    markdown = report.to_markdown()
+    assert "human-owned Golden Scenario" in markdown and "Figures pinned to the Golden Scenario:" in markdown
+
+
+def test_a_generator_error_shows_against_the_signed_off_figures(tmp_path, golden, monkeypatch):
+    from budget_engine.sheets import check_summaries
+
+    # Sabotage: the lump sum ignores the funding rate (the Golden Scenario gives BE2 70%).
+    monkeypatch.setattr(check_summaries, "_lump_sum", lambda total, rate: f"={total}")
+    result = build(golden.shape_parameters, tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert not report.passed
+    by_figure = {m.figure: m for m in report.mismatches}
+    assert (by_figure["ls BE2 WP1"].expected, by_figure["ls BE2 WP1"].actual) == (21509.25, 30727.5)
+    assert "ls BE1 WP1" not in by_figure
+
+
+def test_a_reference_model_that_drifts_from_the_golden_scenario_fails_the_check(tmp_path, golden, monkeypatch):
+    """Model and workbook could share a mistake; the signed-off figures catch the model alone too."""
+    from budget_engine.verify import synthetic
+
+    real = synthetic.expected_transfer_view
+
+    def drifted(profile, shape, inputs):
+        tv = real(profile, shape, inputs)
+        tv[("tv", "BE1", "WP1", "E", "total")] += 1.0
+        return tv
+
+    monkeypatch.setattr(synthetic, "expected_transfer_view", drifted)
+    result = build(golden.shape_parameters, tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert not report.passed
+    drift = [m for m in report.mismatches if m.location == synthetic.REFERENCE_MODEL]
+    assert [(m.figure, m.expected, m.actual) for m in drift] == [
+        ("BE1 WP1 E total", 12051.5, 12052.5),
+        ("wps all E all total", 43487.25, 43488.25),  # the Check Summaries add the drifted figure up
+    ]
+    assert all(m.location != "'Transfer View BE1'!D9" for m in report.mismatches)
+
+
 def test_a_clean_build_passes_and_the_deliverable_is_untouched(tmp_path):
     result = build(shape(), tmp_path / "deliverable" / "planning.xlsx")
     before = digest(result.path)
@@ -50,7 +128,7 @@ def test_a_broken_formula_in_the_generator_fails_with_a_useful_report(tmp_path, 
     monkeypatch.setattr(transfer_view, "_sum", lambda refs: f"={refs[0]}+{refs[0]}")
     result = build(shape(beneficiaries=1, work_packages=1), tmp_path / "planning.xlsx")
 
-    report = run_synthetic_check(result)
+    report = stressed(result)
 
     assert not report.passed
     by_figure = {m.figure: m for m in report.mismatches}
@@ -89,14 +167,14 @@ def test_a_build_that_passes_is_delivered_with_its_report(tmp_path, beneficiarie
     assert out.exists()
     assert result.synthetic_check is not None and result.synthetic_check.passed
     markdown = result.synthetic_check.to_markdown()
-    assert "PASS" in markdown and "PROVISIONAL, not human-owned" in markdown
+    assert "PASS" in markdown and "scaled from the human-owned Golden Scenario" in markdown
 
 
 def test_a_late_partner_in_a_spare_block_and_a_new_table_row_flow_through(tmp_path):
     """The scenario inserts a late AE under BE1 in the BE list Table and fills the first spare block for it."""
     result = build(shape(affiliated_entities=[1, 0], headroom=2), tmp_path / "planning.xlsx")
 
-    report = run_synthetic_check(result)
+    report = stressed(result)
 
     assert report.passed, report.to_markdown()
     assert "BEList: BE1-AE2 under BE1" in report.table_rows_added
@@ -109,7 +187,7 @@ def test_a_late_partner_in_a_spare_block_and_a_new_table_row_flow_through(tmp_pa
 def test_task_grain_effort_rolls_up_to_the_work_package(tmp_path):
     result = build(shape(tasks=[2, 1, 3], affiliated_entities=[1, 0], headroom=1), tmp_path / "planning.xlsx")
 
-    report = run_synthetic_check(result)
+    report = stressed(result)
 
     assert report.passed, report.to_markdown()
     figures = set(report.figures)
@@ -125,7 +203,7 @@ def test_a_task_left_out_of_the_roll_up_fails_the_check(tmp_path, monkeypatch):
     monkeypatch.setattr(transfer_view, "_sum", lambda refs: real(refs[:-1]) if len(refs) > 1 else real(refs))
     result = build(shape(beneficiaries=1, work_packages=1, tasks=[2], headroom=0), tmp_path / "planning.xlsx")
 
-    report = run_synthetic_check(result)
+    report = stressed(result)
 
     assert not report.passed
     assert "BE1 WP1 F total" in {m.figure for m in report.mismatches}
@@ -139,7 +217,7 @@ def test_a_spare_block_that_does_not_calculate_fails_the_check(tmp_path, monkeyp
     monkeypatch.setattr(transfer_view, "_sum", lambda refs: "=0" if _spare(refs) else real(refs))
     result = build(shape(beneficiaries=1, work_packages=1, headroom=1), tmp_path / "planning.xlsx")
 
-    report = run_synthetic_check(result)
+    report = stressed(result)
 
     assert not report.passed
     in_transfer_views = [m for m in report.mismatches if m.location.startswith("'Transfer View")]
@@ -176,7 +254,7 @@ def test_trips_across_several_partners_and_work_packages_are_priced_and_summed(t
     appends a trip row to the Trips Table as a human would; its prices must fill in by themselves."""
     result = build(shape(affiliated_entities=[1, 0], headroom=2), tmp_path / "planning.xlsx")
 
-    report = run_synthetic_check(result)
+    report = stressed(result)
 
     assert report.passed, report.to_markdown()
     assert any(r.startswith("Trips: ") for r in report.table_rows_added)
@@ -193,7 +271,7 @@ def test_a_travel_summary_that_ignores_the_work_package_fails_the_check(tmp_path
     monkeypatch.setattr(travel_planner, "_sumifs", lambda column, code, wp: _without_wp(real(column, code, wp)))
     result = build(shape(beneficiaries=2, work_packages=2, headroom=0), tmp_path / "planning.xlsx")
 
-    report = run_synthetic_check(result)
+    report = stressed(result)
 
     assert not report.passed
     assert any(m.figure.endswith("C1 total") for m in report.mismatches)
@@ -209,7 +287,7 @@ def test_equipment_depreciated_over_longer_and_shorter_periods_than_the_project(
     the project, over the C.2 lines and several BE/AEs, then appends an item to the Equipment Table."""
     result = build(shape(affiliated_entities=[1, 0], headroom=2, duration_months=24), tmp_path / "planning.xlsx")
 
-    report = run_synthetic_check(result)
+    report = stressed(result)
 
     assert report.passed, report.to_markdown()
     assert any(r.startswith("Equipment: ") for r in report.table_rows_added)
@@ -231,7 +309,7 @@ def test_equipment_costed_in_full_beyond_the_project_fails_the_check(tmp_path, m
     monkeypatch.setattr(equipment_depreciation, "calculated_formulas", uncapped)
     result = build(shape(beneficiaries=1, work_packages=1, headroom=0), tmp_path / "planning.xlsx")
 
-    report = run_synthetic_check(result)
+    report = stressed(result)
 
     assert not report.passed
     assert any(" C2_" in m.figure and m.figure.endswith("total") for m in report.mismatches)
@@ -242,7 +320,7 @@ def test_items_spread_across_several_cost_lines(tmp_path):
     then appends an item to the Items Table."""
     result = build(shape(affiliated_entities=[1, 0], headroom=2), tmp_path / "planning.xlsx")
 
-    report = run_synthetic_check(result)
+    report = stressed(result)
 
     assert report.passed, report.to_markdown()
     assert any(r.startswith("Items: ") for r in report.table_rows_added)
@@ -258,7 +336,7 @@ def test_an_itemised_total_that_ignores_the_number_of_items_fails_the_check(tmp_
     monkeypatch.setattr(itemised_list, "total_formula", lambda: "Items[[#This Row],[Cost per item (EUR)]]")
     result = build(shape(beneficiaries=1, work_packages=1, headroom=0), tmp_path / "planning.xlsx")
 
-    report = run_synthetic_check(result)
+    report = stressed(result)
 
     assert not report.passed
     assert any(m.figure.endswith("total") for m in report.mismatches)
@@ -269,7 +347,7 @@ def test_the_check_summaries_match_the_reference_model(tmp_path):
     compared figure by figure; the late AE in the spare block counts with the AEs."""
     result = build(shape(affiliated_entities=[1, 0], headroom=2), tmp_path / "planning.xlsx")
 
-    report = run_synthetic_check(result)
+    report = stressed(result)
 
     assert report.passed, report.to_markdown()
     figures = set(report.figures)
@@ -288,7 +366,7 @@ def test_a_lump_sum_that_ignores_the_funding_rate_fails_the_check(tmp_path, monk
     monkeypatch.setattr(check_summaries, "_lump_sum", lambda total, rate: f"={total}")
     result = build(shape(work_packages=1, headroom=0), tmp_path / "planning.xlsx")
 
-    report = run_synthetic_check(result)
+    report = stressed(result)
 
     assert not report.passed
     differing = {m.figure for m in report.mismatches}
@@ -302,7 +380,7 @@ def test_a_summary_per_wp_that_counts_a_late_ae_as_a_beneficiary_fails_the_check
     monkeypatch.setattr(check_summaries, "_spare_part", lambda code: '"BE"')
     result = build(shape(work_packages=1, headroom=1), tmp_path / "planning.xlsx")
 
-    report = run_synthetic_check(result)
+    report = stressed(result)
 
     assert not report.passed
     differing = {m.figure for m in report.mismatches}
@@ -334,7 +412,7 @@ def test_the_checks_panel_state_is_verified_after_recalculation(tmp_path):
     """The provisional scenario fills every country, lead and rate and leaves the thresholds blank."""
     result = build(shape(), tmp_path / "planning.xlsx")
 
-    report = run_synthetic_check(result)
+    report = stressed(result)
 
     assert report.passed, report.to_markdown()
     assert dict(report.checks_panel) == {**{g: "OK" for g in GUARDS}, "overall": "OK"}

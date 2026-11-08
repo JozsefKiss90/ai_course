@@ -55,7 +55,8 @@ def test_fields_outside_the_contract_are_rejected(tmp_path, field, value):
         ("affiliated_entities", [True, 0]),
         ("affiliated_entities", {"BE1": 1}),
         ("tasks", [2, 2]),  # one entry per WP, and shape() has three
-        ("tasks", [2, 0, 1]),  # a WP with a Task List has at least one task
+        ("tasks", [0, 0, 0]),  # a Task List needs at least one task; leave tasks out instead
+        ("tasks", [2, -1, 1]),
         ("tasks", [2, 1.5, 1]),
         ("tasks", [True, 1, 1]),
         ("tasks", 3),
@@ -99,6 +100,13 @@ def test_tasks_are_optional_and_coded_per_work_package(tmp_path):
     assert with_tasks.tasks == (2, 1, 3)
     assert with_tasks.task_codes == ["T1.1", "T1.2", "T2.1", "T3.1", "T3.2", "T3.3"]
     assert with_tasks.effort_units[:3] == [("WP1", "T1.1"), ("WP1", "T1.2"), ("WP2", "T2.1")]
+
+
+def test_a_work_package_without_tasks_keeps_its_effort_at_wp_grain(tmp_path):
+    mixed = build(shape(tasks=[2, 0, 1]), tmp_path / "mixed.xlsx").shape
+    assert mixed.tasks == (2, 0, 1)
+    assert mixed.task_codes == ["T1.1", "T1.2", "T3.1"]
+    assert mixed.effort_units == [("WP1", "T1.1"), ("WP1", "T1.2"), ("WP2", "WP2"), ("WP3", "T3.1")]
 
 
 def test_the_travel_planner_is_on_by_default_and_can_be_switched_off(tmp_path):

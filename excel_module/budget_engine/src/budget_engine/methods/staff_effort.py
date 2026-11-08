@@ -33,7 +33,7 @@ def label_headers(shape: ShapeParameters) -> tuple[str, ...]:
 
 def build(ctx: BuildContext) -> None:
     ws = ctx.wb.create_sheet(SHEET)
-    grain = "task" if ctx.shape.tasks is not None else "work package"
+    grain = ctx.shape.effort_grain
     ws["A1"] = f"Staff effort ({ctx.profile.effort_unit}) per {grain}, Beneficiary and Staff Category"
     ws["A1"].font = TITLE
     categories = ctx.profile.staff_categories

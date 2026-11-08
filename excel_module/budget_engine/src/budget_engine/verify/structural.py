@@ -28,7 +28,7 @@ from budget_engine.sheets import (
     transfer_view, validation,
 )
 from budget_engine.sheets.styles import is_derived, is_input
-from budget_engine.verify.scenario import provisional_scenario
+from budget_engine.verify.golden import synthetic_scenario
 
 TRIVIAL_NUMBERS = {0.0, 1.0}
 SPARE_ROWS_CHECKED = 5  # rows below a list that must stay empty
@@ -157,10 +157,10 @@ def _check_task_list(wb: Workbook, shape: ShapeParameters) -> list[str]:
         return [f"missing sheet {name!r}"]
     ws = wb[name]
     problems = []
-    units = shape.effort_units
+    units = shape.task_units
     first = task_list.FIRST_DATA_ROW
     for i, entry in enumerate(units):
-        for col, expected in zip("BA", entry):  # effort_units are (WP, task); the sheet shows task, WP
+        for col, expected in zip("BA", entry):  # task_units are (WP, task); the sheet shows task, WP
             if ws[f"{col}{first + i}"].value != expected:
                 problems.append(f"{name}!{col}{first + i}: {ws[f'{col}{first + i}'].value!r}, expected {expected!r}")
     for r in range(first + len(units), first + len(units) + SPARE_ROWS_CHECKED):
@@ -665,7 +665,7 @@ def _check_no_synthetic_values(wb: Workbook, shape: ShapeParameters, profile: Pr
     Every Human Input must be empty (``_check_inputs_empty``); on top, the scenario's free text
     (fake names, titles, item descriptions) must not sit in any cell at all.
     """
-    scenario = provisional_scenario(profile, shape, layout)
+    scenario = synthetic_scenario(profile, shape, layout)
     free_text = {(k[0], k[-1]) for k in layout.free_text}
     entries = {**scenario.inputs, **scenario.added_inputs}
     fake = {v for k, v in entries.items() if isinstance(v, str) and (k[0], k[-1]) in free_text}

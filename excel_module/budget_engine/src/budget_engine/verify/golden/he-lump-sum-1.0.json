@@ -1,0 +1,164 @@
+{
+  "about": "Machine-readable transcription of the human-owned Golden Scenario budget_engine/golden/he-lump-sum-1.0.md (signed off 2026-11-08). The worksheet is the source of truth: an agent never edits an expected figure here to make a check pass. A suspected error is raised with the human.",
+  "worksheet": "golden/he-lump-sum-1.0.md",
+  "shape": {
+    "profile": {"id": "he-lump-sum", "version": "1.0"},
+    "beneficiaries": 2,
+    "affiliated_entities": [1, 0],
+    "work_packages": 2,
+    "tasks": [2, 0],
+    "duration_months": 24,
+    "methods": ["staff_effort", "travel_planner", "equipment_depreciation", "itemised_list"],
+    "headroom": 3
+  },
+  "inputs": {
+    "be_list": [
+      {"code": "BE1", "name": "Example Org One", "acronym": "EX1", "country": "Austria (AT)", "funding_rate": 1},
+      {"code": "BE1-AE1", "name": "Example Affiliate", "acronym": "EXA", "country": "Austria (AT)", "funding_rate": 1},
+      {"code": "BE2", "name": "Example Org Two", "acronym": "EX2", "country": "Portugal (PT)", "funding_rate": 0.7}
+    ],
+    "wp_list": [
+      {"code": "WP1", "name": "Example work package A"},
+      {"code": "WP2", "name": "Example work package B"}
+    ],
+    "task_list": [
+      {"code": "T1.1", "title": "Example task"},
+      {"code": "T1.2", "title": "Example task"}
+    ],
+    "rates": {
+      "BE1": {"A1_senior": 6000, "A1_junior": 4000, "A1_technical": 3000},
+      "BE1-AE1": {"A1_junior": 4500},
+      "BE2": {"A1_senior": 5000, "A1_junior": 3500}
+    },
+    "effort": [
+      {"unit": "T1.1", "be": "BE1", "A1_senior": 2, "A1_junior": 4},
+      {"unit": "T1.1", "be": "BE2", "A1_junior": 6},
+      {"unit": "T1.2", "be": "BE1", "A1_senior": 1, "A1_technical": 3},
+      {"unit": "T1.2", "be": "BE1-AE1", "A1_junior": 5},
+      {"unit": "WP2", "be": "BE1", "A1_senior": 1.5, "A1_junior": 2},
+      {"unit": "WP2", "be": "BE1-AE1", "A1_junior": 2},
+      {"unit": "WP2", "be": "BE2", "A1_senior": 3, "A1_junior": 8}
+    ],
+    "trips": [
+      {"be": "BE1", "wp": "WP1", "travellers": 2, "distance": 1100, "nights": 2, "days": 3, "country": "Belgium"},
+      {"be": "BE2", "wp": "WP1", "travellers": 1, "distance": 2900, "nights": 3, "days": 4, "country": "Belgium"},
+      {"be": "BE1-AE1", "wp": "WP2", "travellers": 1, "distance": 450, "nights": 1, "days": 2, "country": "Hungary"}
+    ],
+    "equipment": [
+      {"be": "BE2", "wp": "WP2", "line": "C2_equipment", "item": "Example equipment 1", "cost": 12000, "period": 36, "usage": 0.5},
+      {"be": "BE1", "wp": "WP1", "line": "C2_equipment", "item": "Example equipment 2", "cost": 3000, "period": 12, "usage": 1}
+    ],
+    "itemised": [
+      {"be": "BE2", "wp": "WP1", "line": "C3_consumables", "item": "Example item 1", "number": 10, "cost": 200},
+      {"be": "BE1", "wp": "WP2", "line": "C3_dissemination", "item": "Example item 2", "number": 2, "cost": 1500},
+      {"be": "BE1-AE1", "wp": "WP2", "line": "C3_publication", "item": "Example item 3", "number": 1, "cost": 2000},
+      {"be": "BE2", "wp": "WP2", "line": "B", "item": "Example item 4", "number": 1, "cost": 10000}
+    ]
+  },
+  "supplement": {
+    "about": "Not in the worksheet, and no expected figure depends on it. The worksheet gives no work package leads; without them every Synthetic Check would show the 'work package with no lead' error on the Checks panel.",
+    "wp_lead": {"WP1": "BE1", "WP2": "BE2"}
+  },
+  "expected": {
+    "trip_totals": {"1": 2206.00, "2": 1582.00, "3": 661.00},
+    "transfer_view": {
+      "BE1": {
+        "WP1": {
+          "lines": {
+            "A1_senior": [3, 6000.00, 18000.00],
+            "A1_junior": [4, 4000.00, 16000.00],
+            "A1_technical": [3, 3000.00, 9000.00],
+            "C1": [2, 1103.00, 2206.00],
+            "C2_equipment": [1, 3000.00, 3000.00]
+          },
+          "AC": 48206.00, "direct": 48206.00, "E": 12051.50, "F": 60257.50
+        },
+        "WP2": {
+          "lines": {
+            "A1_senior": [1.5, 6000.00, 9000.00],
+            "A1_junior": [2, 4000.00, 8000.00],
+            "C3_dissemination": [2, 1500.00, 3000.00]
+          },
+          "AC": 20000.00, "direct": 20000.00, "E": 5000.00, "F": 25000.00
+        }
+      },
+      "BE1-AE1": {
+        "WP1": {
+          "lines": {
+            "A1_junior": [5, 4500.00, 22500.00]
+          },
+          "AC": 22500.00, "direct": 22500.00, "E": 5625.00, "F": 28125.00
+        },
+        "WP2": {
+          "lines": {
+            "A1_junior": [2, 4500.00, 9000.00],
+            "C1": [1, 661.00, 661.00],
+            "C3_publication": [1, 2000.00, 2000.00]
+          },
+          "AC": 11661.00, "direct": 11661.00, "E": 2915.25, "F": 14576.25
+        }
+      },
+      "BE2": {
+        "WP1": {
+          "lines": {
+            "A1_junior": [6, 3500.00, 21000.00],
+            "C1": [1, 1582.00, 1582.00],
+            "C3_consumables": [10, 200.00, 2000.00]
+          },
+          "AC": 24582.00, "direct": 24582.00, "E": 6145.50, "F": 30727.50
+        },
+        "WP2": {
+          "lines": {
+            "A1_senior": [3, 5000.00, 15000.00],
+            "A1_junior": [8, 3500.00, 28000.00],
+            "B": [1, 10000.00, 10000.00],
+            "C2_equipment": [1, 4000.00, 4000.00]
+          },
+          "AC": 47000.00, "direct": 57000.00, "E": 11750.00, "F": 68750.00
+        }
+      }
+    },
+    "category_e": {
+      "BE1": {"AC": 68206.00, "E": 17051.50},
+      "BE1-AE1": {"AC": 34161.00, "E": 8540.25},
+      "BE2": {"AC": 71582.00, "E": 17895.50}
+    },
+    "lump_sum": {
+      "rates": {"BE1": 1, "BE1-AE1": 1, "BE2": 0.7},
+      "rows": {
+        "BE1": {"WP1": 60257.50, "WP2": 25000.00, "total": 85257.50, "share_pct": 43.15},
+        "BE1-AE1": {"WP1": 28125.00, "WP2": 14576.25, "total": 42701.25, "share_pct": 21.61},
+        "BE2": {"WP1": 21509.25, "WP2": 48125.00, "total": 69634.25, "share_pct": 35.24},
+        "total": {"WP1": 109891.75, "WP2": 87701.25, "total": 197593.00, "share_pct": 100.00}
+      },
+      "wp_share_pct": {"WP1": 55.62, "WP2": 44.38}
+    },
+    "cost_categories": {
+      "BE1": {"A": 60000.00, "B": 0.00, "C": 8206.00, "D": 0.00, "E": 17051.50, "F": 85257.50},
+      "BE1-AE1": {"A": 31500.00, "B": 0.00, "C": 2661.00, "D": 0.00, "E": 8540.25, "F": 42701.25},
+      "BE2": {"A": 64000.00, "B": 10000.00, "C": 7582.00, "D": 0.00, "E": 17895.50, "F": 99477.50},
+      "total": {"A": 155500.00, "B": 10000.00, "C": 18449.00, "D": 0.00, "E": 43487.25, "F": 227436.25}
+    },
+    "person_months": {
+      "rows": {
+        "BE1": {"WP1": 10, "WP2": 3.5, "total": 13.5, "share_pct": 36.00},
+        "BE1-AE1": {"WP1": 5, "WP2": 2, "total": 7, "share_pct": 18.67},
+        "BE2": {"WP1": 6, "WP2": 11, "total": 17, "share_pct": 45.33},
+        "total": {"WP1": 21, "WP2": 16.5, "total": 37.5, "share_pct": 100.00}
+      },
+      "wp_share_pct": {"WP1": 56.00, "WP2": 44.00}
+    },
+    "per_wp_summary": {
+      "wps": {
+        "WP1": {"pm": 21, "pm_share_pct": 56.00, "F": 119110.00, "F_share_pct": 52.37},
+        "WP2": {"pm": 16.5, "pm_share_pct": 44.00, "F": 108326.25, "F_share_pct": 47.63}
+      },
+      "blocks": {
+        "BE1": {"pm": 13.5, "pm_share_pct": 36.00, "F": 85257.50, "F_share_pct": 37.49},
+        "BE1-AE1": {"pm": 7, "pm_share_pct": 18.67, "F": 42701.25, "F_share_pct": 18.78},
+        "BE1+BE1-AE1": {"pm": 20.5, "pm_share_pct": 54.67, "F": 127958.75, "F_share_pct": 56.26},
+        "BE2": {"pm": 17, "pm_share_pct": 45.33, "F": 99477.50, "F_share_pct": 43.74}
+      }
+    }
+  }
+}

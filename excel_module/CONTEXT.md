@@ -66,7 +66,7 @@ _Avoid_: Magic number, parameter
 A fixed total grant amount the applicant chooses rather than calculates — for KA220 one of €120,000, €250,000 or €400,000. A Human Input. The Planning Workbook estimates bottom-up with Estimation Methods and shows the gap to the tier; the human adjusts until it fits.
 
 **Synthetic Check**:
-The verification every newly built or rebuilt Planning Workbook must pass before handover: a disposable copy is filled with obviously fake inputs (BE1…BEn, round-number rates and effort), recalculated in Excel, and compared against expected figures computed independently of the workbook's formulas. A workbook without a passed Synthetic Check is not delivered. Expected figures come from a reference model of the Funding Profile and Estimation Methods, itself pinned to a Golden Scenario; expected figures change only with human approval.
+The verification every newly built or rebuilt Planning Workbook must pass before handover: a disposable copy is filled with the profile's Golden Scenario (obviously fake inputs, scaled to the build's Shape Parameters where they differ), recalculated in Excel, and compared against expected figures computed independently of the workbook's formulas. A workbook without a passed Synthetic Check is not delivered. Expected figures come from a reference model of the Funding Profile and Estimation Methods, itself pinned to a Golden Scenario; expected figures change only with human approval.
 
 **Golden Scenario**:
 A small fixed synthetic proposal per Funding Profile (a couple of Beneficiaries, one Affiliated Entity, two work packages, a few trips) whose expected totals were worked out by hand once and committed. It anchors the Synthetic Check to reality.

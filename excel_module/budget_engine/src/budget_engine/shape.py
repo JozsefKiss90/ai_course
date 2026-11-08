@@ -45,7 +45,7 @@ class ShapeParameters:
     duration_months: int
     methods: tuple[str, ...]
     headroom: int
-    tasks: tuple[int, ...] | None = None  # per WP, in WP order; None: no Task List, effort at WP grain
+    tasks: tuple[int, ...] | None = None  # per WP, in WP order (0: that WP at WP grain); None: no Task List
 
     @property
     def be_codes(self) -> list[str]:
@@ -74,14 +74,31 @@ class ShapeParameters:
 
     @property
     def task_codes(self) -> list[str]:
-        return [task for _, task in self.effort_units] if self.tasks is not None else []
+        return [task for _, task in self.task_units]
+
+    @property
+    def task_units(self) -> list[tuple[str, str]]:
+        """(WP, task) per row of the Task List; a WP with no tasks has none."""
+        return [(wp, unit) for wp, unit in self.effort_units if unit != wp]
+
+    @property
+    def effort_grain(self) -> str:
+        """What staff effort is planned per, in words for the workbook and the guide; "task or work
+        package" when some WPs have tasks and others none."""
+        if self.tasks is None:
+            return "work package"
+        return "task" if all(self.tasks) else "task or work package"
 
     @property
     def effort_units(self) -> list[tuple[str, str]]:
-        """(WP, unit) per row of effort: each task under its WP with a Task List, else each WP itself."""
+        """(WP, unit) per row of effort: each task under its WP with a Task List, else each WP itself.
+        A WP given 0 tasks is its own unit, so its effort stays at WP grain."""
         if self.tasks is None:
             return [(wp, wp) for wp in self.wp_codes]
-        return [(f"WP{w}", f"T{w}.{t}") for w, n in enumerate(self.tasks, start=1) for t in range(1, n + 1)]
+        units = []
+        for w, n in enumerate(self.tasks, start=1):
+            units += [(f"WP{w}", f"T{w}.{t}") for t in range(1, n + 1)] if n else [(f"WP{w}", f"WP{w}")]
+        return units
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -119,10 +136,12 @@ def _tasks(raw: Mapping[str, Any], work_packages: int) -> tuple[int, ...] | None
     if (
         not isinstance(value, (list, tuple))
         or len(value) != work_packages
-        or not all(_whole(v, 1) for v in value)
+        or not all(_whole(v, 0) for v in value)
+        or not any(value)
     ):
         raise ShapeError(
-            f"tasks must list one whole number >= 1 per work package ({work_packages} in all)"
+            f"tasks must list one whole number >= 0 per work package ({work_packages} in all), "
+            "at least one of them >= 1 (leave tasks out for no Task List)"
         )
     return tuple(value)
 

@@ -62,7 +62,7 @@ def read_back(shape: ShapeParameters, profile: Profile) -> str:
     if shape.tasks is None:
         tasks = "none (no Task List, effort per work package)"
     else:
-        tasks = f"{_codes_with_counts(shape.wp_codes, shape.tasks)} (Task List on, effort per task)"
+        tasks = f"{_codes_with_counts(shape.wp_codes, shape.tasks)} (Task List on, effort per {shape.effort_grain})"
     methods = []
     for m in profile.methods.allowed:
         mark = "on" if m in shape.methods else "off"

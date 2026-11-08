@@ -19,6 +19,6 @@ Use the current date and time, and let the user choose another new or empty dire
 ## What to tell the user
 
 - The three paths, as `deliver` printed them.
-- Whether the Synthetic Check ran on a provisional scenario (from the report's scenario line).
+- Which scenario the Synthetic Check ran on, as the report's scenario line gives it (Golden, scaled Golden or provisional).
 - Next steps: open the workbook in Excel 2021 or 365 and fill it in following the Cover Sheet's fill-in order and `fill-in-guide.md`, entering names and all other values only in the yellow cells.
 - From here on the workbook is theirs alone. You will never open it, not even for a small fix. A different consortium shape needs a new build.

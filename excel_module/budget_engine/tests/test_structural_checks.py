@@ -75,7 +75,7 @@ def test_affiliated_entities_and_spare_blocks_across_combinations(tmp_path, affi
     assert effort_rows == 3 * (len(entities) + headroom)  # every WP x BE/AE slot, spare ones included
 
 
-@pytest.mark.parametrize("tasks", [[1], [2, 1, 3], [4] * 6])
+@pytest.mark.parametrize("tasks", [[1], [2, 1, 3], [4] * 6, [2, 0]])
 def test_a_task_list_puts_effort_at_task_grain(tmp_path, tasks):
     result = build(shape(work_packages=len(tasks), tasks=tasks, headroom=1), tmp_path / "planning.xlsx")
     wb = load_workbook(result.path)
@@ -93,10 +93,14 @@ def test_a_task_list_puts_effort_at_task_grain(tmp_path, tasks):
 
     effort = wb["Staff effort"]
     slots = ["BE1", "BE2", "spare 1"]
-    assert effort.max_row - 3 == len(codes) * len(slots)
+    units = len(codes) + tasks.count(0)  # a WP without tasks keeps one row per BE/AE at WP grain
+    assert effort.max_row - 3 == units * len(slots)
     assert [effort[f"{c}3"].value for c in "ABC"] == ["WP", "Task", "BE/AE nr"]
     assert (effort["A4"].value, effort["B4"].value, effort["C4"].value) == ("WP1", "T1.1", "BE1")
-    assert len([k for k in result.layout.inputs if k[0] == "effort"]) == len(codes) * len(slots) * len(result.profile.staff_categories)
+    assert len([k for k in result.layout.inputs if k[0] == "effort"]) == units * len(slots) * len(result.profile.staff_categories)
+    for w in (w for w, n in enumerate(tasks, start=1) if n == 0):
+        assert ("effort", f"WP{w}", "BE1", "A1_senior") in result.layout.inputs
+    assert check_structure(result.path, result.shape, result.profile, result.layout) == []
 
 
 def test_without_tasks_there_is_no_task_list_and_effort_stays_at_wp_grain(built):
@@ -1136,7 +1140,7 @@ HANDOVER_TAMPERING = {
     "derived figure not white": (_unpaint_first_total, "is not styled as derived"),
     "legend swatch repainted": (_repaint_input_swatch, "swatch"),
     "synthetic name left behind": (
-        lambda wb: wb["Transfer View BE1"].__setitem__("H1", "SYNTHETIC BE1 (fake)"),
+        lambda wb: wb["Transfer View BE1"].__setitem__("H1", "Example Org One"),  # the Golden Scenario's BE1
         "Transfer View BE1!H1: synthetic value",
     ),
     "last-modified-by in properties": (lambda wb: setattr(wb.properties, "lastModifiedBy", "Jane Doe"), "lastModifiedBy"),

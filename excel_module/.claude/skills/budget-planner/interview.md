@@ -16,7 +16,7 @@ Ask one topic at a time, in this order. Take everything from `ENGINE profiles` o
 2. **Beneficiaries.** A whole number, 1 or more.
 3. **Affiliated Entities.** Ask whether any Beneficiary has Affiliated Entities. If yes, ask how many for each, by code: BE1, BE2, … Omit the key when there are none.
 4. **Work packages.** A whole number, 1 or more.
-5. **Tasks.** Ask whether they want a Task List (effort planned per task) or effort per work package. With a Task List, ask how many tasks each work package has, by code: WP1, WP2, … (1 or more each). Without one, omit the key.
+5. **Tasks.** Ask whether they want a Task List (effort planned per task) or effort per work package. With a Task List, ask how many tasks each work package has, by code: WP1, WP2, … A work package may have 0 tasks; its effort is then planned per work package. At least one needs a task. Without a Task List, omit the key.
 6. **Duration.** The project duration in whole months.
 7. **Estimation Methods.** List the profile's methods by `label`:
    - methods with `default: true` are pre-selected, the others off;

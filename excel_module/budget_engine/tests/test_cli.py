@@ -69,6 +69,12 @@ def test_confirm_without_tasks_plans_effort_per_work_package():
     assert "Affiliated Entities: none" in out
 
 
+def test_confirm_reads_back_a_work_package_without_tasks():
+    _, out, _ = run("confirm", stdin=shape(tasks=[2, 0, 1]))
+
+    assert "Tasks: WP1: 2, WP2: 0, WP3: 1 (Task List on, effort per task or work package)" in out
+
+
 def test_confirm_switches_mandatory_methods_on_and_marks_them_locked():
     _, out, _ = run("confirm", stdin=shape(methods=["travel_planner"]))
 

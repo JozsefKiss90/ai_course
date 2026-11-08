@@ -99,7 +99,7 @@ def _sections(profile: Profile, shape: ShapeParameters) -> dict[str, Section]:
     be_sheet = str(profile.reference_lists["be_list"]["sheet"])
     wp_sheet = str(profile.reference_lists["wp_list"]["sheet"])
     staff = ", ".join(c.label for c in profile.staff_categories)
-    grain = "task" if shape.tasks is not None else "work package"
+    grain = shape.effort_grain
     unit_costs = "; ".join(f"{t.title} ({t.source})" for t in profile.unit_cost_tables.values())
     thresholds = "; ".join(f"{t.label} ({t.unit})" for t in profile.plausibility)
     itemised_lines = "; ".join(itemised_list.cost_lines(profile).values()) if itemised_list.ID in shape.methods else ""

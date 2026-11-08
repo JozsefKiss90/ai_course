@@ -4,13 +4,14 @@ version = "0.1.0"
 description = "Builds blank, project-specific Planning Workbooks from a Funding Profile and Shape Parameters"
 requires-python = ">=3.12"
 dependencies = [
+    "lxml>=5.0",
     "openpyxl>=3.1",
     # Excel COM is used only to recalculate the disposable Synthetic Check copy.
     "pywin32>=306; sys_platform == 'win32'",
 ]
 
 [dependency-groups]
-dev = ["pytest>=8.0", "mypy>=1.10", "types-openpyxl", "types-pywin32"]
+dev = ["pytest>=8.0", "mypy>=1.10", "types-openpyxl", "types-pywin32", "lxml-stubs>=0.5.1"]
 
 [build-system]
 requires = ["hatchling"]
@@ -22,6 +23,8 @@ packages = ["src/budget_engine"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["excel: needs Microsoft Excel via COM (Synthetic Check)"]
+# openpyxl cannot read the x14 Country validation the build writes with lxml; the tests read it from the XML.
+filterwarnings = ["ignore:Data Validation extension is not supported:UserWarning"]
 
 [tool.mypy]
 strict = true

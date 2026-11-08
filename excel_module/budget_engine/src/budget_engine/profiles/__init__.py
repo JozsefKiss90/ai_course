@@ -80,6 +80,28 @@ class UnitCostTable:
 
 
 @dataclass(frozen=True)
+class PlausibilityThreshold:
+    """A soft plausibility warning: its threshold is a blank, human-filled cell with no default."""
+
+    id: str
+    measure: str  # what is compared with the threshold, e.g. "rate"; the guard builder knows each measure
+    label: str
+    unit: str
+
+
+@dataclass(frozen=True)
+class RuleCheck:
+    """One of the Funding Profile's own rules, rendered as an Input Guard; ``kind`` names the rule
+    the guard builder renders, ``params`` its settings (e.g. the Profile Constant holding a limit)."""
+
+    id: str
+    kind: str
+    label: str
+    severity: str  # "error" or "warning"
+    params: dict[str, Any]
+
+
+@dataclass(frozen=True)
 class Profile:
     id: str
     version: str
@@ -102,6 +124,10 @@ class Profile:
     # The Submission Budget's own summaries the Check Summaries mirror: sheets, titles and headers,
     # the Transfer View row the lump sum is taken of, and the cost categories counted as effort.
     check_summaries: dict[str, Any]
+    # The `BE list` Country dropdown's entries, verbatim from the Submission Budget's own list.
+    countries: tuple[str, ...]
+    plausibility: tuple[PlausibilityThreshold, ...]
+    rule_checks: tuple[RuleCheck, ...]
 
     def constant(self, constant_id: str) -> ProfileConstant:
         return next(c for c in self.constants if c.id == constant_id)
@@ -135,6 +161,11 @@ def _unit_cost_tables(refs: dict[str, dict[str, str]]) -> dict[str, UnitCostTabl
             rows=tuple(raw["rows"]),
         )
     return tables
+
+
+def _countries(be_list: dict[str, Any]) -> tuple[str, ...]:
+    data = json.loads((DATA_DIR / be_list["country_list"]["file"]).read_text(encoding="utf-8"))
+    return tuple(data["countries"])
 
 
 def load_profile(profile_id: str, version: str) -> Profile:
@@ -181,4 +212,7 @@ def load_profile(profile_id: str, version: str) -> Profile:
         unit_cost_tables=_unit_cost_tables(raw.get("unit_cost_tables", {})),
         method_settings=raw.get("method_settings", {}),
         check_summaries=raw["check_summaries"],
+        countries=_countries(raw["reference_lists"]["be_list"]),
+        plausibility=tuple(PlausibilityThreshold(**t) for t in raw["input_guards"]["plausibility"]),
+        rule_checks=tuple(RuleCheck(**r) for r in raw["input_guards"]["rule_checks"]),
     )

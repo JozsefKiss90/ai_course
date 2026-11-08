@@ -747,3 +747,271 @@ def test_structural_checks_catch_check_summary_breakage(built, tmp_path, case):
     edit, expected = SUMMARY_TAMPERING[case]
     problems = _tampered(built, tmp_path, edit)
     assert any(expected in p for p in problems), problems
+
+
+# --- Input Guards and the Checks panel (ticket 12) ------------------------------------------------
+
+GUARDS_SHEET = "Input Guards"
+MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+RELS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+X14 = "http://schemas.microsoft.com/office/spreadsheetml/2009/9/main"
+XM = "http://schemas.microsoft.com/office/excel/2006/main"
+
+
+def _validations(path: Path, sheet: str) -> list[dict[str, object]]:
+    """Every data validation on ``sheet`` as written in the file: the standard ones and the x14
+    extension ones openpyxl does not read."""
+    from lxml import etree
+
+    with zipfile.ZipFile(path) as z:
+        book = etree.fromstring(z.read("xl/workbook.xml"))
+        rels = etree.fromstring(z.read("xl/_rels/workbook.xml.rels"))
+        rid = next(s.get(f"{{{RELS}}}id") for s in book.iter(f"{{{MAIN}}}sheet") if s.get("name") == sheet)
+        target = next(r.get("Target") for r in rels if r.get("Id") == rid).lstrip("/")
+        part = etree.fromstring(z.read(target if target.startswith("xl/") else f"xl/{target}"))
+    found: list[dict[str, object]] = []
+    for dv in part.iter(f"{{{MAIN}}}dataValidation"):
+        found.append({**dv.attrib, "formula1": dv.findtext(f"{{{MAIN}}}formula1"), "x14": False})
+    for dv in part.iter(f"{{{X14}}}dataValidation"):
+        found.append({
+            **dv.attrib,
+            "sqref": dv.findtext(f"{{{XM}}}sqref"),
+            "formula1": dv.findtext(f"{{{X14}}}formula1/{{{XM}}}f"),
+            "x14": True,
+        })
+    return found
+
+
+def _covering(validations, coord: str):
+    from openpyxl.worksheet.cell_range import MultiCellRange
+
+    return [dv for dv in validations if coord in MultiCellRange(str(dv["sqref"]))]
+
+
+def test_the_country_is_picked_from_the_official_country_list_through_an_x14_validation(built):
+    wb = load_workbook(built.path)
+    official = _official("CountryList")
+    ws = wb["CountryList"]
+    assert ws.sheet_state == "hidden"
+    assert ws["A1"].value == official["A1"].value == "Country"
+    assert [ws[f"A{r}"].value for r in range(2, 186)] == [official[f"A{r}"].value for r in range(2, 186)]
+    assert ws["A186"].value is None
+
+    countries = [dv for dv in _validations(built.path, "BE list") if dv["x14"]]
+    assert len(countries) == 1
+    assert countries[0]["type"] == "list" and countries[0]["formula1"] == "CountryList!$A$2:$A$185"
+    assert countries[0]["sqref"] == "E4:E5" and countries[0]["showErrorMessage"] == "1"
+
+
+@pytest.mark.parametrize("fixture", ["built", "built_with_tasks", "built_with_aes"])
+def test_every_human_input_except_free_text_has_a_validation_that_blocks_bad_entries(request, fixture):
+    result = request.getfixturevalue(fixture)
+    free_text = {"be_name", "be_acronym", "wp_name", "task_title"}
+    by_sheet: dict[str, list] = {}
+    for key, cell in result.layout.inputs.items():
+        if key[0] in free_text or key[-1] == "item":
+            assert key in result.layout.free_text
+            continue
+        validations = by_sheet.setdefault(cell.sheet, _validations(result.path, cell.sheet))
+        covering = _covering(validations, cell.coord)
+        assert len(covering) == 1, (key, cell)
+        dv = covering[0]
+        assert dv["showErrorMessage"] == "1", (key, "an invalid entry must be refused, not just allowed")
+        if dv["type"] in ("decimal", "whole"):
+            assert float(str(dv["formula1"])) >= 0, (key, "numbers are never negative")
+
+
+def test_numeric_inputs_are_non_negative_and_codes_come_from_the_reference_lists(built):
+    layout = built.layout
+    cases = {
+        ("rate", "BE1", "A1_senior"): ("decimal", "0"),
+        ("effort", "WP1", "BE1", "A1_senior"): ("decimal", "0"),
+        ("threshold", "rate_above"): ("decimal", "0"),
+        ("slot_code", "SPARE1"): ("list", 'INDIRECT("BEList[[BE/AE nr]]")'),
+        ("wp_lead", "WP2"): ("list", 'INDIRECT("BEList[[BE/AE nr]]")'),
+    }
+    for key, (kind, formula) in cases.items():
+        cell = layout.inputs[key]
+        (dv,) = _covering(_validations(built.path, cell.sheet), cell.coord)
+        assert (dv["type"], dv["formula1"]) == (kind, formula), key
+        if kind == "decimal":
+            assert dv["operator"] == "greaterThanOrEqual", key
+
+
+def test_plausibility_thresholds_are_blank_labelled_inputs_beside_the_profile_constants(built):
+    ws = load_workbook(built.path)["Profile Constants"]
+    expected = {
+        "rate_above": ("Personnel rate above", "EUR per person-month"),
+        "effort_above": ("Person-months of one BE/AE in one work package above", "person-months"),
+        "trip_cost_above": ("Cost of one trip above", "EUR"),
+    }
+    for threshold, (label, unit) in expected.items():
+        cell = built.layout.inputs[("threshold", threshold)]
+        assert cell.sheet == "Profile Constants"
+        assert ws[cell.coord].value is None
+        assert (ws[f"A{cell.row}"].value, ws[f"C{cell.row}"].value) == (label, unit)
+        assert threshold not in built.layout.constants  # no value, so not a constant formulas rely on
+    assert any("silent" in str(c.value) for c in ws["A"]), "the sheet says a blank threshold keeps its warning silent"
+
+
+def test_the_input_guards_sheet_takes_each_wp_lead_and_flags_effort_without_a_rate(built):
+    wb = load_workbook(built.path)
+    assert wb.sheetnames[:4] == ["Cover", "BE list", "WP list", GUARDS_SHEET]
+    ws = wb[GUARDS_SHEET]
+    for wp in built.shape.wp_codes:
+        lead = built.layout.inputs[("wp_lead", wp)]
+        assert lead.sheet == GUARDS_SHEET and ws[lead.coord].value is None
+        assert ws[f"A{lead.row}"].value == wp
+        flag = ws.cell(row=lead.row, column=ws[lead.coord].column + 1).value
+        assert flag.startswith("=IF(") and lead.coord in flag
+
+    flags = [
+        c.value for row in ws.iter_rows() for c in row
+        if isinstance(c.value, str) and "'Staff effort'" in c.value and "'Rate Table'" in c.value
+    ]
+    assert len(flags) == len(built.shape.slots) * len(built.profile.staff_categories)
+    rate = built.layout.inputs[("rate", "BE2", "A1_junior")].ref
+    effort = [built.layout.inputs[("effort", wp, "BE2", "A1_junior")].ref for wp in built.shape.wp_codes]
+    (flag,) = [f for f in flags if rate in f]
+    assert all(ref in flag for ref in effort)
+    assert ws.conditional_formatting, "guards are conditionally coloured"
+
+
+def _panel(wb) -> dict[str, tuple[object, object]]:
+    """Checks panel rows on the Cover: guard label -> (status, count)."""
+    ws = wb["Cover"]
+    start = next(c.row for c in ws["A"] if c.value == "Checks panel")
+    rows = {}
+    for r in range(start + 2, ws.max_row + 1):
+        if ws[f"A{r}"].value is None:
+            break
+        rows[ws[f"A{r}"].value] = (ws[f"B{r}"].value, ws[f"C{r}"].value)
+    return rows
+
+
+def test_the_checks_panel_on_the_cover_aggregates_every_guard(built):
+    wb = load_workbook(built.path)
+    panel = _panel(wb)
+    labels = list(panel)
+    assert labels[-1] == "Overall"
+    for expected in (
+        "Negative values in numeric inputs", "Beneficiary or AE with no country", "Work package with no lead",
+        "Effort without a rate", "Plausibility: Personnel rate above",
+        "Plausibility: Person-months of one BE/AE in one work package above", "Plausibility: Cost of one trip above",
+    ):
+        assert expected in labels, labels
+    for label, (status, count) in panel.items():
+        assert isinstance(status, str) and status.startswith("="), label
+        if label != "Overall":
+            assert isinstance(count, str) and count.startswith("="), label
+    assert "BEList[[Country]]" in panel["Beneficiary or AE with no country"][1]
+    threshold = built.layout.inputs[("threshold", "rate_above")].ref
+    assert threshold in panel["Plausibility: Personnel rate above"][1]
+    assert '"warning"' in panel["Plausibility: Personnel rate above"][0]
+    assert '"error"' in panel["Effort without a rate"][0]
+    assert wb["Cover"].conditional_formatting, "panel statuses are conditionally coloured"
+    for key in [("guard", "overall", "status"), ("guard", "effort_without_rate", "count")]:
+        assert built.layout.outputs[key].sheet == "Cover"
+
+
+def test_he_declares_no_profile_rule_checks_and_the_panel_says_so(built):
+    assert built.profile.rule_checks == ()
+    cover = load_workbook(built.path)["Cover"]
+    assert any("no rule checks" in str(c.value) for c in cover["A"])
+
+
+def test_without_the_travel_planner_there_is_no_trip_cost_guard(tmp_path):
+    result = build(shape(methods=["staff_effort"]), tmp_path / "planning.xlsx")
+    panel = _panel(load_workbook(result.path))
+    assert "Plausibility: Cost of one trip above" not in panel
+    assert ("threshold", "trip_cost_above") not in result.layout.inputs
+
+
+def _with_rule(monkeypatch, rule, *constants):
+    from dataclasses import replace
+
+    from budget_engine import shape as shape_module
+    from budget_engine.profiles import load_profile
+
+    real = load_profile("he-lump-sum", "1.0")
+    patched = replace(real, constants=(*real.constants, *constants), rule_checks=(rule,))
+    monkeypatch.setattr(shape_module, "load_profile", lambda *_: patched)
+
+
+def test_profile_rule_checks_declared_in_data_become_guards(tmp_path, monkeypatch):
+    from budget_engine.profiles import ProfileConstant, RuleCheck
+
+    cap = ProfileConstant("wp1_share_cap", "Highest share of the lump sum in WP1", 0.2, "share", "test rule")
+    rule = RuleCheck(
+        id="wp1_cap", kind="max_share_per_wp", label="WP1 share of the lump sum above its cap", severity="error",
+        params={"grid": "ls", "limit_constant": "wp1_share_cap", "wps": ["WP1"]},
+    )
+    _with_rule(monkeypatch, rule, cap)
+
+    result = build(shape(), tmp_path / "planning.xlsx")
+
+    status, count = _panel(load_workbook(result.path))["Rule: WP1 share of the lump sum above its cap"]
+    assert result.layout.constants["wp1_share_cap"].ref in count
+    assert result.layout.outputs[("ls", "share", "WP1")].ref in count
+    assert '"error"' in status
+
+
+def test_an_unknown_rule_check_kind_is_refused(tmp_path, monkeypatch):
+    from budget_engine.profiles import RuleCheck
+
+    _with_rule(monkeypatch, RuleCheck(id="x", kind="no_such_rule", label="?", severity="error", params={}))
+    with pytest.raises(ValueError, match="no_such_rule"):
+        build(shape(), tmp_path / "planning.xlsx")
+
+
+def test_structural_checks_catch_a_lost_country_validation(built, tmp_path):
+    copy = tmp_path / "resaved.xlsx"
+    shutil.copy(built.path, copy)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        wb = load_workbook(copy)
+    wb.save(copy)  # an openpyxl re-save drops the x14 validation
+    problems = check_structure(copy, built.shape, built.profile, built.layout)
+    assert any("BE list!E4" in p and "validation" in p for p in problems), problems
+
+
+def _drop_validation(sheet: str, coord: str):
+    def edit(wb):
+        ws = wb[sheet]
+        ws.data_validations.dataValidation = [dv for dv in ws.data_validations.dataValidation if coord not in dv.sqref]
+    return edit
+
+
+def _soften_validations(sheet: str):
+    def edit(wb):
+        for dv in wb[sheet].data_validations.dataValidation:
+            dv.showErrorMessage = False
+    return edit
+
+
+def _type_in_first_panel_status(wb):
+    ws = wb["Cover"]
+    start = next(c.row for c in ws["A"] if c.value == "Checks panel")
+    ws[f"B{start + 2}"] = "OK"
+
+
+GUARD_TAMPERING = {
+    "rate without validation": (_drop_validation("Rate Table", "C4"), "Rate Table!C4"),
+    "validation that does not block": (_soften_validations("Staff effort"), "Staff effort!"),
+    "threshold filled in": (
+        lambda wb: wb["Profile Constants"].__setitem__(
+            next(f"B{c.row}" for c in wb["Profile Constants"]["A"] if c.value == "Personnel rate above"), 5000
+        ),
+        "Human Input cell is not empty",
+    ),
+    "guard status typed in": (_type_in_first_panel_status, "Cover!B"),
+    "country list edited": (lambda wb: wb["CountryList"].__setitem__("A2", "Atlantis"), "CountryList!A2"),
+    "missing Input Guards sheet": (lambda wb: wb.remove(wb[GUARDS_SHEET]), GUARDS_SHEET),
+}
+
+
+@pytest.mark.parametrize("case", GUARD_TAMPERING)
+def test_structural_checks_catch_input_guard_breakage(built, tmp_path, case):
+    edit, expected = GUARD_TAMPERING[case]
+    problems = _tampered(built, tmp_path, edit)
+    assert any(expected in p for p in problems), problems

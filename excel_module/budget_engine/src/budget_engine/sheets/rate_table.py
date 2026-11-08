@@ -12,7 +12,8 @@ from openpyxl.utils import get_column_letter
 
 from budget_engine.layout import BuildContext
 from budget_engine.shape import is_spare
-from budget_engine.sheets.reference_lists import be_field
+from budget_engine.sheets import validation
+from budget_engine.sheets.reference_lists import be_field, column_ref
 from budget_engine.sheets.styles import MONEY, TITLE, put_derived, put_header, put_input
 
 SHEET = "Rate Table"
@@ -30,10 +31,16 @@ def build_rate_table(ctx: BuildContext) -> None:
     categories = ctx.profile.staff_categories
     for j, category in enumerate(categories):
         put_header(ws, f"{get_column_letter(FIRST_COL + j)}{HEADER_ROW}", category.label)
+    last_row = HEADER_ROW + len(ctx.shape.slots)
+    last_col = get_column_letter(FIRST_COL + len(categories) - 1)
+    validation.apply(ws, validation.non_negative(), f"{get_column_letter(FIRST_COL)}{HEADER_ROW + 1}:{last_col}{last_row}")
+    codes = validation.list_of(f'INDIRECT("{column_ref(ctx.profile, "be_list", "A")}")')
+    ws.add_data_validation(codes)
     for i, slot in enumerate(ctx.shape.slots):
         row = HEADER_ROW + 1 + i
         if is_spare(slot):
             ctx.layout.slot_codes[slot] = put_input(ctx, ws, f"A{row}", ("slot_code", slot)).ref
+            codes.add(f"A{row}")
             ws.row_dimensions[row].outline_level = 1  # grouped, not hidden: nobody misses a spare block
         else:
             put_derived(ws, f"A{row}", slot)

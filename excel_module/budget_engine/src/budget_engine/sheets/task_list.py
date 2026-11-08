@@ -30,7 +30,7 @@ def build_task_list(ctx: BuildContext) -> None:
         row = FIRST_DATA_ROW + i
         put_derived(ws, f"A{row}", task)
         put_derived(ws, f"B{row}", wp)
-        put_input(ctx, ws, f"C{row}", ("task_title", task))
+        put_input(ctx, ws, f"C{row}", ("task_title", task), free_text=True)
     ws.add_table(Table(displayName=TABLE, ref=f"A{HEADER_ROW}:C{FIRST_DATA_ROW + len(units) - 1}"))
     for col, width in zip("ABC", (10, 8, 70)):
         ws.column_dimensions[col].width = width

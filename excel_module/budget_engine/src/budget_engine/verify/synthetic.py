@@ -3,7 +3,8 @@
 1. Copy the blank workbook to a fresh temporary directory outside the deliverable's directory.
 2. Open the copy read-only in real Excel via COM and type the scenario into its Human Input cells.
    Then add the scenario's Table rows (e.g. a late partner, another trip), as a human would.
-3. Recalculate and read the Transfer Views and Check Summaries back; Excel closes the copy without saving.
+3. Recalculate and read the Transfer Views, Check Summaries and Checks panel back; Excel closes the copy
+   without saving.
 4. Compare with the reference model, which works from the scenario inputs alone.
 
 The copy is deleted afterwards, also on failure, and the deletion is verified. The deliverable
@@ -21,7 +22,7 @@ from typing import TYPE_CHECKING
 
 from budget_engine.layout import Cell, Key
 from budget_engine.verify.excel import recalculate_and_read
-from budget_engine.verify.reference import expected_check_summaries, expected_names, expected_transfer_view
+from budget_engine.verify.reference import expected_check_summaries, expected_guards, expected_names, expected_transfer_view
 from budget_engine.verify.scenario import Scenario, provisional_scenario
 
 if TYPE_CHECKING:
@@ -54,6 +55,7 @@ class SyntheticCheckReport:
     mismatches: tuple[Mismatch, ...]
     copy_path: Path
     copy_deleted: bool
+    checks_panel: tuple[tuple[str, object], ...] = ()  # (guard id, status read back), "overall" last
 
     @property
     def figures_compared(self) -> int:
@@ -77,6 +79,9 @@ class SyntheticCheckReport:
             f"- Differing figures: {len(self.mismatches)}",
             f"- Disposable copy deleted: {'yes' if self.copy_deleted else 'NO'}",
         ]
+        if self.checks_panel:
+            panel = ", ".join(f"{guard} {status}" for guard, status in self.checks_panel)
+            lines.append(f"- Checks panel after the synthetic fill: {panel}")
         if self.mismatches:
             lines += [
                 "",
@@ -108,9 +113,11 @@ def run_synthetic_check(result: BuildResult, scenario: Scenario | None = None) -
     fill = {result.layout.inputs[k]: v for k, v in scenario.inputs.items() if v is not None}  # None: left blank
     entries = {**scenario.inputs, **scenario.added_inputs}
     tv = expected_transfer_view(result.profile, result.shape, entries)
+    summaries = expected_check_summaries(result.profile, result.shape, entries, tv)
     expected: dict[Key, float | str] = {
         **tv,
-        **expected_check_summaries(result.profile, result.shape, entries, tv),
+        **summaries,
+        **expected_guards(result.profile, result.shape, entries, summaries),
         **expected_names(result.shape, scenario.inputs, scenario.added_inputs),
     }
     outputs = result.layout.outputs
@@ -135,6 +142,9 @@ def run_synthetic_check(result: BuildResult, scenario: Scenario | None = None) -
         mismatches=tuple(_compare(keys, expected, outputs, actual)),
         copy_path=copy,
         copy_deleted=not workdir.exists(),
+        checks_panel=tuple(
+            (key[1], actual.get(cell)) for key, cell in outputs.items() if key[0] == "guard" and key[2] == "status"
+        ),
     )
 
 

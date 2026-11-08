@@ -58,8 +58,14 @@ def _style(c: XlCell, key: tuple[object, ...], apply: Callable[[XlCell], None]) 
         styles[key] = copy(c._style)  # type: ignore[attr-defined]
 
 
-def put_input(ctx: BuildContext, ws: Worksheet, coord: str, key: Key, number_format: str | None = None) -> Cell:
-    """Mark an empty Human Input cell and register it in the Layout."""
+def put_input(
+    ctx: BuildContext, ws: Worksheet, coord: str, key: Key, number_format: str | None = None, *, free_text: bool = False
+) -> Cell:
+    """Mark an empty Human Input cell and register it in the Layout.
+
+    Every Human Input gets a data validation from its sheet builder, except free text (names,
+    titles, descriptions), which is marked with ``free_text``.
+    """
     def apply(c: XlCell) -> None:
         c.fill = INPUT_FILL
         c.border = BOX
@@ -69,6 +75,8 @@ def put_input(ctx: BuildContext, ws: Worksheet, coord: str, key: Key, number_for
     _style(ws[coord], ("input", number_format), apply)
     cell = Cell(ws.title, coord)
     ctx.layout.inputs[key] = cell
+    if free_text:
+        ctx.layout.free_text.add(key)
     return cell
 
 

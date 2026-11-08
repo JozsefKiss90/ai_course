@@ -216,6 +216,8 @@ def provisional_scenario(profile: Profile, shape: ShapeParameters, layout: Layou
     periods shorter than, equal to and longer than the project, and one more item is appended.
     With the itemised list, items cycle the same way over several of its cost lines, two rows
     landing on the same BE/AE × WP × line, and one more item is appended.
+    Every work package has a lead (the BE/AEs in turn) and the plausibility thresholds stay blank,
+    so the Checks panel is all OK unless a test changes the scenario.
     With headroom, a late AE of BE1 is inserted into the `BE list` Table and claims the first spare
     block; further spare blocks keep a blank code but are filled, so they must calculate anyway.
     An input kind this function does not know raises, so a new sheet cannot slip through unfilled.
@@ -244,6 +246,10 @@ def provisional_scenario(profile: Profile, shape: ShapeParameters, layout: Layou
             inputs[key] = f"Synthetic work package {wp_index[key[1]]} (fake)"
         elif kind == "task_title":
             inputs[key] = f"Synthetic task {key[1]} (fake)"
+        elif kind == "wp_lead":
+            inputs[key] = shape.entity_codes[(wp_index[key[1]] - 1) % len(shape.entity_codes)]
+        elif kind == "threshold":
+            inputs[key] = None  # no threshold: every plausibility warning stays silent
         elif kind == "slot_code":
             inputs[key] = late_code if late_code and key[1] == shape.spare_slots[0] else None
         elif kind == "rate":

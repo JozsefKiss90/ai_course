@@ -22,7 +22,6 @@ from collections import defaultdict
 from collections.abc import Mapping
 
 from openpyxl.utils import get_column_letter
-from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.table import Table, TableColumn, TableFormula
 from openpyxl.worksheet.worksheet import Worksheet
 
@@ -30,6 +29,7 @@ from budget_engine.layout import BuildContext, Cell, Contribution, Key
 from budget_engine.methods.base import Figures, number
 from budget_engine.profiles import Profile, UnitCostTable
 from budget_engine.shape import ShapeParameters, is_spare
+from budget_engine.sheets import validation
 from budget_engine.sheets.reference_lists import be_field, column_ref
 from budget_engine.sheets.styles import MONEY, QUANTITY, TITLE, WRAP, put_derived, put_header, put_input
 
@@ -167,15 +167,9 @@ def _add_validations(ctx: BuildContext, ws: Worksheet, last_row: int) -> None:
         "country": _col(RATES_TABLE, COUNTRY),
     }
     for key, source in lists.items():
-        dv = DataValidation(type="list", formula1=f'INDIRECT("{source}")', allow_blank=True)
-        ws.add_data_validation(dv)
-        dv.add(column_range(key))
-    counts = DataValidation(type="whole", operator="greaterThanOrEqual", formula1="0", allow_blank=True)
-    distance = DataValidation(type="decimal", operator="greaterThanOrEqual", formula1="0", allow_blank=True)
-    for dv, keys in ((counts, ("travellers", "nights", "days")), (distance, ("distance",))):
-        ws.add_data_validation(dv)
-        for key in keys:
-            dv.add(column_range(key))
+        validation.apply(ws, validation.list_of(f'INDIRECT("{source}")'), column_range(key))
+    validation.apply(ws, validation.non_negative(whole=True), *(column_range(k) for k in ("travellers", "nights", "days")))
+    validation.apply(ws, validation.non_negative(), column_range("distance"))
 
 
 def _sumifs(column: str, code: str, wp: str) -> str:
@@ -240,6 +234,33 @@ def _build_unit_costs(ctx: BuildContext) -> None:
     ws.freeze_panes = f"A{FIRST_DATA_ROW}"
 
 
+def trip_rows(inputs: Mapping[Key, object]) -> dict[str, dict[Key, object]]:
+    """Trip nr -> {(field,): value}, from the ("trip", n, field) inputs (rows added later included)."""
+    trips: dict[str, dict[Key, object]] = defaultdict(dict)
+    for key, value in inputs.items():
+        if key[0] == "trip":
+            trips[key[1]][(key[2],)] = value
+    return trips
+
+
+def trip_figures(profile: Profile, trip: Mapping[Key, object]) -> tuple[float, float]:
+    """(travellers, trip cost) of one trip row, from its inputs and the profile's unit costs."""
+    bands, rates = unit_cost_tables(profile)
+    travellers = number(trip, ("travellers",))
+    travel = 0.0
+    if trip.get(("distance",)) is not None:
+        distance = number(trip, ("distance",))
+        band = [r for r in bands.rows if r["from_km"] <= distance]
+        if not band:
+            raise ValueError(f"no travel unit cost for {distance} km: the scenario must not use one")
+        travel = float(band[-1]["amount"])
+    country = trip.get(("country",))
+    by_country = {r["country"]: r for r in rates.rows}
+    rate = by_country[str(country)] if country is not None else {"accommodation": 0, "subsistence": 0}
+    nights, days = number(trip, ("nights",)), number(trip, ("days",))
+    return travellers, travellers * (travel + nights * rate["accommodation"] + days * rate["subsistence"])
+
+
 def reference(profile: Profile, shape: ShapeParameters, inputs: Mapping[Key, object]) -> Figures:
     """Expected items and total per (BE, WP, cost line), from the trip inputs and the profile's data.
 
@@ -247,28 +268,8 @@ def reference(profile: Profile, shape: ShapeParameters, inputs: Mapping[Key, obj
     block's trips are those whose BE/AE nr is the block's code (for a spare block, the code typed in
     the Rate Table; none while it is blank).
     """
-    bands, rates = unit_cost_tables(profile)
-    by_country = {r["country"]: r for r in rates.rows}
     cost_line = profile.method_settings[ID]["cost_line"]
-    trips: dict[str, dict[Key, object]] = defaultdict(dict)  # trip nr -> {(field,): value}
-    for key, value in inputs.items():
-        if key[0] == "trip":
-            trips[key[1]][(key[2],)] = value
-
-    def band_amount(distance: float) -> float:
-        band = [r for r in bands.rows if r["from_km"] <= distance]
-        if not band:
-            raise ValueError(f"no travel unit cost for {distance} km: the scenario must not use one")
-        return float(band[-1]["amount"])
-
-    def trip_figures(trip: dict[Key, object]) -> tuple[float, float]:
-        travellers = number(trip, ("travellers",))
-        travel = band_amount(number(trip, ("distance",))) if trip.get(("distance",)) is not None else 0.0
-        country = trip.get(("country",))
-        rate = by_country[str(country)] if country is not None else {"accommodation": 0, "subsistence": 0}
-        nights, days = number(trip, ("nights",)), number(trip, ("days",))
-        return travellers, travellers * (travel + nights * rate["accommodation"] + days * rate["subsistence"])
-
+    trips = trip_rows(inputs)
     figures: Figures = {}
     for slot in shape.slots:
         code = inputs.get(("slot_code", slot)) if is_spare(slot) else slot
@@ -276,7 +277,7 @@ def reference(profile: Profile, shape: ShapeParameters, inputs: Mapping[Key, obj
             items = total = 0.0
             for trip in trips.values():
                 if code is not None and trip.get(("be",)) == code and trip.get(("wp",)) == wp:
-                    trip_items, trip_total = trip_figures(trip)
+                    trip_items, trip_total = trip_figures(profile, trip)
                     items, total = items + trip_items, total + trip_total
             figures[(slot, wp, cost_line)] = (items, total)
     return figures

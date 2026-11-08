@@ -6,20 +6,26 @@
 from __future__ import annotations
 
 import re
+import warnings
 import zipfile
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
+from lxml import etree
 from openpyxl import load_workbook
 from openpyxl.formula.tokenizer import Token, Tokenizer
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.cell_range import MultiCellRange
 from openpyxl.workbook.workbook import Workbook
 
 from budget_engine.layout import Layout
 from budget_engine.methods import equipment_depreciation, itemised_list, travel_planner
 from budget_engine.profiles import Profile
 from budget_engine.shape import ShapeParameters, is_spare
-from budget_engine.sheets import check_summaries, constants, cover, rate_table, reference_lists, task_list, transfer_view
+from budget_engine.sheets import (
+    check_summaries, constants, cover, input_guards, rate_table, reference_lists, task_list, transfer_view, validation,
+)
 from budget_engine.sheets.styles import is_input
 
 TRIVIAL_NUMBERS = {0.0, 1.0}
@@ -30,7 +36,10 @@ WIDTH_TOLERANCE = 0.01
 def check_structure(path: Path, shape: ShapeParameters, profile: Profile, layout: Layout) -> list[str]:
     problems: list[str] = []
     problems += _check_package(path)
-    wb = load_workbook(path)
+    with warnings.catch_warnings():
+        # openpyxl does not read x14 data validations (the Country dropdown); _check_validations does.
+        warnings.filterwarnings("ignore", message="Data Validation extension is not supported")
+        wb = load_workbook(path)
     problems += _check_reference_lists(wb, shape, profile)
     problems += _check_tables(wb, shape, profile)
     problems += _check_task_list(wb, shape)
@@ -41,6 +50,9 @@ def check_structure(path: Path, shape: ShapeParameters, profile: Profile, layout
     problems += _check_itemised(wb, shape, profile, layout)
     problems += _check_summaries(wb, shape, profile, layout)
     problems += _check_duration(wb, shape, layout)
+    problems += _check_country_list(wb, profile)
+    problems += _check_validations(path, wb, layout)
+    problems += _check_guards(wb, shape, profile, layout)
     problems += _check_inputs_empty(wb, layout)
     problems += _check_no_bare_numbers(wb)
     problems += _check_constants_labelled(wb, layout)
@@ -445,6 +457,92 @@ def _check_summaries(wb: Workbook, shape: ShapeParameters, profile: Profile, lay
 def _grid_label_mark(slot: str, layout: Layout) -> str:
     """What a grid row label of a block must contain: its code, or for a spare block the code's cell."""
     return layout.slot_codes[slot] if is_spare(slot) else f'="{slot}: "'
+
+
+def _check_country_list(wb: Workbook, profile: Profile) -> list[str]:
+    """The hidden CountryList sheet holds the profile's countries, header first, as the Official's does."""
+    name = reference_lists.COUNTRY_SHEET
+    if name not in wb.sheetnames:
+        return [f"missing sheet {name!r}"]
+    ws = wb[name]
+    problems = [] if ws.sheet_state == "hidden" else [f"{name}: not hidden, as in the Official Budget Table"]
+    expected = [reference_lists.COUNTRY_HEADER, *profile.countries, None]
+    for row, value in enumerate(expected, start=1):
+        if ws[f"A{row}"].value != value:
+            problems.append(f"{name}!A{row}: {ws[f'A{row}'].value!r}, expected {value!r}")
+    return problems
+
+
+@dataclass(frozen=True)
+class _Validation:
+    type: str
+    cells: MultiCellRange
+    formula1: str | None
+    blocking: bool
+
+
+def _read_validations(path: Path, sheets: set[str]) -> dict[str, list[_Validation]]:
+    """The data validations of ``sheets`` as written in the file, the x14 ones openpyxl skips included."""
+    found: dict[str, list[_Validation]] = {}
+    m, x14, xm = validation.MAIN, validation.X14, validation.XM
+    with zipfile.ZipFile(path) as z:
+        for sheet in sheets:
+            root = etree.fromstring(z.read(validation.sheet_part(z, sheet)))
+            standard = [
+                (dv, dv.get("sqref"), dv.findtext(f"{{{m}}}formula1")) for dv in root.iter(f"{{{m}}}dataValidation")
+            ]
+            extension = [
+                (dv, dv.findtext(f"{{{xm}}}sqref"), dv.findtext(f"{{{x14}}}formula1/{{{xm}}}f"))
+                for dv in root.iter(f"{{{x14}}}dataValidation")
+            ]
+            found[sheet] = [
+                _Validation(str(dv.get("type")), MultiCellRange(sqref or ""), formula, dv.get("showErrorMessage") in ("1", "true"))
+                for dv, sqref, formula in standard + extension
+            ]
+    return found
+
+
+def _check_validations(path: Path, wb: Workbook, layout: Layout) -> list[str]:
+    """Every Human Input but free text has one data validation that refuses invalid entries; numbers
+    are never allowed below zero."""
+    checked = {k: c for k, c in layout.inputs.items() if k not in layout.free_text and c.sheet in wb.sheetnames}
+    by_sheet = _read_validations(path, {c.sheet for c in checked.values()})
+    problems = []
+    for key, cell in checked.items():
+        covering = [v for v in by_sheet[cell.sheet] if cell.coord in v.cells]
+        where = f"{cell.sheet}!{cell.coord}: Human Input {' '.join(key)}"
+        if len(covering) != 1:
+            problems.append(f"{where} has {len(covering)} data validations, expected 1")
+            continue
+        v = covering[0]
+        if not v.blocking:
+            problems.append(f"{where} has a data validation that does not refuse invalid entries")
+        if v.type in ("decimal", "whole") and not _at_least_zero(v.formula1):
+            problems.append(f"{where} has a data validation that allows negative numbers")
+    return problems
+
+
+def _at_least_zero(formula: str | None) -> bool:
+    try:
+        return formula is not None and float(formula) >= 0
+    except ValueError:
+        return False
+
+
+def _check_guards(wb: Workbook, shape: ShapeParameters, profile: Profile, layout: Layout) -> list[str]:
+    """The Input Guards sheet, and a Checks panel row with formula status and count for every guard."""
+    problems = [] if input_guards.SHEET in wb.sheetnames else [f"missing sheet {input_guards.SHEET!r}"]
+    expected = [s.id for s in input_guards.guard_specs(profile, shape)] + ["overall"]
+    found = list(dict.fromkeys(k[1] for k in layout.outputs if k[0] == "guard"))
+    if found != expected:
+        problems.append(f"Checks panel guards {found}, expected {expected}")
+    for figure, cell in layout.outputs.items():
+        if figure[0] != "guard":
+            continue
+        value = wb[cell.sheet][cell.coord].value
+        if not (isinstance(value, str) and value.startswith("=")):
+            problems.append(f"{cell.sheet}!{cell.coord}: {' '.join(figure)} is not a formula")
+    return problems
 
 
 def _check_duration(wb: Workbook, shape: ShapeParameters, layout: Layout) -> list[str]:

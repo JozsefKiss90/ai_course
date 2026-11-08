@@ -23,7 +23,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 from openpyxl.utils import get_column_letter
-from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.table import Table, TableColumn, TableFormula
 from openpyxl.worksheet.worksheet import Worksheet
 
@@ -31,6 +30,7 @@ from budget_engine.layout import BuildContext, Cell, Contribution, Key
 from budget_engine.methods.base import Figures, number
 from budget_engine.profiles import Profile
 from budget_engine.shape import ShapeParameters, is_spare
+from budget_engine.sheets import validation
 from budget_engine.sheets.constants import DURATION
 from budget_engine.sheets.reference_lists import be_field, column_ref
 from budget_engine.sheets.styles import MONEY, QUANTITY, TITLE, put_derived, put_header, put_input
@@ -111,7 +111,7 @@ def _build_items(ctx: BuildContext) -> None:
     for n in range(1, ITEM_ROWS + 1):
         row = FIRST_DATA_ROW + n - 1
         for i, (key, _) in enumerate(INPUTS, start=1):
-            put_input(ctx, ws, f"{get_column_letter(i)}{row}", ("equipment", str(n), key), formats.get(key))
+            put_input(ctx, ws, f"{get_column_letter(i)}{row}", ("equipment", str(n), key), formats.get(key), free_text=key == "item")
         for i, header in enumerate(CALCULATED, start=len(INPUTS) + 1):
             fmt = MONEY if header == ELIGIBLE else ("0%" if header == LIFE_SHARE else QUANTITY)
             put_derived(ws, f"{get_column_letter(i)}{row}", "=" + formulas[header], fmt)
@@ -135,16 +135,12 @@ def _add_validations(ctx: BuildContext, ws: Worksheet, last_row: int) -> None:
         return f"{letter}{FIRST_DATA_ROW}:{letter}{last_row}"
 
     for key, source in (("be", column_ref(ctx.profile, "be_list", "A")), ("wp", column_ref(ctx.profile, "wp_list", "A"))):
-        dv = DataValidation(type="list", formula1=f'INDIRECT("{source}")', allow_blank=True)
-        ws.add_data_validation(dv)
-        dv.add(column_range(key))
-    lines = DataValidation(type="list", formula1='"' + ",".join(cost_lines(ctx.profile).values()) + '"', allow_blank=True)
-    cost = DataValidation(type="decimal", operator="greaterThanOrEqual", formula1="0", allow_blank=True)
-    period = DataValidation(type="whole", operator="greaterThanOrEqual", formula1="1", allow_blank=True)
-    usage = DataValidation(type="decimal", operator="between", formula1="0", formula2="1", allow_blank=True)
-    for dv, key in ((lines, "line"), (cost, "cost"), (period, "period"), (usage, "usage")):
-        ws.add_data_validation(dv)
-        dv.add(column_range(key))
+        validation.apply(ws, validation.list_of(f'INDIRECT("{source}")'), column_range(key))
+    lines = validation.list_of('"' + ",".join(cost_lines(ctx.profile).values()) + '"')
+    period = validation.at_least("1", whole=True)
+    usage = validation.between("0", "1")
+    for dv, key in ((lines, "line"), (validation.non_negative(), "cost"), (period, "period"), (usage, "usage")):
+        validation.apply(ws, dv, column_range(key))
 
 
 def _criteria(code: str, wp: str, label: str) -> str:

@@ -12,17 +12,21 @@ from typing import Any
 
 from openpyxl.styles import Alignment
 from openpyxl.utils import column_index_from_string, get_column_letter
-from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.table import Table
 from openpyxl.worksheet.worksheet import Worksheet
 
-from budget_engine.layout import BuildContext
+from budget_engine.layout import BuildContext, ExtValidation
 from budget_engine.profiles import Profile
 from budget_engine.shape import is_affiliated
+from budget_engine.sheets import validation
 from budget_engine.sheets.styles import TITLE, put_derived, put_header, put_input
 
 BE_INPUT_KEYS = ("be_name", "be_acronym", "be_country", "be_funding_rate")
+FREE_TEXT_KEYS = ("be_name", "be_acronym")
 TABLES = {"be_list": "BEList", "wp_list": "WPList"}
+# The Official Budget Table's hidden sheet of countries the `BE list` Country dropdown lists.
+COUNTRY_SHEET = "CountryList"
+COUNTRY_HEADER = "Country"
 
 
 def _column(spec: dict[str, Any], letter: str) -> str:
@@ -87,7 +91,7 @@ def build_be_list(ctx: BuildContext) -> None:
     spec = ctx.profile.reference_lists["be_list"]
     ws = ctx.wb.create_sheet(spec["sheet"])
     _frame(ws, spec)
-    rates = DataValidation(type="list", formula1='"' + ",".join(spec["funding_rates"]) + '"', allow_blank=True)
+    rates = validation.list_of('"' + ",".join(spec["funding_rates"]) + '"')
     ws.add_data_validation(rates)
     codes = ctx.shape.entity_codes
     for i, code in enumerate(codes):
@@ -95,9 +99,28 @@ def build_be_list(ctx: BuildContext) -> None:
         put_derived(ws, f"A{row}", code)
         put_derived(ws, f"B{row}", role(spec, code))
         for col, key in zip(spec["input_columns"], BE_INPUT_KEYS):
-            put_input(ctx, ws, f"{col}{row}", (key, code), spec["number_formats"].get(col))
+            put_input(ctx, ws, f"{col}{row}", (key, code), spec["number_formats"].get(col), free_text=key in FREE_TEXT_KEYS)
         rates.add(f"F{row}")
     _add_table(ws, "be_list", spec, len(codes))
+    # The Country dropdown, written like the Official Budget Table's own: an x14 list validation.
+    first, column = spec["first_data_row"], spec["country_list"]["column"]
+    ctx.ext_validations.append(
+        ExtValidation(spec["sheet"], f"{column}{first}:{column}{first + len(codes) - 1}", country_list_source(ctx.profile))
+    )
+
+
+def country_list_source(profile: Profile) -> str:
+    """The Country dropdown's list: the country rows of the CountryList sheet."""
+    return f"{COUNTRY_SHEET}!$A$2:$A${1 + len(profile.countries)}"
+
+
+def build_country_list(ctx: BuildContext) -> None:
+    """The hidden CountryList sheet, as in the Official Budget Table: a header, then one country per row."""
+    ws = ctx.wb.create_sheet(COUNTRY_SHEET)
+    ws.sheet_state = "hidden"
+    ws["A1"] = COUNTRY_HEADER
+    for row, country in enumerate(ctx.profile.countries, start=2):
+        ws[f"A{row}"] = country
 
 
 def role(spec: dict[str, Any], code: str) -> str:
@@ -115,5 +138,5 @@ def build_wp_list(ctx: BuildContext) -> None:
     for i, wp in enumerate(ctx.shape.wp_codes):
         row = spec["first_data_row"] + i
         put_derived(ws, f"A{row}", wp)
-        put_input(ctx, ws, f"B{row}", ("wp_name", wp), spec["number_formats"].get("B"))
+        put_input(ctx, ws, f"B{row}", ("wp_name", wp), spec["number_formats"].get("B"), free_text=True)
     _add_table(ws, "wp_list", spec, len(ctx.shape.wp_codes))

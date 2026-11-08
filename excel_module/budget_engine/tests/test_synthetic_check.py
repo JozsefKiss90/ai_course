@@ -307,3 +307,143 @@ def test_a_summary_per_wp_that_counts_a_late_ae_as_a_beneficiary_fails_the_check
     assert not report.passed
     differing = {m.figure for m in report.mismatches}
     assert "wps WP1 A1_senior ae items" in differing and "wps WP1 A1_senior all items" not in differing
+
+
+# --- Input Guards and the Checks panel (ticket 12) ------------------------------------------------
+
+GUARDS = [
+    "negative_values", "be_without_country", "wp_without_lead", "effort_without_rate",
+    "rate_above", "effort_above", "trip_cost_above",
+]
+
+
+def _scenario(result, **changes):
+    """The provisional scenario with some inputs changed (None: left blank)."""
+    from dataclasses import replace
+
+    from budget_engine.verify.scenario import provisional_scenario
+
+    scenario = provisional_scenario(result.profile, result.shape, result.layout)
+    inputs = dict(scenario.inputs)
+    for key, value in changes.items():
+        inputs[tuple(key.split("|"))] = value
+    return replace(scenario, inputs=inputs)
+
+
+def test_the_checks_panel_state_is_verified_after_recalculation(tmp_path):
+    """The provisional scenario fills every country, lead and rate and leaves the thresholds blank."""
+    result = build(shape(), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert report.passed, report.to_markdown()
+    assert dict(report.checks_panel) == {**{g: "OK" for g in GUARDS}, "overall": "OK"}
+    assert {"guard overall status", "guard wp_without_lead count"} <= set(report.figures)
+    assert "Checks panel after the synthetic fill" in report.to_markdown()
+
+
+def test_a_scenario_that_trips_completeness_flags_and_a_plausibility_warning(tmp_path):
+    result = build(shape(), tmp_path / "planning.xlsx")
+    scenario = _scenario(
+        result,
+        **{
+            "be_country|BE2": None,
+            "wp_lead|WP2": None,
+            "rate|BE1|A1_senior": None,  # BE1 has senior effort in WP1, so it is effort without a rate
+            "effort|WP1|BE1|A1_junior": -1,  # pasted past the validation
+            "threshold|rate_above": 2000,  # BE2 and the spare blocks have rates above 2,000
+        },
+    )
+
+    report = run_synthetic_check(result, scenario)
+
+    assert report.passed, report.to_markdown()
+    panel = dict(report.checks_panel)
+    assert {g: panel[g] for g in GUARDS[:4]} == {g: "error" for g in GUARDS[:4]}
+    assert panel["rate_above"] == "warning"
+    assert panel["effort_above"] == panel["trip_cost_above"] == "OK"  # no threshold: silent
+    assert panel["overall"] == "error"
+
+
+def test_plausibility_warnings_alone_make_the_panel_amber(tmp_path):
+    result = build(shape(), tmp_path / "planning.xlsx")
+    scenario = _scenario(result, **{"threshold|trip_cost_above": 1500, "threshold|effort_above": 1.25})
+
+    report = run_synthetic_check(result, scenario)
+
+    assert report.passed, report.to_markdown()
+    panel = dict(report.checks_panel)
+    assert panel["trip_cost_above"] == panel["effort_above"] == "warning"
+    assert panel["overall"] == "warning"
+
+
+def test_a_guard_that_counts_the_wrong_column_fails_the_check(tmp_path, monkeypatch):
+    from budget_engine.sheets import input_guards
+
+    # Sabotage: the country guard counts Beneficiaries with no acronym instead.
+    monkeypatch.setattr(input_guards, "_country_column", lambda profile: "D")
+    result = build(shape(), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result, _scenario(result, **{"be_country|BE2": None}))
+
+    assert not report.passed
+    assert {m.figure for m in report.mismatches} >= {"guard be_without_country count", "guard overall status"}
+
+
+def test_excel_reads_the_country_dropdown_and_refuses_invalid_entries(tmp_path):
+    """The x14 Country validation is written with lxml after openpyxl's save: Excel must see it."""
+    import shutil
+
+    import pythoncom
+    import win32com.client
+
+    result = build(shape(), tmp_path / "deliverable" / "planning.xlsx")
+    copy = tmp_path / "copy.xlsx"
+    shutil.copyfile(result.path, copy)
+    rate = result.layout.inputs[("rate", "BE1", "A1_senior")]
+    pythoncom.CoInitialize()
+    app = win32com.client.DispatchEx("Excel.Application")
+    try:
+        app.DisplayAlerts = False
+        wb = app.Workbooks.Open(str(copy), UpdateLinks=0, ReadOnly=True)
+        try:
+            country = wb.Worksheets("BE list").Range("E5").Validation
+            assert (country.Type, country.Formula1, country.ShowError) == (3, "=CountryList!$A$2:$A$185", True)
+            numeric = wb.Worksheets(rate.sheet).Range(rate.coord).Validation
+            assert (numeric.Type, numeric.Formula1, numeric.ShowError) == (2, "0", True)  # decimal >= 0
+            # A Beneficiary added late as a row of the BE list Table gets the dropdown too.
+            added = wb.Worksheets("BE list").ListObjects("BEList").ListRows.Add().Range
+            late = added.Worksheet.Range(f"E{added.Row}").Validation
+            assert (added.Row, late.Type, late.Formula1) == (6, 3, "=CountryList!$A$2:$A$185")
+            del country, numeric, added, late
+        finally:
+            wb.Close(SaveChanges=False)
+            del wb
+    finally:
+        app.Quit()
+        del app
+        pythoncom.CoUninitialize()
+
+
+def test_profile_rule_checks_are_verified_with_the_rest_of_the_panel(tmp_path, monkeypatch):
+    from dataclasses import replace
+
+    from budget_engine import shape as shape_module
+    from budget_engine.profiles import ProfileConstant, RuleCheck, load_profile
+
+    real = load_profile("he-lump-sum", "1.0")
+    cap = ProfileConstant("wp_share_cap", "Highest share of the lump sum in one WP", 0.2, "share", "test rule")
+    rule = RuleCheck(
+        id="wp_share_cap", kind="max_share_per_wp", label="A WP's share of the lump sum above the cap",
+        severity="warning", params={"grid": "ls", "limit_constant": "wp_share_cap"},
+    )
+    patched = replace(real, constants=(*real.constants, cap), rule_checks=(rule,))
+    monkeypatch.setattr(shape_module, "load_profile", lambda *_: patched)
+    result = build(shape(), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert report.passed, report.to_markdown()
+    panel = dict(report.checks_panel)
+    assert panel["wp_share_cap"] == "warning"  # three WPs: at least one holds more than 20%
+    assert panel["overall"] == "warning"

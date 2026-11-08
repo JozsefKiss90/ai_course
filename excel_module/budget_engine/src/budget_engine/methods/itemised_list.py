@@ -15,7 +15,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 from openpyxl.utils import get_column_letter
-from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.table import Table, TableColumn, TableFormula
 from openpyxl.worksheet.worksheet import Worksheet
 
@@ -23,6 +22,7 @@ from budget_engine.layout import BuildContext, Cell, Contribution, Key
 from budget_engine.methods.base import Figures, number
 from budget_engine.profiles import Profile
 from budget_engine.shape import ShapeParameters, is_spare
+from budget_engine.sheets import validation
 from budget_engine.sheets.reference_lists import be_field, column_ref
 from budget_engine.sheets.styles import MONEY, QUANTITY, TITLE, put_derived, put_header, put_input
 
@@ -118,7 +118,7 @@ def _build_items(ctx: BuildContext) -> None:
     for n in range(1, ITEM_ROWS + 1):
         row = FIRST_DATA_ROW + n - 1
         for i, (key, _) in enumerate(INPUTS, start=1):
-            put_input(ctx, ws, f"{get_column_letter(i)}{row}", ("itemised", str(n), key), formats.get(key))
+            put_input(ctx, ws, f"{get_column_letter(i)}{row}", ("itemised", str(n), key), formats.get(key), free_text=key == "item")
         put_derived(ws, f"{total_col}{row}", "=" + total_formula(), MONEY)
 
     table = Table(displayName=TABLE, ref=f"A{HEADER_ROW}:{total_col}{last_row}")
@@ -144,17 +144,10 @@ def _add_validations(ctx: BuildContext, ws: Worksheet, last_row: int) -> None:
         return f"{letter}{FIRST_DATA_ROW}:{letter}{last_row}"
 
     for key, source in (("be", column_ref(ctx.profile, "be_list", "A")), ("wp", column_ref(ctx.profile, "wp_list", "A"))):
-        dv = DataValidation(type="list", formula1=f'INDIRECT("{source}")', allow_blank=True)
-        ws.add_data_validation(dv)
-        dv.add(column_range(key))
+        validation.apply(ws, validation.list_of(f'INDIRECT("{source}")'), column_range(key))
     # A range, not an inline list: labels hold commas and together exceed Excel's 255-character limit.
-    lines = DataValidation(type="list", formula1=pick_list_source(ctx.profile), allow_blank=True)
-    amount = DataValidation(type="decimal", operator="greaterThanOrEqual", formula1="0", allow_blank=True)
-    ws.add_data_validation(lines)
-    lines.add(column_range("line"))
-    ws.add_data_validation(amount)
-    amount.add(column_range("number"))
-    amount.add(column_range("cost"))
+    validation.apply(ws, validation.list_of(pick_list_source(ctx.profile)), column_range("line"))
+    validation.apply(ws, validation.non_negative(), column_range("number"), column_range("cost"))
 
 
 def _sumifs(column: str, code: str, wp: str, label: str) -> str:

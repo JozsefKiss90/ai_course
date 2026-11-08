@@ -1,4 +1,4 @@
-"""The reference model: expected Transfer View and Check Summary figures from the Human Inputs alone.
+"""The reference model: expected Transfer View, Check Summary and Checks panel figures from the Human Inputs alone.
 
 It never reads a workbook formula. Cost lines come from each switched-on Estimation Method's own
 reference function; totals, indirect costs and the grand total come from the profile's row rules.
@@ -10,10 +10,11 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 from budget_engine.layout import Key
-from budget_engine.methods import CATALOGUE, Figures
+from budget_engine.methods import CATALOGUE, Figures, travel_planner
 from budget_engine.methods.base import number
-from budget_engine.profiles import Profile
+from budget_engine.profiles import PlausibilityThreshold, Profile, RuleCheck
 from budget_engine.shape import ShapeParameters, is_affiliated, is_spare
+from budget_engine.sheets import input_guards
 from budget_engine.sheets.breakdown import TOTAL_KINDS
 from budget_engine.sheets.check_summaries import PARTS
 
@@ -160,3 +161,81 @@ def _grid(kind: str, shape: ShapeParameters, cells: Mapping[tuple[str, str], flo
         expected[(kind, "share", wp)] = share(value)
     expected[(kind, "total", "total")] = grand
     return expected
+
+
+def expected_guards(
+    profile: Profile, shape: ShapeParameters, entries: Mapping[Key, object], summaries: Mapping[Key, float]
+) -> dict[Key, float | str]:
+    """Expected Checks panel figures keyed like ``Layout.outputs``: ("guard", id, "count"|"status") and
+    ("guard", "overall", "status"), from the inputs (with added Table rows) and the expected Check
+    Summaries ``summaries``."""
+    counts = {
+        "negative_values": sum(1 for key, value in entries.items() if _numeric_input(shape, key) and _below_zero(value)),
+        "be_without_country": sum(1 for key, value in entries.items() if key[0] == "be_country" and _blank(value)),
+        "wp_without_lead": sum(1 for wp in shape.wp_codes if _blank(entries.get(("wp_lead", wp)))),
+        "effort_without_rate": sum(
+            1
+            for slot in shape.slots
+            for c in profile.staff_categories
+            if sum(number(entries, ("effort", unit, slot, c.id)) for _, unit in shape.effort_units) > 0
+            and number(entries, ("rate", slot, c.id)) == 0
+        ),
+    }
+    expected: dict[Key, float | str] = {}
+    statuses = []
+    for spec in input_guards.guard_specs(profile, shape):
+        if spec.threshold is not None:
+            count = _above_threshold(profile, shape, entries, summaries, spec.threshold)
+        elif spec.rule is not None:
+            count = _rule_breaches(profile, shape, summaries, spec.rule)
+        else:
+            count = counts[spec.id]
+        status = spec.severity if count > 0 else input_guards.OK
+        expected[("guard", spec.id, "count")] = float(count)
+        expected[("guard", spec.id, "status")] = status
+        statuses.append(status)
+    worst = next((s for s in (input_guards.ERROR, input_guards.WARNING) if s in statuses), input_guards.OK)
+    expected[("guard", "overall", "status")] = worst
+    return expected
+
+
+def _blank(value: object) -> bool:
+    return value is None or value == ""
+
+
+def _below_zero(value: object) -> bool:
+    return isinstance(value, (int, float)) and value < 0
+
+
+def _numeric_input(shape: ShapeParameters, key: Key) -> bool:
+    """A numeric Human Input the negative-values guard covers."""
+    if key[0] in input_guards.NUMERIC_KINDS:
+        return True
+    table = input_guards.NUMERIC_TABLE_FIELDS.get(key[0])
+    return table is not None and table[0].ID in shape.methods and key[2] in table[1]
+
+
+def _above_threshold(
+    profile: Profile, shape: ShapeParameters, entries: Mapping[Key, object], summaries: Mapping[Key, float],
+    threshold: PlausibilityThreshold,
+) -> int:
+    """How many figures exceed a plausibility threshold; none while the threshold is blank."""
+    limit = entries.get(("threshold", threshold.id))
+    if not isinstance(limit, (int, float)):
+        return 0
+    if threshold.measure == "rate":
+        figures = [v for k, v in entries.items() if k[0] == "rate" and isinstance(v, (int, float))]
+    elif threshold.measure == "effort_per_block_wp":
+        figures = [summaries[("pm", slot, wp)] for slot in shape.slots for wp in shape.wp_codes]
+    elif threshold.measure == "trip_cost":
+        figures = [travel_planner.trip_figures(profile, trip)[1] for trip in travel_planner.trip_rows(entries).values()]
+    else:
+        raise ValueError(f"the reference model has no rule for plausibility measure {threshold.measure!r}")
+    return sum(1 for value in figures if value > limit)
+
+
+def _rule_breaches(profile: Profile, shape: ShapeParameters, summaries: Mapping[Key, float], rule: RuleCheck) -> int:
+    if rule.kind != "max_share_per_wp":
+        raise ValueError(f"the reference model has no rule for rule check kind {rule.kind!r}")
+    limit = profile.constant(rule.params["limit_constant"]).value
+    return sum(1 for wp in input_guards.rule_wps(rule, shape) if summaries[(rule.params["grid"], "share", wp)] > limit)

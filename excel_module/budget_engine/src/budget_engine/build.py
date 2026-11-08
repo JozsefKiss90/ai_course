@@ -14,7 +14,9 @@ from budget_engine.layout import BuildContext, Layout
 from budget_engine.methods import CATALOGUE
 from budget_engine.profiles import Profile
 from budget_engine.shape import ShapeParameters, parse_shape
-from budget_engine.sheets import check_summaries, constants, cover, rate_table, reference_lists, task_list, transfer_view
+from budget_engine.sheets import (
+    check_summaries, constants, cover, input_guards, rate_table, reference_lists, task_list, transfer_view, validation,
+)
 from budget_engine.verify.structural import check_structure
 from budget_engine.verify.synthetic import SyntheticCheckReport, run_synthetic_check
 
@@ -68,6 +70,8 @@ def build(
     if shape.tasks is not None:
         task_list.build_task_list(ctx)
     constants.build_constants(ctx)
+    reference_lists.build_country_list(ctx)
+    input_guards.build_thresholds(ctx)
     rate_table.build_rate_table(ctx)
     method_sheets = []
     for method_id in shape.methods:
@@ -75,21 +79,26 @@ def build(
         method_sheets.append(CATALOGUE[method_id].SHEET)
     transfer_view.build_transfer_views(ctx)
     check_summaries.build_check_summaries(ctx)
+    guards = input_guards.build_input_guards(ctx)
 
     fill_in_order = [
         reference_lists_sheet(profile, "be_list"),
         reference_lists_sheet(profile, "wp_list"),
         *([task_list.SHEET] if shape.tasks is not None else []),
+        f"{input_guards.SHEET}: the lead of each work package",
         rate_table.SHEET,
         *method_sheets,
         "Transfer View sheets: copy into the Submission Budget",
         "Check sheets: compare with the Submission Budget's own summaries",
+        f"{constants.SHEET}: plausibility thresholds, if you want the warnings (optional)",
+        "Cover Sheet: review the Checks panel",
     ]
-    cover.build_cover(ctx, cover_ws, fill_in_order, date.today())
+    cover.build_cover(ctx, cover_ws, fill_in_order, date.today(), guards)
     _clear_personal_metadata(wb)
 
     out.parent.mkdir(parents=True, exist_ok=True)
     wb.save(out)
+    validation.write_ext_validations(out, ctx.ext_validations)
 
     problems = check_structure(out, shape, profile, ctx.layout)
     if problems:

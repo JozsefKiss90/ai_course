@@ -16,6 +16,7 @@ from budget_engine.layout import BuildContext, Cell, Contribution, Key
 from budget_engine.methods.base import Figures, number
 from budget_engine.profiles import Profile
 from budget_engine.shape import ShapeParameters, is_spare
+from budget_engine.sheets import validation
 from budget_engine.sheets.reference_lists import be_field
 from budget_engine.sheets.styles import MONEY, QUANTITY, TITLE, put_derived, put_header, put_input
 
@@ -65,6 +66,8 @@ def build(ctx: BuildContext) -> None:
                 )
             row += 1
 
+    effort = f"{get_column_letter(first_col)}{HEADER_ROW + 1}:{get_column_letter(first_col + n - 1)}{row - 1}"
+    validation.apply(ws, validation.non_negative(), effort)
     for j in range(2 * n):
         ws.column_dimensions[get_column_letter(first_col + j)].width = 14
     ws.row_dimensions[HEADER_ROW].height = 60

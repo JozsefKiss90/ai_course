@@ -1,0 +1,64 @@
+"""The build input contract: only Shape Parameters get in (ADR-0001)."""
+
+import pytest
+
+from budget_engine import ShapeError, build
+
+HE = {"id": "he-lump-sum", "version": "1.0"}
+
+
+def shape(**overrides: object) -> dict[str, object]:
+    params: dict[str, object] = {
+        "profile": HE,
+        "beneficiaries": 2,
+        "work_packages": 3,
+        "duration_months": 36,
+    }
+    params.update(overrides)
+    return params
+
+
+def test_minimal_shape_builds_an_xlsx(tmp_path):
+    result = build(shape(), tmp_path / "planning.xlsx")
+    assert result.path.exists()
+    assert result.path.suffix == ".xlsx"
+
+
+@pytest.mark.parametrize(
+    "field, value",
+    [
+        ("partner_names", ["Acme University"]),
+        ("acronym", "ACME"),
+        ("budget_ceiling", 4_000_000),
+        ("countries", ["Belgium"]),
+    ],
+)
+def test_fields_outside_the_contract_are_rejected(tmp_path, field, value):
+    with pytest.raises(ShapeError, match=field):
+        build(shape(**{field: value}), tmp_path / "x.xlsx")
+    assert not (tmp_path / "x.xlsx").exists()
+
+
+@pytest.mark.parametrize(
+    "field, value",
+    [
+        ("beneficiaries", 0),
+        ("beneficiaries", "2"),
+        ("beneficiaries", True),
+        ("work_packages", -1),
+        ("duration_months", 2.5),
+        ("headroom", -1),
+        ("methods", ["staff_effort", "crystal_ball"]),
+        ("profile", {"id": "he-lump-sum", "version": "1.0", "note": "ACME"}),
+        ("profile", {"id": "no-such-profile", "version": "1.0"}),
+    ],
+)
+def test_invalid_shape_values_are_rejected(tmp_path, field, value):
+    with pytest.raises(ShapeError):
+        build(shape(**{field: value}), tmp_path / "x.xlsx")
+
+
+def test_mandatory_methods_are_switched_on_and_headroom_defaults_from_profile(tmp_path):
+    result = build(shape(methods=[]), tmp_path / "planning.xlsx")
+    assert "staff_effort" in result.shape.methods
+    assert result.shape.headroom == 3

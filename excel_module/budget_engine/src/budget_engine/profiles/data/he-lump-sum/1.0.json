@@ -1,0 +1,114 @@
+{
+  "id": "he-lump-sum",
+  "version": "1.0",
+  "name": "Horizon Europe lump sum",
+  "provenance": [
+    {"document": "Detailed lump sum budget table (HE/Euratom), Official Budget Table", "version": "v3.6", "file": "docs/detailed-budget-table_he-ls-euratom_en.xlsm"},
+    {"document": "Lump sum Model Grant Agreement (HE/Euratom)", "file": "docs/ls-mga_en.pdf"},
+    {"document": "Annotated Grant Agreement (AGA)", "file": "docs/aga_en.pdf"},
+    {"document": "Handbook on the lump sum funding", "file": "docs/Handbook-on-the-lump-sum-funding.pdf"}
+  ],
+  "effort_unit": "person-months",
+  "rate_unit": "EUR per person-month",
+  "default_headroom": 3,
+  "profile_constants": [
+    {"id": "indirect_rate", "label": "Indirect cost flat rate (share of A+C)", "value": 0.25, "unit": "share", "source": "Official Budget Table v3.6, BE sheet row 41: E = 25% x (A+C)"},
+    {"id": "productive_hours_per_year", "label": "Annual productive hours (fixed number)", "value": 1720, "unit": "hours per year", "source": "AGA Art. 6.2.A, fixed number of annual productive hours"}
+  ],
+  "cost_categories": [
+    {"id": "A", "label": "Direct personnel costs"},
+    {"id": "B", "label": "Direct subcontracting costs"},
+    {"id": "C", "label": "Direct purchase costs"},
+    {"id": "D", "label": "Other cost categories"},
+    {"id": "E", "label": "Indirect costs"}
+  ],
+  "indirect_rule": {"line": "E", "rate_constant": "indirect_rate", "base_groups": ["A", "C"]},
+  "staff_categories": [
+    {"id": "A1_senior", "label": "Senior scientists", "cost_line": "A1_senior"},
+    {"id": "A1_junior", "label": "Junior scientists", "cost_line": "A1_junior"},
+    {"id": "A1_technical", "label": "Technical personnel", "cost_line": "A1_technical"},
+    {"id": "A1_admin", "label": "Administrative personnel", "cost_line": "A1_admin"},
+    {"id": "A1_others", "label": "Others (A.1)", "cost_line": "A1_others"},
+    {"id": "A2", "label": "Natural persons under direct contract", "cost_line": "A2"},
+    {"id": "A3", "label": "Seconded persons", "cost_line": "A3"},
+    {"id": "A4", "label": "SME owners and natural person beneficiaries", "cost_line": "A4"}
+  ],
+  "estimation_methods": {
+    "allowed": ["staff_effort"],
+    "default": ["staff_effort"],
+    "mandatory": ["staff_effort"]
+  },
+  "reference_lists": {
+    "be_list": {
+      "sheet": "BE list",
+      "title_cell": "A2",
+      "title_merge": "A2:F2",
+      "title": "List of beneficiaries (BE) and affiliated entities (AE)\nChoose from the dropdown lists the country and funding rate for each beneficiary. Do not modify the predefined values.",
+      "header_row": 3,
+      "headers": ["BE/AE nr", "Role", "BE/AE name", "Acronym", "Country", "Funding rate"],
+      "first_data_row": 4,
+      "input_columns": ["C", "D", "E", "F"],
+      "roles": {"coordinator": "Coordinator", "beneficiary": "Beneficiary", "affiliated": "Affiliated entity"},
+      "funding_rates": ["70%", "100%"],
+      "number_formats": {"F": "0%"},
+      "column_widths": {"A": 9.71, "B": 16.71, "C": 40.71, "D": 15.71, "E": 22.0, "F": 12.86},
+      "row_heights": {"1": 3.0, "2": 37.9, "3": 15.75}
+    },
+    "wp_list": {
+      "sheet": "WP list",
+      "title_cell": "A2",
+      "title_merge": "A2:B2",
+      "title": "List of Work Packages",
+      "header_row": 3,
+      "headers": ["WP number", "WP name"],
+      "first_data_row": 4,
+      "input_columns": ["B"],
+      "number_formats": {},
+      "column_widths": {"A": 12.29, "B": 40.71},
+      "row_heights": {"1": 3.0, "2": 24.0}
+    }
+  },
+  "transfer_view": {
+    "headers": ["COST CATEGORY", "ITEMS", "COST PER ITEM", "BE TOTAL COSTS"],
+    "wp_title": "COSTS WORK PACKAGE {n}: ",
+    "rows": [
+      {"kind": "heading", "label": "A. DIRECT PERSONNEL COSTS"},
+      {"kind": "heading", "label": "A.1 Employees (or equivalent)"},
+      {"kind": "line", "id": "A1_senior", "group": "A", "label": "SENIOR SCIENTISTS (or equivalent in the private sector)"},
+      {"kind": "line", "id": "A1_junior", "group": "A", "label": "JUNIOR SCIENTISTS (or equivalent in the private sector)"},
+      {"kind": "line", "id": "A1_technical", "group": "A", "label": "TECHNICAL PERSONNEL (or equivalent in the private sector)"},
+      {"kind": "line", "id": "A1_admin", "group": "A", "label": "ADMINISTRATIVE PERSONNEL (or equivalent in the private sector)"},
+      {"kind": "line", "id": "A1_others", "group": "A", "label": "OTHERS"},
+      {"kind": "line", "id": "A2", "group": "A", "label": "A.2 Natural Persons under direct contract"},
+      {"kind": "line", "id": "A3", "group": "A", "label": "A.3 Seconded Persons"},
+      {"kind": "line", "id": "A4", "group": "A", "label": "A.4 SME owners and natural person beneficiaries"},
+      {"kind": "heading", "label": "B. DIRECT SUBCONTRACTING COSTS"},
+      {"kind": "line", "id": "B", "group": "B"},
+      {"kind": "heading", "label": "C. DIRECT PURCHASE COSTS"},
+      {"kind": "line", "id": "C1", "group": "C", "label": "C.1 Travel and subsistence"},
+      {"kind": "heading", "label": "C.2 Equipment (complete 'Depreciation costs' sheet)"},
+      {"kind": "line", "id": "C2_equipment", "group": "C", "label": "Equipment"},
+      {"kind": "line", "id": "C2_infrastructure", "group": "C", "label": "Infrastructure"},
+      {"kind": "line", "id": "C2_other_assets", "group": "C", "label": "Other assets"},
+      {"kind": "heading", "label": "C.3 Other goods, works and services"},
+      {"kind": "line", "id": "C3_consumables", "group": "C", "label": "Consumables"},
+      {"kind": "line", "id": "C3_meetings", "group": "C", "label": "Services for meetings, seminars"},
+      {"kind": "line", "id": "C3_dissemination", "group": "C", "label": "Services for dissemination activities (including website)"},
+      {"kind": "line", "id": "C3_publication", "group": "C", "label": "Publication fees"},
+      {"kind": "line", "id": "C3_other", "group": "C", "label": "Other (shipment, insurance, translation, etc.)"},
+      {"kind": "heading", "label": "D. OTHER COST CATEGORIES"},
+      {"kind": "line", "id": "D1", "group": "D", "label": "D.1 Financial support to third parties (if applicable in the topic specific conditions)"},
+      {"kind": "line", "id": "D2", "group": "D", "label": "D.2 Internally invoiced goods and services"},
+      {"kind": "line", "id": "D3", "group": "D", "label": "D.3 Transnational access to research infrastructure unit costs (if mentioned as eligible in the topic specific conditions)"},
+      {"kind": "line", "id": "D4", "group": "D", "label": "D.4 Virtual access to research infrastructure unit costs (if mentioned as eligible in the topic specific conditions)"},
+      {"kind": "line", "id": "D5", "group": "D", "label": "D.5 PCP/PPI procurement costs (if mentioned as eligible in the topic specific conditions)"},
+      {"kind": "blank"},
+      {"kind": "total", "id": "AC", "label": "TOTAL DIRECT PERSONNEL COSTS AND PURCHASE COSTS (A+C)", "sum_groups": ["A", "C"]},
+      {"kind": "total", "id": "direct", "label": "TOTAL DIRECT COSTS  (A+B+C+D)", "sum_groups": ["A", "B", "C", "D"]},
+      {"kind": "blank"},
+      {"kind": "indirect", "id": "E", "label": "E. INDIRECT COSTS (25% * (A+C))"},
+      {"kind": "blank"},
+      {"kind": "grand_total", "id": "F", "label": "F. TOTAL COSTS (A+B+C+D+E)", "add": ["direct", "E"]}
+    ]
+  }
+}

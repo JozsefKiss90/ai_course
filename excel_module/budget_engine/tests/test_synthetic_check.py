@@ -1,0 +1,112 @@
+"""Seam 1: build + Synthetic Check, recalculated in real Excel via COM.
+
+Every workbook comes from the build entry point. The check fills a disposable copy with the
+provisional scenario, recalculates it in Excel and compares the Transfer View with the reference
+model. These tests need Microsoft Excel and are marked ``excel``.
+"""
+
+import hashlib
+from pathlib import Path
+
+import pytest
+
+from budget_engine import SyntheticCheckFailed, build, run_synthetic_check
+
+pytestmark = pytest.mark.excel
+pytest.importorskip("win32com.client", reason="the Synthetic Check needs Excel via COM (Windows)")
+
+HE = {"id": "he-lump-sum", "version": "1.0"}
+
+
+def shape(**overrides: object) -> dict[str, object]:
+    params: dict[str, object] = {"profile": HE, "beneficiaries": 2, "work_packages": 3, "duration_months": 36}
+    params.update(overrides)
+    return params
+
+
+def digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_a_clean_build_passes_and_the_deliverable_is_untouched(tmp_path):
+    result = build(shape(), tmp_path / "deliverable" / "planning.xlsx")
+    before = digest(result.path)
+
+    report = run_synthetic_check(result)
+
+    assert report.passed, report.to_markdown()
+    assert report.figures_compared > 0
+    assert report.mismatches == ()
+    assert digest(result.path) == before
+    assert report.copy_path is not None
+    assert result.path.parent not in report.copy_path.parents
+    assert not report.copy_path.exists() and report.copy_deleted
+
+
+def test_a_broken_formula_in_the_generator_fails_with_a_useful_report(tmp_path, monkeypatch):
+    from budget_engine.sheets import transfer_view
+
+    # Sabotage: every Transfer View cost line doubles its first source instead of summing them.
+    monkeypatch.setattr(transfer_view, "_sum", lambda refs: f"={refs[0]}+{refs[0]}")
+    result = build(shape(beneficiaries=1, work_packages=1), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert not report.passed
+    by_figure = {m.figure: m for m in report.mismatches}
+    # Rate for BE1 senior is 1,100 and effort for WP1/BE1/senior is 0.5 x ((3+2+1) % 4) = 1.0.
+    senior = by_figure["BE1 WP1 A1_senior total"]
+    assert senior.location == "'Transfer View BE1'!D9"
+    assert (senior.expected, senior.actual, senior.difference) == (1100.0, 2200.0, 1100.0)
+    assert "BE1 WP1 F total" in by_figure  # the error carries through to the grand total
+    assert "BE1 WP1 A1_senior avg" not in by_figure  # average per item is unaffected by doubling both
+    markdown = report.to_markdown()
+    assert "FAIL" in markdown and "'Transfer View BE1'!D9" in markdown and "1,100.00" in markdown
+    assert report.copy_path is not None and not report.copy_path.exists()
+    assert report.copy_deleted
+
+
+def test_a_failed_check_stops_delivery(tmp_path, monkeypatch):
+    from budget_engine.sheets import transfer_view
+
+    monkeypatch.setattr(transfer_view, "_sum", lambda refs: f"={refs[0]}+{refs[0]}")
+    out = tmp_path / "planning.xlsx"
+
+    with pytest.raises(SyntheticCheckFailed) as failed:
+        build(shape(), out, synthetic_check=True)
+
+    assert not out.exists()
+    assert failed.value.report.mismatches
+    assert "'Transfer View BE1'!D9" in str(failed.value)
+
+
+@pytest.mark.parametrize("beneficiaries, work_packages", [(1, 1), (4, 2)])
+def test_a_build_that_passes_is_delivered_with_its_report(tmp_path, beneficiaries, work_packages):
+    out = tmp_path / "planning.xlsx"
+
+    result = build(shape(beneficiaries=beneficiaries, work_packages=work_packages), out, synthetic_check=True)
+
+    assert out.exists()
+    assert result.synthetic_check is not None and result.synthetic_check.passed
+    markdown = result.synthetic_check.to_markdown()
+    assert "PASS" in markdown and "PROVISIONAL, not human-owned" in markdown
+
+
+def test_the_copy_is_deleted_when_the_check_breaks_down(tmp_path, monkeypatch):
+    from budget_engine.verify import synthetic
+
+    seen: list[Path] = []
+
+    def excel_crashes(copy, fill, cells):
+        seen.append(copy)
+        assert copy.exists()
+        raise RuntimeError("Excel went away")
+
+    monkeypatch.setattr(synthetic, "recalculate_and_read", excel_crashes)
+    out = tmp_path / "planning.xlsx"
+
+    with pytest.raises(RuntimeError, match="Excel went away"):
+        build(shape(), out, synthetic_check=True)
+
+    assert seen and not seen[0].parent.exists()
+    assert not out.exists()

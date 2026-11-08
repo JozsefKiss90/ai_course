@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -16,10 +16,19 @@ from budget_engine.profiles import Profile
 from budget_engine.shape import ShapeParameters, parse_shape
 from budget_engine.sheets import constants, cover, rate_table, reference_lists, transfer_view
 from budget_engine.verify.structural import check_structure
+from budget_engine.verify.synthetic import SyntheticCheckReport, run_synthetic_check
 
 
 class BuildError(RuntimeError):
-    """The generated workbook failed its structural checks and was not delivered."""
+    """The generated workbook failed its checks and was not delivered."""
+
+
+class SyntheticCheckFailed(BuildError):
+    """The Synthetic Check found differing figures; the workbook was deleted, not delivered."""
+
+    def __init__(self, report: SyntheticCheckReport) -> None:
+        super().__init__("Synthetic Check failed:\n" + report.to_markdown())
+        self.report = report
 
 
 @dataclass(frozen=True)
@@ -28,13 +37,20 @@ class BuildResult:
     profile: Profile
     shape: ShapeParameters
     layout: Layout
+    synthetic_check: SyntheticCheckReport | None = None
 
 
-def build(shape_parameters: Mapping[str, Any], out_path: str | Path) -> BuildResult:
+def build(
+    shape_parameters: Mapping[str, Any], out_path: str | Path, *, synthetic_check: bool = False
+) -> BuildResult:
     """Generate a blank Planning Workbook at ``out_path`` and run the structural checks on it.
 
+    With ``synthetic_check``, also run the Synthetic Check (needs Excel) and attach its report.
+    Without it the workbook is generated but unverified: anything that delivers a workbook (the
+    Handover Package, the budget-planner skill) must build with ``synthetic_check=True``.
+
     Raises ShapeError for any input outside the Shape Parameters contract, and BuildError (after
-    deleting the file) if the structural checks fail.
+    deleting the file) if the structural checks fail; SyntheticCheckFailed if the Synthetic Check does.
     """
     shape, profile = parse_shape(shape_parameters)
     out = Path(out_path)
@@ -74,7 +90,18 @@ def build(shape_parameters: Mapping[str, Any], out_path: str | Path) -> BuildRes
     if problems:
         out.unlink()
         raise BuildError("structural checks failed:\n- " + "\n- ".join(problems))
-    return BuildResult(path=out, profile=profile, shape=shape, layout=ctx.layout)
+    result = BuildResult(path=out, profile=profile, shape=shape, layout=ctx.layout)
+    if not synthetic_check:
+        return result
+    try:
+        report = run_synthetic_check(result)
+    except BaseException:
+        out.unlink()  # no workbook is delivered without a completed check
+        raise
+    if not report.passed:
+        out.unlink()
+        raise SyntheticCheckFailed(report)
+    return replace(result, synthetic_check=report)
 
 
 def reference_lists_sheet(profile: Profile, which: str) -> str:

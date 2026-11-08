@@ -17,7 +17,7 @@ from openpyxl.workbook.workbook import Workbook
 from budget_engine.layout import Layout
 from budget_engine.profiles import Profile
 from budget_engine.shape import ShapeParameters, is_spare
-from budget_engine.sheets import cover, rate_table, reference_lists, transfer_view
+from budget_engine.sheets import cover, rate_table, reference_lists, task_list, transfer_view
 from budget_engine.sheets.styles import is_input
 
 TRIVIAL_NUMBERS = {0.0, 1.0}
@@ -31,6 +31,7 @@ def check_structure(path: Path, shape: ShapeParameters, profile: Profile, layout
     wb = load_workbook(path)
     problems += _check_reference_lists(wb, shape, profile)
     problems += _check_tables(wb, shape, profile)
+    problems += _check_task_list(wb, shape)
     problems += _check_no_cell_references_into_lists(wb, profile)
     problems += _check_blocks(wb, shape, profile, layout)
     problems += _check_inputs_empty(wb, layout)
@@ -123,6 +124,36 @@ def _check_tables(wb: Workbook, shape: ShapeParameters, profile: Profile) -> lis
     return problems
 
 
+def _check_task_list(wb: Workbook, shape: ShapeParameters) -> list[str]:
+    """With tasks, one Excel Table row per task under its WP; without, no Task List at all."""
+    name = task_list.SHEET
+    if shape.tasks is None:
+        return [f"unexpected {name!r} sheet in a build without tasks"] if name in wb.sheetnames else []
+    if name not in wb.sheetnames:
+        return [f"missing sheet {name!r}"]
+    ws = wb[name]
+    problems = []
+    units = shape.effort_units
+    first = task_list.FIRST_DATA_ROW
+    for i, entry in enumerate(units):
+        for col, expected in zip("BA", entry):  # effort_units are (WP, task); the sheet shows task, WP
+            if ws[f"{col}{first + i}"].value != expected:
+                problems.append(f"{name}!{col}{first + i}: {ws[f'{col}{first + i}'].value!r}, expected {expected!r}")
+    for r in range(first + len(units), first + len(units) + SPARE_ROWS_CHECKED):
+        if ws[f"A{r}"].value is not None:
+            problems.append(f"{name}!A{r}: unexpected entry below the list")
+    table = task_list.TABLE
+    if list(ws.tables) != [table]:
+        return problems + [f"{name}: Excel Tables {list(ws.tables)}, expected [{table!r}]"]
+    ref = f"A{task_list.HEADER_ROW}:C{first + len(units) - 1}"
+    if ws.tables[table].ref != ref:
+        problems.append(f"{name}: Table {table} spans {ws.tables[table].ref}, expected {ref}")
+    columns = [c.name for c in ws.tables[table].tableColumns]
+    if columns != list(task_list.HEADERS):
+        problems.append(f"{name}: Table {table} columns {columns}, expected {list(task_list.HEADERS)}")
+    return problems
+
+
 def _check_no_cell_references_into_lists(wb: Workbook, profile: Profile) -> list[str]:
     """Other sheets reach the Reference Lists by structured reference only: an added row moves cells."""
     list_sheets = [spec["sheet"] for spec in profile.reference_lists.values()]
@@ -140,7 +171,7 @@ def _check_no_cell_references_into_lists(wb: Workbook, profile: Profile) -> list
 
 def _check_blocks(wb: Workbook, shape: ShapeParameters, profile: Profile, layout: Layout) -> list[str]:
     """Per BE/AE block, spare ones included: a Transfer View holding one block per WP, a Rate Table
-    row, and one staff effort row per WP."""
+    row, and one staff effort row per WP (per task, with a Task List)."""
     problems = []
     expected_tv = [transfer_view.sheet_name(slot) for slot in shape.slots]
     found_tv = [s for s in wb.sheetnames if s.startswith(transfer_view.SHEET_PREFIX)]
@@ -169,23 +200,24 @@ def _check_blocks(wb: Workbook, shape: ShapeParameters, profile: Profile, layout
     else:
         problems.append(f"missing sheet {rate_table.SHEET!r}")
 
+    wp_of = {unit: wp for wp, unit in shape.effort_units}
     effort_blocks: set[tuple[str, str]] = set()
     for key, cell in layout.inputs.items():
         if key[0] != "effort" or cell.sheet not in wb.sheetnames:
             continue
         ws = wb[cell.sheet]
-        row = cell.row
-        wp, slot = key[1:3]
-        expected = (wp, layout.slot_label(slot))
-        labels = (ws[f"A{row}"].value, ws[f"B{row}"].value)
+        unit, slot = key[1:3]
+        task = (unit,) if shape.tasks is not None else ()
+        expected = (wp_of.get(unit), *task, layout.slot_label(slot))
+        labels = tuple(ws[f"{get_column_letter(i + 1)}{cell.row}"].value for i in range(len(expected)))
         if labels != expected:
             problems.append(f"{cell.sheet}!{cell.coord}: staff effort row labelled {labels}, expected {expected}")
         else:
-            effort_blocks.add((wp, slot))
-    for wp in shape.wp_codes:
+            effort_blocks.add((unit, slot))
+    for _, unit in shape.effort_units:
         for be in shape.slots:
-            if (wp, be) not in effort_blocks:
-                problems.append(f"no staff effort block for {wp} x {be}")
+            if (unit, be) not in effort_blocks:
+                problems.append(f"no staff effort block for {unit} x {be}")
     return problems
 
 
@@ -197,7 +229,7 @@ def _check_inputs_empty(wb: Workbook, layout: Layout) -> list[str]:
                 if is_input(c.fill) and c.value is not None:
                     problems.append(f"{ws.title}!{c.coordinate}: Human Input cell is not empty")
     for key, cell in layout.inputs.items():
-        if not is_input(wb[cell.sheet][cell.coord].fill):
+        if cell.sheet in wb.sheetnames and not is_input(wb[cell.sheet][cell.coord].fill):
             problems.append(f"{cell.sheet}!{cell.coord}: input {key} is not styled as a Human Input")
     return problems
 

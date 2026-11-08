@@ -14,7 +14,7 @@ from budget_engine.layout import BuildContext, Layout
 from budget_engine.methods import CATALOGUE
 from budget_engine.profiles import Profile
 from budget_engine.shape import ShapeParameters, parse_shape
-from budget_engine.sheets import constants, cover, rate_table, reference_lists, transfer_view
+from budget_engine.sheets import constants, cover, rate_table, reference_lists, task_list, transfer_view
 from budget_engine.verify.structural import check_structure
 from budget_engine.verify.synthetic import SyntheticCheckReport, run_synthetic_check
 
@@ -65,6 +65,8 @@ def build(
 
     reference_lists.build_be_list(ctx)
     reference_lists.build_wp_list(ctx)
+    if shape.tasks is not None:
+        task_list.build_task_list(ctx)
     constants.build_constants(ctx)
     rate_table.build_rate_table(ctx)
     method_sheets = []
@@ -76,6 +78,7 @@ def build(
     fill_in_order = [
         reference_lists_sheet(profile, "be_list"),
         reference_lists_sheet(profile, "wp_list"),
+        *([task_list.SHEET] if shape.tasks is not None else []),
         rate_table.SHEET,
         *method_sheets,
         "Transfer View sheets: copy into the Submission Budget",

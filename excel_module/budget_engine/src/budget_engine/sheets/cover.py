@@ -19,6 +19,7 @@ SHEET = "Cover"
 
 def provenance(profile: Profile, shape: ShapeParameters, build_date: date | None) -> list[tuple[str, str | int]]:
     """The provenance block, label then value; without a build date, that entry is left out."""
+    tasks = ", ".join(map(str, shape.tasks)) if shape.tasks is not None else "none (effort per work package)"
     dated: list[tuple[str, str | int]] = [("Build date", build_date.isoformat())] if build_date else []
     return [
         ("Funding Profile", profile.id),
@@ -27,6 +28,7 @@ def provenance(profile: Profile, shape: ShapeParameters, build_date: date | None
         ("Beneficiaries", shape.beneficiaries),
         ("Affiliated Entities per Beneficiary", ", ".join(map(str, shape.affiliated_entities))),
         ("Work packages", shape.work_packages),
+        ("Tasks per work package", tasks),
         ("Duration (months)", shape.duration_months),
         ("Estimation Methods", ", ".join(shape.methods)),
         ("Headroom (spare BE/AE blocks)", shape.headroom),

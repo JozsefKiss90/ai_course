@@ -1,6 +1,7 @@
-"""Staff effort: effort per WP × BE/AE block × Staff Category, priced from the Rate Table.
+"""Staff effort: effort per Task (or WP) × BE/AE block × Staff Category, priced from the Rate Table.
 
-Spare blocks get rows too, so a late partner's effort needs no rebuild.
+With a Task List, effort is planned per task and each task's rows contribute to its WP; without
+one, per WP. Spare blocks get rows too, so a late partner's effort needs no rebuild.
 
 Output per BE × WP × cost line: items = effort (in the profile's effort unit), total = effort × rate.
 """
@@ -21,33 +22,42 @@ from budget_engine.sheets.styles import MONEY, QUANTITY, TITLE, put_derived, put
 ID = "staff_effort"
 SHEET = "Staff effort"
 HEADER_ROW = 3
-FIRST_COL = 4  # A: WP, B: BE/AE nr, C: acronym, then effort columns, then cost columns
+
+
+def label_headers(shape: ShapeParameters) -> tuple[str, ...]:
+    """The label columns from A, before the effort and cost columns."""
+    task = ("Task",) if shape.tasks is not None else ()
+    return ("WP", *task, "BE/AE nr", "Acronym")
 
 
 def build(ctx: BuildContext) -> None:
     ws = ctx.wb.create_sheet(SHEET)
-    ws["A1"] = f"Staff effort ({ctx.profile.effort_unit}) per work package, Beneficiary and Staff Category"
+    grain = "task" if ctx.shape.tasks is not None else "work package"
+    ws["A1"] = f"Staff effort ({ctx.profile.effort_unit}) per {grain}, Beneficiary and Staff Category"
     ws["A1"].font = TITLE
     categories = ctx.profile.staff_categories
     n = len(categories)
-    for col, header in zip("ABC", ("WP", "BE/AE nr", "Acronym")):
-        put_header(ws, f"{col}{HEADER_ROW}", header)
+    headers = label_headers(ctx.shape)
+    first_col = len(headers) + 1
+    for i, header in enumerate(headers):
+        put_header(ws, f"{get_column_letter(i + 1)}{HEADER_ROW}", header)
     for j, category in enumerate(categories):
-        put_header(ws, f"{get_column_letter(FIRST_COL + j)}{HEADER_ROW}", f"{category.label} ({ctx.profile.effort_unit})")
-        put_header(ws, f"{get_column_letter(FIRST_COL + n + j)}{HEADER_ROW}", f"{category.label} (EUR)")
+        put_header(ws, f"{get_column_letter(first_col + j)}{HEADER_ROW}", f"{category.label} ({ctx.profile.effort_unit})")
+        put_header(ws, f"{get_column_letter(first_col + n + j)}{HEADER_ROW}", f"{category.label} (EUR)")
 
     row = HEADER_ROW + 1
-    for wp in ctx.shape.wp_codes:
+    for wp, unit in ctx.shape.effort_units:
+        task = (unit,) if ctx.shape.tasks is not None else ()
         for slot in ctx.shape.slots:
-            put_derived(ws, f"A{row}", wp)
-            put_derived(ws, f"B{row}", ctx.layout.slot_label(slot))
-            put_derived(ws, f"C{row}", "=" + be_field(ctx, "be_acronym", ctx.layout.slot_codes[slot]))
+            labels = (wp, *task, ctx.layout.slot_label(slot), "=" + be_field(ctx, "be_acronym", ctx.layout.slot_codes[slot]))
+            for i, label in enumerate(labels):
+                put_derived(ws, f"{get_column_letter(i + 1)}{row}", label)
             if is_spare(slot):
                 ws.row_dimensions[row].outline_level = 1
             for j, category in enumerate(categories):
-                effort_coord = f"{get_column_letter(FIRST_COL + j)}{row}"
-                cost_coord = f"{get_column_letter(FIRST_COL + n + j)}{row}"
-                put_input(ctx, ws, effort_coord, ("effort", wp, slot, category.id), QUANTITY)
+                effort_coord = f"{get_column_letter(first_col + j)}{row}"
+                cost_coord = f"{get_column_letter(first_col + n + j)}{row}"
+                put_input(ctx, ws, effort_coord, ("effort", unit, slot, category.id), QUANTITY)
                 rate = ctx.layout.inputs[("rate", slot, category.id)].ref
                 put_derived(ws, cost_coord, f"={effort_coord}*{rate}", MONEY)
                 ctx.contributions.append(
@@ -56,18 +66,21 @@ def build(ctx: BuildContext) -> None:
             row += 1
 
     for j in range(2 * n):
-        ws.column_dimensions[get_column_letter(FIRST_COL + j)].width = 14
+        ws.column_dimensions[get_column_letter(first_col + j)].width = 14
     ws.row_dimensions[HEADER_ROW].height = 60
-    ws.freeze_panes = f"D{HEADER_ROW + 1}"
+    ws.freeze_panes = f"{get_column_letter(first_col)}{HEADER_ROW + 1}"
 
 
 def reference(profile: Profile, shape: ShapeParameters, inputs: Mapping[Key, object]) -> Figures:
-    """Expected items and total per (BE, WP, cost line), computed from the inputs alone."""
+    """Expected items and total per (BE, WP, cost line), computed from the inputs alone.
+
+    Task effort counts towards the WP the task sits under.
+    """
     figures: Figures = {}
-    for wp in shape.wp_codes:
+    for wp, unit in shape.effort_units:
         for be in shape.slots:
             for category in profile.staff_categories:
-                effort = number(inputs, ("effort", wp, be, category.id))
+                effort = number(inputs, ("effort", unit, be, category.id))
                 rate = number(inputs, ("rate", be, category.id))
                 items, total = figures.get((be, wp, category.cost_line), (0.0, 0.0))
                 figures[(be, wp, category.cost_line)] = (items + effort, total + effort * rate)

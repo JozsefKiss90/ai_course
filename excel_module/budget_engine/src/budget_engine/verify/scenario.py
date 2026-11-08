@@ -71,7 +71,8 @@ def provisional_scenario(profile: Profile, shape: ShapeParameters, layout: Layou
     """Fake values for every Human Input cell in ``layout``.
 
     Rates are round numbers that encode the BE/AE block and Staff Category (second block, third
-    category -> 2,300); effort cycles through blank, 0.5, 1 and 1.5 so blank cells are exercised too.
+    category -> 2,300); effort, per WP or per task, cycles through blank, 0.5, 1 and 1.5 so blank
+    cells are exercised too.
     With headroom, a late AE of BE1 is inserted into the `BE list` Table and claims the first spare
     block; further spare blocks keep a blank code but are filled, so they must calculate anyway.
     An input kind this function does not know raises, so a new sheet cannot slip through unfilled.
@@ -79,6 +80,7 @@ def provisional_scenario(profile: Profile, shape: ShapeParameters, layout: Layou
     category_index = {c.id: j for j, c in enumerate(profile.staff_categories, start=1)}
     slot_index = {slot: i for i, slot in enumerate(shape.slots, start=1)}
     wp_index = {wp: i for i, wp in enumerate(shape.wp_codes, start=1)}
+    unit_index = {unit: i for i, (_, unit) in enumerate(shape.effort_units, start=1)}  # = wp_index without tasks
     inputs: dict[Key, InputValue] = {}
     late = _late_ae_of_be1(profile, shape) if shape.spare_slots else None
     for key in layout.inputs:
@@ -93,14 +95,16 @@ def provisional_scenario(profile: Profile, shape: ShapeParameters, layout: Layou
             inputs[key] = 1
         elif kind == "wp_name":
             inputs[key] = f"Synthetic work package {wp_index[key[1]]} (fake)"
+        elif kind == "task_title":
+            inputs[key] = f"Synthetic task {key[1]} (fake)"
         elif kind == "slot_code":
             inputs[key] = late.code if late and key[1] == shape.spare_slots[0] else None
         elif kind == "rate":
             _, be, category = key
             inputs[key] = 1000 * slot_index[be] + 100 * category_index[category]
         elif kind == "effort":
-            _, wp, be, category = key
-            step = (3 * wp_index[wp] + 2 * slot_index[be] + category_index[category]) % 4
+            _, unit, be, category = key
+            step = (3 * unit_index[unit] + 2 * slot_index[be] + category_index[category]) % 4
             inputs[key] = step * 0.5 if step else None  # None: left blank
         else:
             raise ValueError(f"the provisional scenario has no fake value for input kind {kind!r}")

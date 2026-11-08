@@ -13,7 +13,8 @@ from typing import Any
 from budget_engine.profiles import Profile, ProfileNotFound, load_profile
 
 ALLOWED_KEYS = {
-    "profile", "beneficiaries", "affiliated_entities", "work_packages", "duration_months", "methods", "headroom",
+    "profile", "beneficiaries", "affiliated_entities", "work_packages", "tasks", "duration_months", "methods",
+    "headroom",
 }
 REQUIRED_KEYS = {"profile", "beneficiaries", "work_packages", "duration_months"}
 
@@ -43,6 +44,7 @@ class ShapeParameters:
     duration_months: int
     methods: tuple[str, ...]
     headroom: int
+    tasks: tuple[int, ...] | None = None  # per WP, in WP order; None: no Task List, effort at WP grain
 
     @property
     def be_codes(self) -> list[str]:
@@ -68,6 +70,17 @@ class ShapeParameters:
     @property
     def wp_codes(self) -> list[str]:
         return [f"WP{i}" for i in range(1, self.work_packages + 1)]
+
+    @property
+    def task_codes(self) -> list[str]:
+        return [task for _, task in self.effort_units] if self.tasks is not None else []
+
+    @property
+    def effort_units(self) -> list[tuple[str, str]]:
+        """(WP, unit) per row of effort: each task under its WP with a Task List, else each WP itself."""
+        if self.tasks is None:
+            return [(wp, wp) for wp in self.wp_codes]
+        return [(f"WP{w}", f"T{w}.{t}") for w, n in enumerate(self.tasks, start=1) for t in range(1, n + 1)]
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -95,6 +108,21 @@ def _affiliated_entities(raw: Mapping[str, Any], beneficiaries: int) -> tuple[in
         raise ShapeError(
             f"affiliated_entities must list one whole number >= 0 per Beneficiary "
             f"({beneficiaries} in all), got {value!r}"
+        )
+    return tuple(value)
+
+
+def _tasks(raw: Mapping[str, Any], work_packages: int) -> tuple[int, ...] | None:
+    if "tasks" not in raw:
+        return None
+    value = raw["tasks"]
+    if (
+        not isinstance(value, (list, tuple))
+        or len(value) != work_packages
+        or not all(_whole(v, 1) for v in value)
+    ):
+        raise ShapeError(
+            f"tasks must list one whole number >= 1 per work package ({work_packages} in all), got {value!r}"
         )
     return tuple(value)
 
@@ -133,14 +161,16 @@ def parse_shape(raw: Mapping[str, Any]) -> tuple[ShapeParameters, Profile]:
     headroom = _count(raw, "headroom", 0) if "headroom" in raw else profile.default_headroom
 
     beneficiaries = _count(raw, "beneficiaries", 1)
+    work_packages = _count(raw, "work_packages", 1)
     shape = ShapeParameters(
         profile_id=profile.id,
         profile_version=profile.version,
         beneficiaries=beneficiaries,
         affiliated_entities=_affiliated_entities(raw, beneficiaries),
-        work_packages=_count(raw, "work_packages", 1),
+        work_packages=work_packages,
         duration_months=_count(raw, "duration_months", 1),
         methods=tuple(switched_on),
         headroom=headroom,
+        tasks=_tasks(raw, work_packages),
     )
     return shape, profile

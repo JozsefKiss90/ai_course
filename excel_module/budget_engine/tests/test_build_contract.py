@@ -54,6 +54,11 @@ def test_fields_outside_the_contract_are_rejected(tmp_path, field, value):
         ("affiliated_entities", [1, 1.5]),
         ("affiliated_entities", [True, 0]),
         ("affiliated_entities", {"BE1": 1}),
+        ("tasks", [2, 2]),  # one entry per WP, and shape() has three
+        ("tasks", [2, 0, 1]),  # a WP with a Task List has at least one task
+        ("tasks", [2, 1.5, 1]),
+        ("tasks", [True, 1, 1]),
+        ("tasks", 3),
         ("methods", ["staff_effort", "crystal_ball"]),
         ("profile", {"id": "he-lump-sum", "version": "1.0", "note": "ACME"}),
         ("profile", {"id": "no-such-profile", "version": "1.0"}),
@@ -83,3 +88,14 @@ def test_blocks_are_built_up_to_count_plus_headroom(tmp_path):
 
     default = build(shape(), tmp_path / "default.xlsx")
     assert default.shape.slots == ["BE1", "BE2", "SPARE1", "SPARE2", "SPARE3"]  # HE default headroom +3
+
+
+def test_tasks_are_optional_and_coded_per_work_package(tmp_path):
+    without = build(shape(), tmp_path / "none.xlsx").shape
+    assert without.tasks is None
+    assert without.effort_units == [("WP1", "WP1"), ("WP2", "WP2"), ("WP3", "WP3")]
+
+    with_tasks = build(shape(tasks=[2, 1, 3]), tmp_path / "tasks.xlsx").shape
+    assert with_tasks.tasks == (2, 1, 3)
+    assert with_tasks.task_codes == ["T1.1", "T1.2", "T2.1", "T3.1", "T3.2", "T3.3"]
+    assert with_tasks.effort_units[:3] == [("WP1", "T1.1"), ("WP1", "T1.2"), ("WP2", "T2.1")]

@@ -106,6 +106,31 @@ def test_a_late_partner_in_a_spare_block_and_a_new_table_row_flow_through(tmp_pa
     assert "BE1-AE1 WP2 F total" in figures
 
 
+def test_task_grain_effort_rolls_up_to_the_work_package(tmp_path):
+    result = build(shape(tasks=[2, 1, 3], affiliated_entities=[1, 0], headroom=1), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert report.passed, report.to_markdown()
+    figures = set(report.figures)
+    assert "BE1 WP1 A1_senior total" in figures and "SPARE1 WP3 F total" in figures
+    assert not any(" T" in f for f in figures)  # the Transfer View stays at WP grain
+
+
+def test_a_task_left_out_of_the_roll_up_fails_the_check(tmp_path, monkeypatch):
+    from budget_engine.sheets import transfer_view
+
+    real = transfer_view._sum
+    # Sabotage: each Transfer View cost line drops its last task row.
+    monkeypatch.setattr(transfer_view, "_sum", lambda refs: real(refs[:-1]) if len(refs) > 1 else real(refs))
+    result = build(shape(beneficiaries=1, work_packages=1, tasks=[2], headroom=0), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert not report.passed
+    assert "BE1 WP1 F total" in {m.figure for m in report.mismatches}
+
+
 def test_a_spare_block_that_does_not_calculate_fails_the_check(tmp_path, monkeypatch):
     from budget_engine.sheets import transfer_view
 

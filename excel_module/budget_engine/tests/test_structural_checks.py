@@ -75,6 +75,39 @@ def test_affiliated_entities_and_spare_blocks_across_combinations(tmp_path, affi
     assert effort_rows == 3 * (len(entities) + headroom)  # every WP x BE/AE slot, spare ones included
 
 
+@pytest.mark.parametrize("tasks", [[1], [2, 1, 3], [4] * 6])
+def test_a_task_list_puts_effort_at_task_grain(tmp_path, tasks):
+    result = build(shape(work_packages=len(tasks), tasks=tasks, headroom=1), tmp_path / "planning.xlsx")
+    wb = load_workbook(result.path)
+    assert wb.sheetnames[:4] == ["Cover", "BE list", "WP list", "Task List"]
+
+    codes = [(f"T{w}.{t}", f"WP{w}") for w, n in enumerate(tasks, start=1) for t in range(1, n + 1)]
+    ws = wb["Task List"]
+    assert [c.name for c in ws.tables["TaskList"].tableColumns] == ["Task nr", "WP", "Task title"]
+    assert ws.tables["TaskList"].ref == f"A3:C{3 + len(codes)}"
+    assert [(ws[f"A{4 + i}"].value, ws[f"B{4 + i}"].value) for i in range(len(codes))] == codes
+    for i, (code, _) in enumerate(codes):
+        title = result.layout.inputs[("task_title", code)]
+        assert (title.sheet, title.coord) == ("Task List", f"C{4 + i}")
+        assert ws[title.coord].value is None
+
+    effort = wb["Staff effort"]
+    slots = ["BE1", "BE2", "spare 1"]
+    assert effort.max_row - 3 == len(codes) * len(slots)
+    assert [effort[f"{c}3"].value for c in "ABC"] == ["WP", "Task", "BE/AE nr"]
+    assert (effort["A4"].value, effort["B4"].value, effort["C4"].value) == ("WP1", "T1.1", "BE1")
+    assert len([k for k in result.layout.inputs if k[0] == "effort"]) == len(codes) * len(slots) * len(result.profile.staff_categories)
+
+
+def test_without_tasks_there_is_no_task_list_and_effort_stays_at_wp_grain(built):
+    wb = load_workbook(built.path)
+    assert "Task List" not in wb.sheetnames
+    effort = wb["Staff effort"]
+    assert [effort[f"{c}3"].value for c in "AB"] == ["WP", "BE/AE nr"]
+    assert {k[1] for k in built.layout.inputs if k[0] == "effort"} == {"WP1", "WP2", "WP3"}
+    assert "none" in str(next(r[1].value for r in wb["Cover"].iter_rows(max_col=2) if r[0].value == "Tasks per work package"))
+
+
 def test_reference_lists_grow_through_excel_tables(tmp_path):
     result = build(shape(affiliated_entities=[1, 0]), tmp_path / "planning.xlsx")
     wb = load_workbook(result.path)
@@ -240,6 +273,35 @@ def test_structural_checks_catch_an_affiliated_entity_out_of_place(tmp_path):
     for edit, expected in ((demote_ae, "BE list!B5"), (drop_ae_transfer_view, "Transfer View BE1-AE1")):
         problems = _tampered(result, tmp_path, edit)
         assert any(expected in p for p in problems), problems
+
+
+@pytest.fixture(scope="module")
+def built_with_tasks(tmp_path_factory):
+    return build(shape(tasks=[2, 1, 2]), tmp_path_factory.mktemp("tasks") / "planning.xlsx")
+
+
+TASK_TAMPERING = {
+    "missing Task List": (lambda wb: wb.remove(wb["Task List"]), "Task List"),
+    "shrunk Task List Table": (lambda wb: setattr(wb["Task List"].tables["TaskList"], "ref", "A3:C5"), "TaskList"),
+    "filled task title": (lambda wb: wb["Task List"].__setitem__("C4", "Kick-off"), "Human Input cell is not empty"),
+    "task under the wrong WP": (lambda wb: wb["Task List"].__setitem__("B6", "WP3"), "Task List!B6"),
+    "relabelled task effort row": (
+        lambda wb: wb["Staff effort"].__setitem__("B4", "T1.2"),
+        "Staff effort!",
+    ),
+}
+
+
+@pytest.mark.parametrize("case", TASK_TAMPERING)
+def test_structural_checks_catch_task_list_breakage(built_with_tasks, tmp_path, case):
+    edit, expected = TASK_TAMPERING[case]
+    problems = _tampered(built_with_tasks, tmp_path, edit)
+    assert any(expected in p for p in problems), problems
+
+
+def test_structural_checks_catch_a_task_list_in_a_build_without_tasks(built, tmp_path):
+    problems = _tampered(built, tmp_path, lambda wb: wb.create_sheet("Task List"))
+    assert any("Task List" in p for p in problems), problems
 
 
 def test_transfer_view_rows_match_the_official_budget_table(built):

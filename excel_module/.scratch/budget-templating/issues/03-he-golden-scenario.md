@@ -12,3 +12,7 @@
 - [ ] Expected figures computed by hand: items and average cost per item per BE/AE × WP × cost line, category E, the lump sum breakdown, person-months overview, per-WP summary and % shares
 - [ ] Working shown so a reviewer can follow every figure
 - [ ] Committed and marked human-owned; changes require explicit human approval
+
+## Comments
+
+- **2026-11-08, agent:** the human chose "scaffold only". The worksheet is `budget_engine/golden/he-lump-sum-1.0.md`. It holds proposed fake Shape Parameters and Human Inputs covering all four v1 Estimation Methods, proposed calculation rules for the human to confirm, and blank expected-figure tables with a working section and a sign-off block. All checkboxes above stay open until the human computes the figures and signs the file off.

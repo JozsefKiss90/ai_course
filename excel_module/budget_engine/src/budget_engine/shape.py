@@ -1,7 +1,8 @@
 """The build input contract: Shape Parameters and nothing else (ADR-0001).
 
 There is deliberately no field that could carry an identifier or an amount. Unknown keys
-are rejected rather than ignored, so a mistakenly supplied name never travels further.
+are rejected rather than ignored, so a mistakenly supplied name never travels further. Errors name
+the offending key and never repeat the value given for it, which may be exactly such a name.
 """
 
 from __future__ import annotations
@@ -10,7 +11,7 @@ from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from budget_engine.profiles import Profile, ProfileNotFound, load_profile
+from budget_engine.profiles import Profile, ProfileNotFound, available_profiles, load_profile
 
 ALLOWED_KEYS = {
     "profile", "beneficiaries", "affiliated_entities", "work_packages", "tasks", "duration_months", "methods",
@@ -94,7 +95,7 @@ def _whole(value: object, minimum: int) -> bool:
 def _count(raw: Mapping[str, Any], key: str, minimum: int) -> int:
     value = raw[key]
     if not _whole(value, minimum):
-        raise ShapeError(f"{key} must be a whole number >= {minimum}, got {value!r}")
+        raise ShapeError(f"{key} must be a whole number >= {minimum}")
     return int(value)
 
 
@@ -106,8 +107,7 @@ def _affiliated_entities(raw: Mapping[str, Any], beneficiaries: int) -> tuple[in
         or not all(_whole(v, 0) for v in value)
     ):
         raise ShapeError(
-            f"affiliated_entities must list one whole number >= 0 per Beneficiary "
-            f"({beneficiaries} in all), got {value!r}"
+            f"affiliated_entities must list one whole number >= 0 per Beneficiary ({beneficiaries} in all)"
         )
     return tuple(value)
 
@@ -122,7 +122,7 @@ def _tasks(raw: Mapping[str, Any], work_packages: int) -> tuple[int, ...] | None
         or not all(_whole(v, 1) for v in value)
     ):
         raise ShapeError(
-            f"tasks must list one whole number >= 1 per work package ({work_packages} in all), got {value!r}"
+            f"tasks must list one whole number >= 1 per work package ({work_packages} in all)"
         )
     return tuple(value)
 
@@ -145,8 +145,9 @@ def parse_shape(raw: Mapping[str, Any]) -> tuple[ShapeParameters, Profile]:
         raise ShapeError("profile id and version must be strings")
     try:
         profile = load_profile(ref["id"], ref["version"])
-    except ProfileNotFound as exc:
-        raise ShapeError(str(exc)) from exc
+    except ProfileNotFound:
+        available = ", ".join(f"{i} {v}" for i, v in available_profiles())
+        raise ShapeError(f"no such Funding Profile version (available: {available})") from None
 
     methods = raw.get("methods", list(profile.methods.default))
     if not isinstance(methods, (list, tuple)) or not all(isinstance(m, str) for m in methods):
@@ -154,7 +155,8 @@ def parse_shape(raw: Mapping[str, Any]) -> tuple[ShapeParameters, Profile]:
     not_allowed = [m for m in methods if m not in profile.methods.allowed]
     if not_allowed:
         raise ShapeError(
-            f"Estimation Methods not allowed by {profile.id} {profile.version}: {', '.join(not_allowed)}"
+            f"{len(not_allowed)} Estimation Method(s) not allowed by {profile.id} {profile.version} "
+            f"(allowed: {', '.join(profile.methods.allowed)})"
         )
     switched_on = [m for m in profile.methods.allowed if m in methods or m in profile.methods.mandatory]
 

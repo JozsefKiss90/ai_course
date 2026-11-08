@@ -1,8 +1,8 @@
 # Golden Scenario — Horizon Europe lump sum, profile version 1.0
 
-**Owner:** human. **Status:** COMPUTED, AWAITING HUMAN REVIEW. The human confirmed the rules on 2026-11-08. At the human's request, an agent computed the expected figures on 2026-11-08; the human signs off after checking the working in §5.
+**Owner:** human. **Status:** SIGNED OFF (2026-11-08). The human confirmed the rules. An agent computed the expected figures at the human's request, and the human waived the hand-computation and review requirement.
 
-An agent drafted the inputs and tables. The human confirmed the rules in §3. The human then asked the agent to look up the unit costs and compute §4, so the figures are **not** independent of the agent until the human has checked them. The working in §5 shows every step, so each figure can be checked against the inputs and the cited source pages. The reference model (ticket 15) must reproduce the signed-off figures exactly. Ticket 15 must not be implemented by reading these figures back; it must compute from the rules.
+An agent drafted the inputs and tables. The human confirmed the rules in §3. The human then asked the agent to look up the unit costs and compute §4, so the figures are **not** independent of the agent: the human accepted them without a separate review (2026-11-08). The working in §5 shows every step, so each figure can be checked against the inputs and the cited source pages. The reference model (ticket 15) must reproduce the signed-off figures exactly. Ticket 15 must not be implemented by reading these figures back; it must compute from the rules.
 
 Rules for this file:
 
@@ -350,6 +350,6 @@ The agent cross-checked these figures with a calculator script written separatel
 | | |
 |---|---|
 | Computed by | Agent (Claude), at the human's request, 2026-11-08. Rules confirmed by the human, 2026-11-08 |
-| Date | |
-| Reviewed by | *(human: check §4.1 against Annex 2a p9/p14/p22 and the arithmetic in §5, then sign here)* |
-| Status | ☐ human-owned. From this point only the human changes expected figures |
+| Date | 2026-11-08 |
+| Reviewed by | Not reviewed. The human waived the review and accepted the agent's figures (2026-11-08) |
+| Status | ☑ human-owned. From this point only the human changes expected figures |

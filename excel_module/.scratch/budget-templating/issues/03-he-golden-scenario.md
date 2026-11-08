@@ -4,14 +4,14 @@
 
 **Blocked by:** None — can start immediately. (Ticket 15 consumes it.)
 
-**Status:** ready-for-human
+**Status:** done
 
 - [x] Shape Parameters chosen: at least two Beneficiaries, one Affiliated Entity, two or more work packages, tasks on at least one WP
 - [x] Fake Human Inputs exercise all four v1 Estimation Methods: staff effort, travel planner, equipment depreciation, itemised list
 - [x] Inputs are obviously fake (no real names, countries chosen arbitrarily, round synthetic rates)
-- [ ] Expected figures computed by hand: items and average cost per item per BE/AE × WP × cost line, category E, the lump sum breakdown, person-months overview, per-WP summary and % shares
+- [x] Expected figures computed by hand: items and average cost per item per BE/AE × WP × cost line, category E, the lump sum breakdown, person-months overview, per-WP summary and % shares
 - [x] Working shown so a reviewer can follow every figure
-- [ ] Committed and marked human-owned; changes require explicit human approval
+- [x] Committed and marked human-owned; changes require explicit human approval
 
 ## Comments
 
@@ -27,3 +27,6 @@
   - Unit costs come from Annex 2a V1.11 (`docs/additional-information-on-unit-costs-and-contributions_en.pdf`): p9 for travel (identical to C(2024)5405 point 5.1), p14 for accommodation and p22 for subsistence.
   - §4.2–4.6 are filled in with full working in §5. A calculator script written separately from the engine code cross-checked the figures.
   - **Still open:** "computed by hand" is not ticked, because an agent computed the figures. It counts as done once the human has checked §4.1 and §5. "Marked human-owned" waits for the human's sign-off in the worksheet. After that, set the status to done.
+- **2026-11-08, agent:** the human overrode the ticket's rule. No hand computation or human review is required for this scenario, and the human closed the ticket on the agent-computed figures (`e994ea5`). The worksheet's sign-off records this.
+  - **Consequence for ticket 15:** the Golden Scenario is not independent of the agent. Ticket 15's reference model must be implemented from the §3 rules, without reading these figures, so that a match still means something.
+  - Future changes to the expected figures still need explicit human approval.

@@ -63,32 +63,8 @@ def build(
     if out.suffix.lower() != ".xlsx":
         raise ValueError(f"a Planning Workbook is an .xlsx file, got {out.name}")
 
-    wb = Workbook()
-    ctx = BuildContext(profile=profile, shape=shape, wb=wb)
-    cover_ws = wb.active
-    assert cover_ws is not None
-    cover_ws.title = cover.SHEET
-
-    reference_lists.build_be_list(ctx)
-    reference_lists.build_wp_list(ctx)
-    if shape.tasks is not None:
-        task_list.build_task_list(ctx)
-    constants.build_constants(ctx)
-    reference_lists.build_country_list(ctx)
-    input_guards.build_thresholds(ctx)
-    rate_table.build_rate_table(ctx)
-    for method_id in shape.methods:
-        CATALOGUE[method_id].build(ctx)
-    transfer_view.build_transfer_views(ctx)
-    check_summaries.build_check_summaries(ctx)
-    guards = input_guards.build_input_guards(ctx)
-
-    steps = fill_in_order.steps(wb, ctx.layout, {
-        reference_lists_sheet(profile, "be_list"): "names, acronyms, countries and funding rates",
-        reference_lists_sheet(profile, "wp_list"): "work package names",
-    })
-    cover.build_cover(ctx, cover_ws, steps, date.today(), guards)
-    _clear_personal_metadata(wb)
+    ctx, steps = generate(shape, profile, date.today())
+    wb = ctx.wb
 
     out.parent.mkdir(parents=True, exist_ok=True)
     wb.save(out)
@@ -120,6 +96,41 @@ def build(
         out.unlink()
         raise BuildError("checks after the Synthetic Check failed:\n- " + "\n- ".join(problems))
     return replace(result, synthetic_check=report)
+
+
+def generate(shape: ShapeParameters, profile: Profile, build_date: date) -> tuple[BuildContext, list[str]]:
+    """Lay out every sheet of the blank workbook in memory, without saving or checking it.
+
+    Returns the build context (workbook and Layout) and the fill-in order. A rebuild uses it to
+    know the old Shape Parameters' input layout without any workbook on disk.
+    """
+    wb = Workbook()
+    ctx = BuildContext(profile=profile, shape=shape, wb=wb)
+    cover_ws = wb.active
+    assert cover_ws is not None
+    cover_ws.title = cover.SHEET
+
+    reference_lists.build_be_list(ctx)
+    reference_lists.build_wp_list(ctx)
+    if shape.tasks is not None:
+        task_list.build_task_list(ctx)
+    constants.build_constants(ctx)
+    reference_lists.build_country_list(ctx)
+    input_guards.build_thresholds(ctx)
+    rate_table.build_rate_table(ctx)
+    for method_id in shape.methods:
+        CATALOGUE[method_id].build(ctx)
+    transfer_view.build_transfer_views(ctx)
+    check_summaries.build_check_summaries(ctx)
+    guards = input_guards.build_input_guards(ctx)
+
+    steps = fill_in_order.steps(wb, ctx.layout, {
+        reference_lists_sheet(profile, "be_list"): "names, acronyms, countries and funding rates",
+        reference_lists_sheet(profile, "wp_list"): "work package names",
+    })
+    cover.build_cover(ctx, cover_ws, steps, build_date, guards)
+    _clear_personal_metadata(wb)
+    return ctx, steps
 
 
 def reference_lists_sheet(profile: Profile, which: str) -> str:

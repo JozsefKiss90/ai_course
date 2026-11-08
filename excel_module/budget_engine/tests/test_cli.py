@@ -2,7 +2,8 @@
 
 Shape Parameters arrive as JSON on stdin, so they never land in a file. ``profiles`` lists what
 each Funding Profile allows, ``confirm`` reads the Shape Parameters back for the human to confirm,
-and ``deliver`` builds, checks and packages. The Synthetic Check is stood in for as in
+``deliver`` builds, checks and packages, and ``confirm-rebuild`` and ``rebuild`` do the same for
+old and new Shape Parameters, adding the re-paste guide. The Synthetic Check is stood in for as in
 ``test_handover``; the real Excel run is covered there.
 """
 
@@ -14,7 +15,7 @@ from pathlib import Path
 import pytest
 
 from budget_engine.cli import main
-from budget_engine.handover import GUIDE, REPORT, WORKBOOK
+from budget_engine.handover import GUIDE, REPASTE_GUIDE, REPORT, WORKBOOK
 
 from budget_engine.verify.excel import ExcelUnavailable
 from test_handover import check_fails, check_passes, shape  # noqa: F401 (fixtures)
@@ -220,3 +221,67 @@ def test_deliver_reports_a_directory_it_cannot_write(tmp_path, check_passes):
     code, out, err = run("deliver", "--out", str(blocker / "package"), stdin=shape())
 
     assert code == 1 and out == "" and "No Handover Package" in err
+
+
+# confirm-rebuild and rebuild
+
+
+def test_confirm_rebuild_reads_back_old_and_new_shape_parameters():
+    code, out, _ = run("confirm-rebuild", stdin={"old": shape(), "new": shape(beneficiaries=3)})
+
+    assert code == 0
+    old, new = out.split("New Shape Parameters", 1)
+    assert old.startswith("Old Shape Parameters") and "Beneficiaries: 2" in old
+    assert "Beneficiaries: 3" in new
+    assert "Funding Profile: Horizon Europe lump sum (he-lump-sum 1.0)" in new
+
+
+def test_confirm_rebuild_keeps_the_old_profile_version_when_the_new_one_leaves_it_out():
+    new = {k: v for k, v in shape(work_packages=4).items() if k != "profile"}
+    code, out, _ = run("confirm-rebuild", stdin={"old": shape(), "new": new})
+
+    assert code == 0 and out.count("(he-lump-sum 1.0)") == 2
+
+
+@pytest.mark.parametrize(
+    "stdin, named",
+    [
+        (shape(), "old, new"),
+        ({"old": shape(), "new": shape(), "workbook": "C:/Acme/budget.xlsx"}, "workbook"),
+        ({"old": shape(acronym="ACME"), "new": shape()}, "old Shape Parameters: not a Shape Parameter: acronym"),
+        ({"old": shape(), "new": shape(beneficiaries="Acme")}, "new Shape Parameters: beneficiaries"),
+    ],
+)
+def test_confirm_rebuild_refuses_anything_but_old_and_new_shape_parameters(stdin, named):
+    code, out, err = run("confirm-rebuild", stdin=stdin)
+
+    assert code == 2 and out == ""
+    assert named in err and "Acme" not in err and "ACME" not in err
+
+
+def test_rebuild_writes_the_package_with_the_repaste_guide_and_says_where(tmp_path, check_passes):
+    out_dir = tmp_path / "package"
+    code, out, _ = run("rebuild", "--out", str(out_dir), stdin={"old": shape(), "new": shape(beneficiaries=3)})
+
+    assert code == 0
+    assert sorted(p.name for p in out_dir.iterdir()) == sorted([WORKBOOK, REPORT, GUIDE, REPASTE_GUIDE])
+    assert "Synthetic Check: PASS" in out
+    for name in (WORKBOOK, REPORT, GUIDE, REPASTE_GUIDE):
+        assert str(out_dir / name) in out
+
+
+def test_rebuild_refuses_another_profile_version_and_writes_nothing(tmp_path, check_passes):
+    out_dir = tmp_path / "package"
+    stdin = {"old": shape(), "new": shape(profile={"id": "he-lump-sum", "version": "0.9"})}
+    code, _, err = run("rebuild", "--out", str(out_dir), stdin=stdin)
+
+    assert code == 2 and "new Shape Parameters" in err
+    assert not out_dir.exists()
+
+
+def test_rebuild_stops_on_a_failing_synthetic_check_without_a_repaste_guide(tmp_path, check_fails):
+    out_dir = tmp_path / "package"
+    code, _, err = run("rebuild", "--out", str(out_dir), stdin={"old": shape(), "new": shape(beneficiaries=3)})
+
+    assert code == 1 and "Synthetic Check failed" in err
+    assert [p.name for p in out_dir.iterdir()] == [REPORT]

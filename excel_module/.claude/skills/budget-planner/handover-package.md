@@ -15,10 +15,11 @@ Use the current date and time, and let the user choose another new or empty dire
 - `planning-workbook.xlsx`: the blank Planning Workbook. Its Cover Sheet holds the provenance, the Checks panel, the fill-in order and the colour legend: light yellow cells are inputs, white cells are derived, and guards are coloured by status.
 - `synthetic-check-report.md`: the evidence that the blank workbook calculates correctly.
 - `fill-in-guide.md`: per sheet, what to enter, the unit and the source, and step by step how to transfer the Transfer Views into the Submission Budget.
+- On a rebuild only, `re-paste-guide.md`: which input block of the old workbook to copy where in the new one, what is new, and what has no place (see [rebuild.md](rebuild.md)).
 
 ## What to tell the user
 
-- The three paths, as `deliver` printed them.
+- The three paths (four on a rebuild), as the command printed them.
 - Which scenario the Synthetic Check ran on, as the report's scenario line gives it (Golden, scaled Golden or provisional).
 - Next steps: open the workbook in Excel 2021 or 365 and fill it in following the Cover Sheet's fill-in order and `fill-in-guide.md`, entering names and all other values only in the yellow cells.
-- From here on the workbook is theirs alone. You will never open it, not even for a small fix. A different consortium shape needs a new build.
+- From here on the workbook is theirs alone. You will never open it, not even for a small fix. A consortium shape the spare blocks cannot absorb needs a rebuild ([rebuild.md](rebuild.md)).

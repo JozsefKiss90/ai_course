@@ -1,6 +1,6 @@
 ---
 name: budget-planner
-description: Builds a blank Planning Workbook for one proposal from its Shape Parameters. Use when the user wants a budget planning workbook built for a Horizon Europe or Erasmus+ proposal.
+description: Builds a blank Planning Workbook for one proposal from its Shape Parameters, or rebuilds one for a changed consortium shape with a re-paste guide. Use when the user wants a budget planning workbook built or rebuilt for a Horizon Europe or Erasmus+ proposal.
 ---
 
 # budget-planner
@@ -29,4 +29,6 @@ Shape Parameters go to the engine as a JSON object on stdin (a heredoc), never a
 
    Done when the user has the package's three paths, or the failed step and its error output.
 
-A rebuild for a changed consortium shape is not available yet. Tell the user so, and offer a fresh build with the new Shape Parameters instead.
+## Rebuild
+
+When the user's consortium shape has changed since an earlier build (more partners than the spare blocks hold, other work packages, tasks or methods), follow [rebuild.md](rebuild.md) instead of the steps above. A rebuild takes the old and the new Shape Parameters, never the old workbook.

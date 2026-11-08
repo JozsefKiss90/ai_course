@@ -11,7 +11,7 @@ from collections.abc import Mapping
 from budget_engine.layout import Key
 from budget_engine.methods import CATALOGUE, Figures
 from budget_engine.profiles import Profile
-from budget_engine.shape import ShapeParameters
+from budget_engine.shape import ShapeParameters, is_spare
 
 
 def method_figures(profile: Profile, shape: ShapeParameters, inputs: Mapping[Key, object]) -> Figures:
@@ -27,10 +27,10 @@ def method_figures(profile: Profile, shape: ShapeParameters, inputs: Mapping[Key
 def expected_transfer_view(
     profile: Profile, shape: ShapeParameters, inputs: Mapping[Key, object]
 ) -> dict[Key, float]:
-    """Expected figures keyed like ``Layout.outputs``: ("tv", BE, WP, row id, items|avg|total)."""
+    """Expected figures keyed like ``Layout.outputs``: ("tv", BE/AE block, WP, row id, items|avg|total)."""
     figures = method_figures(profile, shape, inputs)
     expected: dict[Key, float] = {}
-    for be in shape.be_codes:
+    for be in shape.slots:
         for wp in shape.wp_codes:
             group_totals: dict[str, float] = {}
             row_totals: dict[str, float] = {}
@@ -58,4 +58,18 @@ def expected_transfer_view(
                     raise ValueError(f"the reference model has no rule for Transfer View row kind {spec.kind!r}")
                 row_totals[spec.id] = value
                 expected[("tv", be, wp, spec.id, "total")] = value
+    return expected
+
+
+def expected_names(
+    shape: ShapeParameters, inputs: Mapping[Key, object], added: Mapping[Key, object]
+) -> dict[Key, str]:
+    """The name each Transfer View shows, keyed ("tv", block, "name"): the `BE list` name of the BE/AE
+    whose code the block carries. ``added`` holds entries of rows added to the `BE list` Table."""
+    entries = {**inputs, **added}
+    expected: dict[Key, str] = {}
+    for slot in shape.slots:
+        code = entries.get(("slot_code", slot)) if is_spare(slot) else slot
+        name = entries.get(("be_name", str(code))) if code else None
+        expected[("tv", slot, "name")] = "" if name is None else str(name)
     return expected

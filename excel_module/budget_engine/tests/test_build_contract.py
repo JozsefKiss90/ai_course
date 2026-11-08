@@ -48,6 +48,12 @@ def test_fields_outside_the_contract_are_rejected(tmp_path, field, value):
         ("work_packages", -1),
         ("duration_months", 2.5),
         ("headroom", -1),
+        ("headroom", True),
+        ("affiliated_entities", [1]),  # one entry per Beneficiary, and shape() has two
+        ("affiliated_entities", [1, -1]),
+        ("affiliated_entities", [1, 1.5]),
+        ("affiliated_entities", [True, 0]),
+        ("affiliated_entities", {"BE1": 1}),
         ("methods", ["staff_effort", "crystal_ball"]),
         ("profile", {"id": "he-lump-sum", "version": "1.0", "note": "ACME"}),
         ("profile", {"id": "no-such-profile", "version": "1.0"}),
@@ -62,3 +68,18 @@ def test_mandatory_methods_are_switched_on_and_headroom_defaults_from_profile(tm
     result = build(shape(methods=[]), tmp_path / "planning.xlsx")
     assert "staff_effort" in result.shape.methods
     assert result.shape.headroom == 3
+
+
+def test_affiliated_entities_default_to_none_and_are_listed_under_their_beneficiary(tmp_path):
+    assert build(shape(), tmp_path / "none.xlsx").shape.entity_codes == ["BE1", "BE2"]
+
+    result = build(shape(beneficiaries=3, affiliated_entities=[2, 0, 1]), tmp_path / "planning.xlsx")
+    assert result.shape.entity_codes == ["BE1", "BE1-AE1", "BE1-AE2", "BE2", "BE3", "BE3-AE1"]
+
+
+def test_blocks_are_built_up_to_count_plus_headroom(tmp_path):
+    result = build(shape(affiliated_entities=[1, 0], headroom=2), tmp_path / "planning.xlsx")
+    assert result.shape.slots == ["BE1", "BE1-AE1", "BE2", "SPARE1", "SPARE2"]
+
+    default = build(shape(), tmp_path / "default.xlsx")
+    assert default.shape.slots == ["BE1", "BE2", "SPARE1", "SPARE2", "SPARE3"]  # HE default headroom +3

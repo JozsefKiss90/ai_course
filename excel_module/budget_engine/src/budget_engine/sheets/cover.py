@@ -25,10 +25,11 @@ def provenance(profile: Profile, shape: ShapeParameters, build_date: date | None
         ("Profile version", profile.version),
         *dated,
         ("Beneficiaries", shape.beneficiaries),
+        ("Affiliated Entities per Beneficiary", ", ".join(map(str, shape.affiliated_entities))),
         ("Work packages", shape.work_packages),
         ("Duration (months)", shape.duration_months),
         ("Estimation Methods", ", ".join(shape.methods)),
-        ("Headroom", shape.headroom),
+        ("Headroom (spare BE/AE blocks)", shape.headroom),
     ]
 
 

@@ -12,8 +12,21 @@ from typing import Any
 
 from budget_engine.profiles import Profile, ProfileNotFound, load_profile
 
-ALLOWED_KEYS = {"profile", "beneficiaries", "work_packages", "duration_months", "methods", "headroom"}
+ALLOWED_KEYS = {
+    "profile", "beneficiaries", "affiliated_entities", "work_packages", "duration_months", "methods", "headroom",
+}
 REQUIRED_KEYS = {"profile", "beneficiaries", "work_packages", "duration_months"}
+
+
+SPARE_PREFIX = "SPARE"  # internal key of a spare block; the workbook shows "spare <n>"
+
+
+def is_spare(slot: str) -> bool:
+    return slot.startswith(SPARE_PREFIX)
+
+
+def is_affiliated(code: str) -> bool:
+    return "-AE" in code
 
 
 class ShapeError(ValueError):
@@ -25,6 +38,7 @@ class ShapeParameters:
     profile_id: str
     profile_version: str
     beneficiaries: int
+    affiliated_entities: tuple[int, ...]  # per Beneficiary, in BE order
     work_packages: int
     duration_months: int
     methods: tuple[str, ...]
@@ -35,6 +49,23 @@ class ShapeParameters:
         return [f"BE{i}" for i in range(1, self.beneficiaries + 1)]
 
     @property
+    def entity_codes(self) -> list[str]:
+        """Beneficiaries with their Affiliated Entities listed under them, as in the `BE list`."""
+        codes = []
+        for be, aes in zip(self.be_codes, self.affiliated_entities):
+            codes += [be] + [f"{be}-AE{a}" for a in range(1, aes + 1)]
+        return codes
+
+    @property
+    def spare_slots(self) -> list[str]:
+        return [f"{SPARE_PREFIX}{i}" for i in range(1, self.headroom + 1)]
+
+    @property
+    def slots(self) -> list[str]:
+        """Every per-BE/AE block: one per Beneficiary and AE, then the spare ones up to the headroom."""
+        return self.entity_codes + self.spare_slots
+
+    @property
     def wp_codes(self) -> list[str]:
         return [f"WP{i}" for i in range(1, self.work_packages + 1)]
 
@@ -42,12 +73,30 @@ class ShapeParameters:
         return asdict(self)
 
 
+def _whole(value: object, minimum: int) -> bool:
+    # bool is an int subclass; True must not pass as a count.
+    return isinstance(value, int) and not isinstance(value, bool) and value >= minimum
+
+
 def _count(raw: Mapping[str, Any], key: str, minimum: int) -> int:
     value = raw[key]
-    # bool is an int subclass; True must not pass as a count.
-    if not isinstance(value, int) or isinstance(value, bool) or value < minimum:
+    if not _whole(value, minimum):
         raise ShapeError(f"{key} must be a whole number >= {minimum}, got {value!r}")
-    return value
+    return int(value)
+
+
+def _affiliated_entities(raw: Mapping[str, Any], beneficiaries: int) -> tuple[int, ...]:
+    value = raw.get("affiliated_entities", [0] * beneficiaries)
+    if (
+        not isinstance(value, (list, tuple))
+        or len(value) != beneficiaries
+        or not all(_whole(v, 0) for v in value)
+    ):
+        raise ShapeError(
+            f"affiliated_entities must list one whole number >= 0 per Beneficiary "
+            f"({beneficiaries} in all), got {value!r}"
+        )
+    return tuple(value)
 
 
 def parse_shape(raw: Mapping[str, Any]) -> tuple[ShapeParameters, Profile]:
@@ -83,10 +132,12 @@ def parse_shape(raw: Mapping[str, Any]) -> tuple[ShapeParameters, Profile]:
 
     headroom = _count(raw, "headroom", 0) if "headroom" in raw else profile.default_headroom
 
+    beneficiaries = _count(raw, "beneficiaries", 1)
     shape = ShapeParameters(
         profile_id=profile.id,
         profile_version=profile.version,
-        beneficiaries=_count(raw, "beneficiaries", 1),
+        beneficiaries=beneficiaries,
+        affiliated_entities=_affiliated_entities(raw, beneficiaries),
         work_packages=_count(raw, "work_packages", 1),
         duration_months=_count(raw, "duration_months", 1),
         methods=tuple(switched_on),

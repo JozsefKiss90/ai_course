@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import gc
 from collections import defaultdict
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 
 from openpyxl.utils import column_index_from_string, get_column_letter
@@ -20,9 +21,26 @@ class ExcelUnavailable(RuntimeError):
     """Microsoft Excel could not be started through COM."""
 
 
-def recalculate_and_read(path: Path, fill: Mapping[Cell, object], cells: Iterable[Cell]) -> dict[Cell, object]:
-    """Open ``path`` read-only in a private Excel instance, type in ``fill``, recalculate, read ``cells``.
+@dataclass(frozen=True)
+class TableRowAddition:
+    """A row a human adds to an Excel Table: inserted at ``position`` (1-based, within the data rows)."""
 
+    sheet: str
+    table: str
+    position: int
+    values: tuple[object, ...]  # one per Table column, in column order
+
+
+def recalculate_and_read(
+    path: Path,
+    fill: Mapping[Cell, object],
+    cells: Iterable[Cell],
+    table_rows: Sequence[TableRowAddition] = (),
+) -> dict[Cell, object]:
+    """Open ``path`` read-only in a private Excel instance, type in ``fill``, add ``table_rows``,
+    recalculate and read ``cells``.
+
+    ``fill`` addresses cells as built, so it is typed in before any Table row moves cells down.
     Numbers come back as floats, blanks as None and cell errors as their text (e.g. "#REF!").
     """
     try:
@@ -49,6 +67,10 @@ def recalculate_and_read(path: Path, fill: Mapping[Cell, object], cells: Iterabl
             try:
                 for cell, value in fill.items():
                     wb.Worksheets(cell.sheet).Range(cell.coord).Value = value
+                for addition in table_rows:
+                    table = wb.Worksheets(addition.sheet).ListObjects(addition.table)
+                    table.ListRows.Add(addition.position).Range.Value = (addition.values,)
+                    del table
                 app.CalculateFull()
                 return {cell: value for sheet, wanted in by_sheet.items() for cell, value in _read(wb, sheet, wanted)}
             finally:

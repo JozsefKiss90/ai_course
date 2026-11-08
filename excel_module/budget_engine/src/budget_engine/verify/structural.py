@@ -16,8 +16,8 @@ from openpyxl.workbook.workbook import Workbook
 
 from budget_engine.layout import Layout
 from budget_engine.profiles import Profile
-from budget_engine.shape import ShapeParameters
-from budget_engine.sheets import cover, transfer_view
+from budget_engine.shape import ShapeParameters, is_spare
+from budget_engine.sheets import cover, rate_table, reference_lists, transfer_view
 from budget_engine.sheets.styles import is_input
 
 TRIVIAL_NUMBERS = {0.0, 1.0}
@@ -30,6 +30,8 @@ def check_structure(path: Path, shape: ShapeParameters, profile: Profile, layout
     problems += _check_package(path)
     wb = load_workbook(path)
     problems += _check_reference_lists(wb, shape, profile)
+    problems += _check_tables(wb, shape, profile)
+    problems += _check_no_cell_references_into_lists(wb, profile)
     problems += _check_blocks(wb, shape, profile, layout)
     problems += _check_inputs_empty(wb, layout)
     problems += _check_no_bare_numbers(wb)
@@ -56,7 +58,7 @@ def _check_package(path: Path) -> list[str]:
 
 def _check_reference_lists(wb: Workbook, shape: ShapeParameters, profile: Profile) -> list[str]:
     problems: list[str] = []
-    expected_codes = {"be_list": shape.be_codes, "wp_list": shape.wp_codes}
+    expected_codes = {"be_list": shape.entity_codes, "wp_list": shape.wp_codes}
     for which, spec in profile.reference_lists.items():
         name = spec["sheet"]
         if name not in wb.sheetnames:
@@ -92,19 +94,56 @@ def _check_reference_lists(wb: Workbook, shape: ShapeParameters, profile: Profil
                 if ws[f"{col}{first + i}"].number_format != fmt:
                     problems.append(f"{name}!{col}{first + i}: number format is not {fmt!r}")
         if which == "be_list":
-            roles = spec["roles"]
-            for i in range(len(codes)):
-                expected = roles["coordinator"] if i == 0 else roles["beneficiary"]
+            for i, code in enumerate(codes):
+                expected = reference_lists.role(spec, code)
                 if ws[f"B{first + i}"].value != expected:
                     problems.append(f"{name}!B{first + i}: role {ws[f'B{first + i}'].value!r}, expected {expected!r}")
     return problems
 
 
-def _check_blocks(wb: Workbook, shape: ShapeParameters, profile: Profile, layout: Layout) -> list[str]:
-    """One Transfer View per Beneficiary holding one block per WP, and one effort block per WP x BE."""
+def _check_tables(wb: Workbook, shape: ShapeParameters, profile: Profile) -> list[str]:
+    """Each Reference List is one Excel Table spanning its headers and every entry, so it can grow."""
     problems = []
-    expected_tv = [transfer_view.sheet_name(be) for be in shape.be_codes]
-    found_tv = [s for s in wb.sheetnames if s.startswith(transfer_view.sheet_name(""))]
+    counts = {"be_list": len(shape.entity_codes), "wp_list": shape.work_packages}
+    for which, spec in profile.reference_lists.items():
+        if spec["sheet"] not in wb.sheetnames:
+            continue  # reported with the Reference Lists
+        name = reference_lists.TABLES[which]
+        tables = wb[spec["sheet"]].tables
+        if list(tables) != [name]:
+            problems.append(f"{spec['sheet']}: Excel Tables {list(tables)}, expected [{name!r}]")
+            continue
+        last = spec["first_data_row"] + counts[which] - 1
+        ref = f"A{spec['header_row']}:{get_column_letter(len(spec['headers']))}{last}"
+        if tables[name].ref != ref:
+            problems.append(f"{spec['sheet']}: Table {name} spans {tables[name].ref}, expected {ref}")
+        columns = [c.name for c in tables[name].tableColumns]
+        if columns != list(spec["headers"]):
+            problems.append(f"{spec['sheet']}: Table {name} columns {columns}, expected {spec['headers']}")
+    return problems
+
+
+def _check_no_cell_references_into_lists(wb: Workbook, profile: Profile) -> list[str]:
+    """Other sheets reach the Reference Lists by structured reference only: an added row moves cells."""
+    list_sheets = [spec["sheet"] for spec in profile.reference_lists.values()]
+    prefixes = [f"'{name}'!" for name in list_sheets] + [f"{name}!" for name in list_sheets if " " not in name]
+    problems = []
+    for ws in wb.worksheets:
+        if ws.title in list_sheets:
+            continue
+        for row in ws.iter_rows():
+            for c in row:
+                if isinstance(c.value, str) and c.value.startswith("=") and any(p in c.value for p in prefixes):
+                    problems.append(f"{ws.title}!{c.coordinate}: refers to a Reference List cell instead of its Table")
+    return problems
+
+
+def _check_blocks(wb: Workbook, shape: ShapeParameters, profile: Profile, layout: Layout) -> list[str]:
+    """Per BE/AE block, spare ones included: a Transfer View holding one block per WP, a Rate Table
+    row, and one staff effort row per WP."""
+    problems = []
+    expected_tv = [transfer_view.sheet_name(slot) for slot in shape.slots]
+    found_tv = [s for s in wb.sheetnames if s.startswith(transfer_view.SHEET_PREFIX)]
     if found_tv != expected_tv:
         problems.append(f"Transfer View sheets {found_tv}, expected {expected_tv}")
     for sheet in set(found_tv) & set(expected_tv):
@@ -115,19 +154,36 @@ def _check_blocks(wb: Workbook, shape: ShapeParameters, profile: Profile, layout
             if count != 1:
                 problems.append(f"{sheet}: {count} blocks for WP{n}, expected 1")
 
+    if rate_table.SHEET in wb.sheetnames:
+        ws = wb[rate_table.SHEET]
+        for i, slot in enumerate(shape.slots):
+            coord = f"A{rate_table.HEADER_ROW + 1 + i}"
+            if is_spare(slot):
+                if not is_input(ws[coord].fill):
+                    problems.append(f"{rate_table.SHEET}!{coord}: spare block {slot} has no BE/AE nr input")
+            elif ws[coord].value != slot:
+                problems.append(f"{rate_table.SHEET}!{coord}: {ws[coord].value!r}, expected {slot!r}")
+        below = f"A{rate_table.HEADER_ROW + 1 + len(shape.slots)}"
+        if ws[below].value is not None or is_input(ws[below].fill):
+            problems.append(f"{rate_table.SHEET}!{below}: unexpected row below the last block")
+    else:
+        problems.append(f"missing sheet {rate_table.SHEET!r}")
+
     effort_blocks: set[tuple[str, str]] = set()
     for key, cell in layout.inputs.items():
         if key[0] != "effort" or cell.sheet not in wb.sheetnames:
             continue
         ws = wb[cell.sheet]
         row = cell.row
+        wp, slot = key[1:3]
+        expected = (wp, layout.slot_label(slot))
         labels = (ws[f"A{row}"].value, ws[f"B{row}"].value)
-        if labels != key[1:3]:
-            problems.append(f"{cell.sheet}!{cell.coord}: staff effort row labelled {labels}, expected {key[1:3]}")
+        if labels != expected:
+            problems.append(f"{cell.sheet}!{cell.coord}: staff effort row labelled {labels}, expected {expected}")
         else:
-            effort_blocks.add(labels)
+            effort_blocks.add((wp, slot))
     for wp in shape.wp_codes:
-        for be in shape.be_codes:
+        for be in shape.slots:
             if (wp, be) not in effort_blocks:
                 problems.append(f"no staff effort block for {wp} x {be}")
     return problems

@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from openpyxl import Workbook
 
 from budget_engine.profiles import Profile
-from budget_engine.shape import ShapeParameters
+from budget_engine.shape import ShapeParameters, is_spare
 
 Key = tuple[str, ...]
 
@@ -41,6 +41,13 @@ class Layout:
     inputs: dict[Key, Cell] = field(default_factory=dict)
     outputs: dict[Key, Cell] = field(default_factory=dict)
     constants: dict[str, Cell] = field(default_factory=dict)
+    # Per-BE/AE block -> formula operand for its BE/AE code: a quoted literal for a built Beneficiary
+    # or AE, a reference to the Human Input where the code of a late partner goes for a spare block.
+    slot_codes: dict[str, str] = field(default_factory=dict)
+
+    def slot_label(self, slot: str) -> str:
+        """What a per-BE/AE row shows as its BE/AE nr: the code, or a spare block's code by formula."""
+        return f'={self.slot_codes[slot]}&""' if is_spare(slot) else slot
 
 
 @dataclass(frozen=True)

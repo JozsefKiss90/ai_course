@@ -43,10 +43,67 @@ def test_structural_checks_pass_across_shapes(tmp_path, beneficiaries, work_pack
     assert time.perf_counter() - started < 5, "structural checks must be fast enough for every build"
 
     wb = load_workbook(result.path)
+    spare = 3 if headroom is None else headroom
     expected_tv = [f"Transfer View BE{i}" for i in range(1, beneficiaries + 1)]
+    expected_tv += [f"Transfer View spare {i}" for i in range(1, spare + 1)]
     assert [s for s in wb.sheetnames if s.startswith("Transfer View")] == expected_tv
     assert wb.sheetnames[:3] == ["Cover", "BE list", "WP list"]
     assert {"Profile Constants", "Rate Table", "Staff effort"} <= set(wb.sheetnames)
+
+
+@pytest.mark.parametrize(
+    "affiliated_entities, headroom",
+    [([0, 0, 0], 0), ([1, 0, 0], 3), ([0, 2, 1], 1), ([3, 3, 3], 5)],
+)
+def test_affiliated_entities_and_spare_blocks_across_combinations(tmp_path, affiliated_entities, headroom):
+    result = build(shape(beneficiaries=3, affiliated_entities=affiliated_entities, headroom=headroom), tmp_path / "p.xlsx")
+    wb = load_workbook(result.path)
+
+    entities = []
+    for be, aes in enumerate(affiliated_entities, start=1):
+        entities += [f"BE{be}"] + [f"BE{be}-AE{a}" for a in range(1, aes + 1)]
+    be_list = wb["BE list"]
+    assert [be_list[f"A{4 + i}"].value for i in range(len(entities))] == entities
+    roles = [be_list[f"B{4 + i}"].value for i in range(len(entities))]
+    assert roles == ["Coordinator" if e == "BE1" else "Affiliated entity" if "-AE" in e else "Beneficiary" for e in entities]
+
+    spares = [f"spare {i}" for i in range(1, headroom + 1)]
+    assert [s.removeprefix("Transfer View ") for s in wb.sheetnames if s.startswith("Transfer View")] == entities + spares
+    rate_rows = wb["Rate Table"].max_row - 3
+    assert rate_rows == len(entities) + headroom
+    effort_rows = wb["Staff effort"].max_row - 3
+    assert effort_rows == 3 * (len(entities) + headroom)  # every WP x BE/AE slot, spare ones included
+
+
+def test_reference_lists_grow_through_excel_tables(tmp_path):
+    result = build(shape(affiliated_entities=[1, 0]), tmp_path / "planning.xlsx")
+    wb = load_workbook(result.path)
+    be_tables = wb["BE list"].tables
+    assert {n: be_tables[n].ref for n in be_tables} == {"BEList": "A3:F6"}
+    assert [c.name for c in be_tables["BEList"].tableColumns] == [
+        "BE/AE nr", "Role", "BE/AE name", "Acronym", "Country", "Funding rate",
+    ]
+    wp_tables = wb["WP list"].tables
+    assert {n: wp_tables[n].ref for n in wp_tables} == {"WPList": "A3:B6"}
+
+    # Every other sheet reaches the Reference Lists by structured reference, never by cell address,
+    # so a row a human adds (e.g. an AE inserted under its Beneficiary) keeps every formula working.
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for c in row:
+                if isinstance(c.value, str) and c.value.startswith("="):
+                    assert "'BE list'!" not in c.value and "'WP list'!" not in c.value, f"{ws.title}!{c.coordinate}"
+    assert "BEList[" in wb["Transfer View BE1-AE1"]["A2"].value
+    assert "WPList[" in wb["Transfer View BE1"]["A5"].value
+
+
+def test_a_spare_block_takes_its_code_from_a_human_input(tmp_path):
+    result = build(shape(headroom=1), tmp_path / "planning.xlsx")
+    code = result.layout.inputs[("slot_code", "SPARE1")]
+    assert code.sheet == "Rate Table"
+    wb = load_workbook(result.path)
+    assert wb[code.sheet][code.coord].value is None
+    assert code.ref in wb["Transfer View spare 1"]["A2"].value  # the name is looked up by that code
 
 
 def _official(sheet: str):
@@ -133,6 +190,14 @@ TAMPERING = {
     ),
     "unlabelled constant": (lambda wb: wb["Profile Constants"].__setitem__("A4", None), "has no label"),
     "missing Transfer View": (lambda wb: wb.remove(wb["Transfer View BE2"]), "Transfer View BE2"),
+    "missing spare Transfer View": (lambda wb: wb.remove(wb["Transfer View spare 3"]), "Transfer View spare 3"),
+    "missing BE list Table": (lambda wb: wb["BE list"].tables.pop("BEList"), "BEList"),
+    "shrunk WP list Table": (lambda wb: setattr(wb["WP list"].tables["WPList"], "ref", "A3:B5"), "WPList"),
+    "cell reference into a Reference List": (
+        lambda wb: wb["Rate Table"].__setitem__("B4", "='BE list'!$D$4"),
+        "Rate Table!B4: refers to a Reference List cell",
+    ),
+    "spare code typed in": (lambda wb: wb["Rate Table"].__setitem__("A6", "BE3"), "Rate Table!A6"),
     "narrowed column": (lambda wb: setattr(wb["BE list"].column_dimensions["C"], "width", 20), "column C width"),
     "funding rate format": (lambda wb: setattr(wb["BE list"]["F4"], "number_format", "General"), "BE list!F4"),
 }
@@ -156,10 +221,25 @@ def test_structural_checks_catch_vba(built, tmp_path):
 def test_structural_checks_catch_a_missing_staff_effort_block(built, tmp_path):
     def relabel_last_block(wb):
         ws = wb["Staff effort"]
-        ws[f"B{ws.max_row}"] = "BE1"  # the last WP now shows BE1 twice and no BE2
+        row = next(r for r in range(1, ws.max_row + 1) if (ws[f"A{r}"].value, ws[f"B{r}"].value) == ("WP3", "BE2"))
+        ws[f"B{row}"] = "BE1"  # the last WP now shows BE1 twice and no BE2
 
     problems = _tampered(built, tmp_path, relabel_last_block)
     assert "no staff effort block for WP3 x BE2" in problems, problems
+
+
+def test_structural_checks_catch_an_affiliated_entity_out_of_place(tmp_path):
+    result = build(shape(affiliated_entities=[1, 0]), tmp_path / "planning.xlsx")
+
+    def demote_ae(wb):
+        wb["BE list"]["B5"] = "Beneficiary"
+
+    def drop_ae_transfer_view(wb):
+        wb.remove(wb["Transfer View BE1-AE1"])
+
+    for edit, expected in ((demote_ae, "BE list!B5"), (drop_ae_transfer_view, "Transfer View BE1-AE1")):
+        problems = _tampered(result, tmp_path, edit)
+        assert any(expected in p for p in problems), problems
 
 
 def test_transfer_view_rows_match_the_official_budget_table(built):

@@ -1,4 +1,6 @@
-"""Staff effort: effort per WP × Beneficiary × Staff Category, priced from the Rate Table.
+"""Staff effort: effort per WP × BE/AE block × Staff Category, priced from the Rate Table.
+
+Spare blocks get rows too, so a late partner's effort needs no rebuild.
 
 Output per BE × WP × cost line: items = effort (in the profile's effort unit), total = effort × rate.
 """
@@ -12,8 +14,9 @@ from openpyxl.utils import get_column_letter
 from budget_engine.layout import BuildContext, Cell, Contribution, Key
 from budget_engine.methods.base import Figures, number
 from budget_engine.profiles import Profile
-from budget_engine.sheets.styles import MONEY, QUANTITY, TITLE, name_formula, put_derived, put_header, put_input
-from budget_engine.shape import ShapeParameters
+from budget_engine.shape import ShapeParameters, is_spare
+from budget_engine.sheets.reference_lists import be_field
+from budget_engine.sheets.styles import MONEY, QUANTITY, TITLE, put_derived, put_header, put_input
 
 ID = "staff_effort"
 SHEET = "Staff effort"
@@ -35,18 +38,20 @@ def build(ctx: BuildContext) -> None:
 
     row = HEADER_ROW + 1
     for wp in ctx.shape.wp_codes:
-        for be in ctx.shape.be_codes:
+        for slot in ctx.shape.slots:
             put_derived(ws, f"A{row}", wp)
-            put_derived(ws, f"B{row}", be)
-            put_derived(ws, f"C{row}", name_formula(ctx.layout.inputs[("be_acronym", be)].ref))
+            put_derived(ws, f"B{row}", ctx.layout.slot_label(slot))
+            put_derived(ws, f"C{row}", "=" + be_field(ctx, "be_acronym", ctx.layout.slot_codes[slot]))
+            if is_spare(slot):
+                ws.row_dimensions[row].outline_level = 1
             for j, category in enumerate(categories):
                 effort_coord = f"{get_column_letter(FIRST_COL + j)}{row}"
                 cost_coord = f"{get_column_letter(FIRST_COL + n + j)}{row}"
-                put_input(ctx, ws, effort_coord, ("effort", wp, be, category.id), QUANTITY)
-                rate = ctx.layout.inputs[("rate", be, category.id)].ref
+                put_input(ctx, ws, effort_coord, ("effort", wp, slot, category.id), QUANTITY)
+                rate = ctx.layout.inputs[("rate", slot, category.id)].ref
                 put_derived(ws, cost_coord, f"={effort_coord}*{rate}", MONEY)
                 ctx.contributions.append(
-                    Contribution(be, wp, category.cost_line, Cell(SHEET, effort_coord), Cell(SHEET, cost_coord))
+                    Contribution(slot, wp, category.cost_line, Cell(SHEET, effort_coord), Cell(SHEET, cost_coord))
                 )
             row += 1
 
@@ -60,7 +65,7 @@ def reference(profile: Profile, shape: ShapeParameters, inputs: Mapping[Key, obj
     """Expected items and total per (BE, WP, cost line), computed from the inputs alone."""
     figures: Figures = {}
     for wp in shape.wp_codes:
-        for be in shape.be_codes:
+        for be in shape.slots:
             for category in profile.staff_categories:
                 effort = number(inputs, ("effort", wp, be, category.id))
                 rate = number(inputs, ("rate", be, category.id))

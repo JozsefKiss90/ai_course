@@ -62,8 +62,3 @@ def put_header(ws: Worksheet, coord: str, text: str) -> None:
     c.fill = HEADER_FILL
     c.border = BOX
     c.alignment = WRAP
-
-
-def name_formula(code_cell_ref: str) -> str:
-    """Show a Reference List entry, or nothing while the human has not filled it."""
-    return f'=IF({code_cell_ref}="","",{code_cell_ref})'

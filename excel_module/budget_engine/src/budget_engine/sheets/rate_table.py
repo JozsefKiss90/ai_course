@@ -1,11 +1,19 @@
-"""Rate Table: one rate per Beneficiary × Staff Category, in the profile's native unit."""
+"""Rate Table: one rate per BE/AE block × Staff Category, in the profile's native unit.
+
+There is a row per Beneficiary and AE, then one per spare block up to the headroom. A spare row's
+BE/AE nr is a Human Input: a late partner added to the `BE list` claims a spare block by typing its
+code there, and every per-BE/AE structure of that block follows. This sheet comes first among the
+per-BE/AE structures, so it owns the block codes the others refer to.
+"""
 
 from __future__ import annotations
 
 from openpyxl.utils import get_column_letter
 
 from budget_engine.layout import BuildContext
-from budget_engine.sheets.styles import MONEY, TITLE, name_formula, put_derived, put_header, put_input
+from budget_engine.shape import is_spare
+from budget_engine.sheets.reference_lists import be_field
+from budget_engine.sheets.styles import MONEY, TITLE, put_derived, put_header, put_input
 
 SHEET = "Rate Table"
 HEADER_ROW = 3
@@ -16,17 +24,24 @@ def build_rate_table(ctx: BuildContext) -> None:
     ws = ctx.wb.create_sheet(SHEET)
     ws["A1"] = f"Rate Table ({ctx.profile.rate_unit})"
     ws["A1"].font = TITLE
+    ws["A2"] = "Spare rows: type the BE/AE nr of a Beneficiary or AE added late to the BE list, then fill its rates."
     put_header(ws, f"A{HEADER_ROW}", "BE/AE nr")
     put_header(ws, f"B{HEADER_ROW}", "Acronym")
     categories = ctx.profile.staff_categories
     for j, category in enumerate(categories):
         put_header(ws, f"{get_column_letter(FIRST_COL + j)}{HEADER_ROW}", category.label)
-    for i, be in enumerate(ctx.shape.be_codes):
+    for i, slot in enumerate(ctx.shape.slots):
         row = HEADER_ROW + 1 + i
-        put_derived(ws, f"A{row}", be)
-        put_derived(ws, f"B{row}", name_formula(ctx.layout.inputs[("be_acronym", be)].ref))
+        if is_spare(slot):
+            ctx.layout.slot_codes[slot] = put_input(ctx, ws, f"A{row}", ("slot_code", slot)).ref
+            ws.row_dimensions[row].outline_level = 1  # grouped, not hidden: nobody misses a spare block
+        else:
+            put_derived(ws, f"A{row}", slot)
+            ctx.layout.slot_codes[slot] = f'"{slot}"'
+        put_derived(ws, f"B{row}", "=" + be_field(ctx, "be_acronym", ctx.layout.slot_codes[slot]))
         for j, category in enumerate(categories):
-            put_input(ctx, ws, f"{get_column_letter(FIRST_COL + j)}{row}", ("rate", be, category.id), MONEY)
+            put_input(ctx, ws, f"{get_column_letter(FIRST_COL + j)}{row}", ("rate", slot, category.id), MONEY)
+    ws.column_dimensions["A"].width = 12
     ws.column_dimensions["B"].width = 14
     for j in range(len(categories)):
         ws.column_dimensions[get_column_letter(FIRST_COL + j)].width = 16

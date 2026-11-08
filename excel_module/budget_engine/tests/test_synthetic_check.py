@@ -92,12 +92,45 @@ def test_a_build_that_passes_is_delivered_with_its_report(tmp_path, beneficiarie
     assert "PASS" in markdown and "PROVISIONAL, not human-owned" in markdown
 
 
+def test_a_late_partner_in_a_spare_block_and_a_new_table_row_flow_through(tmp_path):
+    """The scenario inserts a late AE under BE1 in the BE list Table and fills the first spare block for it."""
+    result = build(shape(affiliated_entities=[1, 0], headroom=2), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert report.passed, report.to_markdown()
+    assert report.table_rows_added == ("BEList: BE1-AE2 under BE1",)
+    figures = set(report.figures)
+    assert "SPARE1 name" in figures  # the late AE's name, typed into the new Table row
+    assert "SPARE1 WP1 A1_senior total" in figures and "SPARE2 WP3 F total" in figures
+    assert "BE1-AE1 WP2 F total" in figures
+
+
+def test_a_spare_block_that_does_not_calculate_fails_the_check(tmp_path, monkeypatch):
+    from budget_engine.sheets import transfer_view
+
+    real = transfer_view._sum
+    # Sabotage: the spare block's Transfer View cost lines are wired to nothing.
+    monkeypatch.setattr(transfer_view, "_sum", lambda refs: "=0" if _spare(refs) else real(refs))
+    result = build(shape(beneficiaries=1, work_packages=1, headroom=1), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert not report.passed
+    assert {m.figure.split()[0] for m in report.mismatches} == {"SPARE1"}
+
+
+def _spare(refs: list[str]) -> bool:
+    """True for the refs of the last Staff effort row, which with one BE and headroom 1 is the spare block."""
+    return all(r.endswith("$5") for r in refs)
+
+
 def test_the_copy_is_deleted_when_the_check_breaks_down(tmp_path, monkeypatch):
     from budget_engine.verify import synthetic
 
     seen: list[Path] = []
 
-    def excel_crashes(copy, fill, cells):
+    def excel_crashes(copy, fill, cells, table_rows=()):
         seen.append(copy)
         assert copy.exists()
         raise RuntimeError("Excel went away")

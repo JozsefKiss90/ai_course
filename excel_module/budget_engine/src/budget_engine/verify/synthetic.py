@@ -2,6 +2,7 @@
 
 1. Copy the blank workbook to a fresh temporary directory outside the deliverable's directory.
 2. Open the copy read-only in real Excel via COM and type the scenario into its Human Input cells.
+   Then add the scenario's Reference List Table rows (e.g. a late partner), as a human would.
 3. Recalculate and read the Transfer View back; Excel closes the copy without saving.
 4. Compare with the reference model, which works from the scenario inputs alone.
 
@@ -20,7 +21,7 @@ from typing import TYPE_CHECKING
 
 from budget_engine.layout import Cell, Key
 from budget_engine.verify.excel import recalculate_and_read
-from budget_engine.verify.reference import expected_transfer_view
+from budget_engine.verify.reference import expected_names, expected_transfer_view
 from budget_engine.verify.scenario import Scenario, provisional_scenario
 
 if TYPE_CHECKING:
@@ -37,7 +38,7 @@ class CopyNotDeleted(RuntimeError):
 class Mismatch:
     figure: str  # semantic name, e.g. "BE1 WP2 A1_senior items"
     location: str  # 'Transfer View BE1'!B7
-    expected: float | None
+    expected: float | str | None
     actual: object
     difference: float | None
 
@@ -48,10 +49,15 @@ class SyntheticCheckReport:
     scenario: str
     scenario_provenance: str
     human_owned: bool
-    figures_compared: int
+    figures: tuple[str, ...]  # semantic names of every figure compared
+    table_rows_added: tuple[str, ...]
     mismatches: tuple[Mismatch, ...]
     copy_path: Path
     copy_deleted: bool
+
+    @property
+    def figures_compared(self) -> int:
+        return len(self.figures)
 
     @property
     def passed(self) -> bool:
@@ -66,6 +72,7 @@ class SyntheticCheckReport:
             f"- Workbook: {self.workbook}",
             f"- Scenario: {self.scenario} ({ownership})",
             f"- {self.scenario_provenance}",
+            f"- Table rows added after the build: {', '.join(self.table_rows_added) or 'none'}",
             f"- Figures compared: {self.figures_compared}",
             f"- Differing figures: {len(self.mismatches)}",
             f"- Disposable copy deleted: {'yes' if self.copy_deleted else 'NO'}",
@@ -99,7 +106,10 @@ def run_synthetic_check(result: BuildResult, scenario: Scenario | None = None) -
     if missing:
         raise ValueError(f"scenario {scenario.name!r} has no value for {sorted(missing)[:5]}")
     fill = {result.layout.inputs[k]: v for k, v in scenario.inputs.items() if v is not None}  # None: left blank
-    expected = expected_transfer_view(result.profile, result.shape, scenario.inputs)
+    expected: dict[Key, float | str] = {
+        **expected_transfer_view(result.profile, result.shape, scenario.inputs),
+        **expected_names(result.shape, scenario.inputs, scenario.added_inputs),
+    }
     outputs = result.layout.outputs
 
     workdir = Path(tempfile.mkdtemp(prefix="synthetic-check-"))
@@ -108,7 +118,7 @@ def run_synthetic_check(result: BuildResult, scenario: Scenario | None = None) -
         if result.path.parent.resolve() in (workdir.resolve(), *workdir.resolve().parents):
             raise RuntimeError(f"the disposable copy would sit inside the deliverable's directory ({workdir})")
         shutil.copyfile(result.path, copy)
-        actual = recalculate_and_read(copy, fill, outputs.values())
+        actual = recalculate_and_read(copy, fill, outputs.values(), scenario.table_rows)
     finally:
         _delete(workdir)
     keys = sorted(expected.keys() | outputs.keys())
@@ -117,7 +127,8 @@ def run_synthetic_check(result: BuildResult, scenario: Scenario | None = None) -
         scenario=scenario.name,
         scenario_provenance=scenario.provenance,
         human_owned=scenario.human_owned,
-        figures_compared=len(keys),
+        figures=tuple(_figure_name(k) for k in keys),
+        table_rows_added=tuple(e.description for e in scenario.late_entities),
         mismatches=tuple(_compare(keys, expected, outputs, actual)),
         copy_path=copy,
         copy_deleted=not workdir.exists(),
@@ -129,7 +140,7 @@ def _figure_name(key: Key) -> str:
 
 
 def _compare(
-    keys: list[Key], expected: dict[Key, float], outputs: dict[Key, Cell], actual: dict[Cell, object]
+    keys: list[Key], expected: dict[Key, float | str], outputs: dict[Key, Cell], actual: dict[Cell, object]
 ) -> list[Mismatch]:
     mismatches = []
     for key in keys:
@@ -137,6 +148,10 @@ def _compare(
         cell = outputs.get(key)
         location = f"'{cell.sheet}'!{cell.coord}" if cell else "(not in the workbook)"
         got = actual.get(cell) if cell else None
+        if isinstance(want, str):  # text, e.g. a name looked up from a Reference List
+            if got != want:
+                mismatches.append(Mismatch(_figure_name(key), location, want, got, None))
+            continue
         # Excel numbers come back as floats; blanks, text and cell errors never match a figure.
         diff = got - want if want is not None and isinstance(got, float) else None
         if diff is not None and abs(diff) <= TOLERANCE:

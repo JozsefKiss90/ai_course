@@ -36,8 +36,8 @@
     {"id": "A4", "label": "SME owners and natural person beneficiaries", "cost_line": "A4"}
   ],
   "estimation_methods": {
-    "allowed": ["staff_effort", "travel_planner"],
-    "default": ["staff_effort", "travel_planner"],
+    "allowed": ["staff_effort", "travel_planner", "equipment_depreciation"],
+    "default": ["staff_effort", "travel_planner", "equipment_depreciation"],
     "mandatory": ["staff_effort"]
   },
   "unit_cost_tables": {
@@ -45,7 +45,8 @@
     "accommodation_subsistence": {"file": "he_travel_unit_costs_c2024_5405.json", "table": "subsistence", "source": "annex_2a"}
   },
   "method_settings": {
-    "travel_planner": {"cost_line": "C1", "travel_bands": "travel_bands", "rates": "accommodation_subsistence"}
+    "travel_planner": {"cost_line": "C1", "travel_bands": "travel_bands", "rates": "accommodation_subsistence"},
+    "equipment_depreciation": {"cost_lines": ["C2_equipment", "C2_infrastructure", "C2_other_assets"]}
   },
   "reference_lists": {
     "be_list": {

@@ -147,7 +147,7 @@ def test_a_spare_block_that_does_not_calculate_fails_the_check(tmp_path, monkeyp
 
 def _spare(refs: list[str]) -> bool:
     """True for the refs of the last Staff effort row, which with one BE and headroom 1 is the spare block."""
-    return all(r.endswith("$5") for r in refs)
+    return all(r.startswith("'Staff effort'!") and r.endswith("$5") for r in refs)
 
 
 def test_the_copy_is_deleted_when_the_check_breaks_down(tmp_path, monkeypatch):
@@ -201,3 +201,36 @@ def test_a_travel_summary_that_ignores_the_work_package_fails_the_check(tmp_path
 def _without_wp(sumifs: str) -> str:
     """Drop the last criteria pair (the WP) from a SUMIFS formula."""
     return sumifs.rsplit(",", 2)[0] + ")"
+
+
+def test_equipment_depreciated_over_longer_and_shorter_periods_than_the_project(tmp_path):
+    """The scenario enters items whose depreciation period is longer than, shorter than and equal to
+    the project, over the C.2 lines and several BE/AEs, then appends an item to the Equipment Table."""
+    result = build(shape(affiliated_entities=[1, 0], headroom=2, duration_months=24), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert report.passed, report.to_markdown()
+    assert any(r.startswith("Equipment: ") for r in report.table_rows_added)
+    figures = set(report.figures)
+    for line in ("C2_equipment", "C2_infrastructure", "C2_other_assets"):
+        assert f"BE1 WP1 {line} total" in figures and f"SPARE1 WP3 {line} items" in figures
+
+
+def test_equipment_costed_in_full_beyond_the_project_fails_the_check(tmp_path, monkeypatch):
+    from budget_engine.methods import equipment_depreciation
+
+    real = equipment_depreciation.calculated_formulas
+
+    def uncapped(duration: str) -> dict[str, str]:
+        # Sabotage: the months in the project ignore the project duration.
+        period = "Equipment[[#This Row],[Depreciation period (months)]]"
+        return {**real(duration), equipment_depreciation.MONTHS: f"IF({period}>0,{period},0)"}
+
+    monkeypatch.setattr(equipment_depreciation, "calculated_formulas", uncapped)
+    result = build(shape(beneficiaries=1, work_packages=1, headroom=0), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert not report.passed
+    assert any(" C2_" in m.figure and m.figure.endswith("total") for m in report.mismatches)

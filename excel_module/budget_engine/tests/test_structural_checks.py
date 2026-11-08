@@ -398,6 +398,97 @@ def test_structural_checks_catch_travel_planner_breakage(built, tmp_path, case):
     assert any(expected in p for p in problems), problems
 
 
+# --- Equipment depreciation (ticket 09) ---------------------------------------------------------
+
+EQUIPMENT_INPUTS = [
+    "BE/AE nr", "WP", "Cost line", "Item", "Purchase cost (EUR)", "Depreciation period (months)",
+    "Usage share for the action",
+]
+EQUIPMENT_CALCULATED = ["Months in the project", "Share of useful life in the project", "Eligible cost (EUR)"]
+
+
+def test_equipment_grows_through_an_excel_table_with_human_inputs_and_calculated_columns(built):
+    ws = load_workbook(built.path)["Equipment depreciation"]
+    assert list(ws.tables) == ["Equipment"]
+    table = ws.tables["Equipment"]
+    assert [c.name for c in table.tableColumns] == EQUIPMENT_INPUTS + EQUIPMENT_CALCULATED
+    first, last = table.ref.split(":")
+    assert first == "A3" and int(last[1:]) > 4  # blank item rows to start from
+
+    keys = [k for k in built.layout.inputs if k[0] == "equipment"]
+    assert {k[2] for k in keys} == {"be", "wp", "line", "item", "cost", "period", "usage"}
+    assert all(built.layout.inputs[k].sheet == "Equipment depreciation" for k in keys)
+    for column in table.tableColumns[len(EQUIPMENT_INPUTS):]:
+        assert column.calculatedColumnFormula is not None, column.name
+
+
+def test_the_eligible_share_uses_the_labelled_project_duration(built):
+    wb = load_workbook(built.path)
+    constants = wb["Profile Constants"]
+    row = next(r for r in range(1, constants.max_row + 1) if constants[f"A{r}"].value == "Project duration (months)")
+    assert constants[f"B{row}"].value == 36  # the duration_months Shape Parameter
+
+    ws = wb["Equipment depreciation"]
+    months, share, eligible = ws["H4"].value, ws["I4"].value, ws["J4"].value
+    assert f"MIN('Profile Constants'!$B${row}," in months
+    assert "[Months in the project]" in share and "[Depreciation period (months)]" in share
+    assert all(name in eligible for name in ("[Purchase cost (EUR)]", "[Usage share for the action]"))
+
+
+def test_the_equipment_summary_feeds_the_c2_lines_of_the_transfer_view(built):
+    wb = load_workbook(built.path)
+    summary = wb["Equipment summary"]
+    rows = [
+        (summary[f"A{r}"].value, summary[f"C{r}"].value, summary[f"D{r}"].value)
+        for r in range(4, summary.max_row + 1)
+        if summary[f"C{r}"].value
+    ]
+    assert len(rows) == 5 * 3 * 3  # BE/AE blocks (spare ones included) x WPs x C.2 lines
+    assert rows[:4] == [
+        ("BE1", "WP1", "Equipment"), ("BE1", "WP1", "Infrastructure"), ("BE1", "WP1", "Other assets"),
+        ("BE1", "WP2", "Equipment"),
+    ]
+    assert summary["E4"].value.startswith("=COUNTIFS(Equipment[") and summary["F4"].value.startswith("=SUMIFS(Equipment[")
+
+    tv = wb["Transfer View BE1"]
+    for label, row in (("Equipment", 4), ("Infrastructure", 5), ("Other assets", 6)):
+        line = next(r for r in range(1, tv.max_row + 1) if tv[f"A{r}"].value == label)
+        assert tv[f"B{line}"].value == f"='Equipment summary'!$E${row}"
+        assert tv[f"D{line}"].value == f"='Equipment summary'!$F${row}"
+
+
+def test_without_equipment_depreciation_there_are_no_equipment_sheets(tmp_path):
+    result = build(shape(methods=["staff_effort"]), tmp_path / "planning.xlsx")
+    names = load_workbook(result.path).sheetnames
+    assert not [n for n in names if n.startswith("Equipment")]
+
+
+def _duration_row(wb) -> int:
+    ws = wb["Profile Constants"]
+    return next(r for r in range(1, ws.max_row + 1) if ws[f"A{r}"].value == "Project duration (months)")
+
+
+EQUIPMENT_TAMPERING = {
+    "missing Equipment Table": (lambda wb: wb["Equipment depreciation"].tables.pop("Equipment"), "Equipment"),
+    "eligible cost typed in": (lambda wb: wb["Equipment depreciation"].__setitem__("J4", 500), "Equipment depreciation!J4"),
+    "duration typed into a formula": (
+        lambda wb: wb["Equipment depreciation"].__setitem__("H5", "=MIN(36,F5)"), "Equipment depreciation!H5"
+    ),
+    "changed project duration": (
+        lambda wb: wb["Profile Constants"].__setitem__(f"B{_duration_row(wb)}", 24), "project duration 24"
+    ),
+    "relabelled summary row": (lambda wb: wb["Equipment summary"].__setitem__("D5", "Equipment"), "Equipment summary!"),
+    "missing equipment sheet": (lambda wb: wb.remove(wb["Equipment summary"]), "Equipment summary"),
+}
+
+
+@pytest.mark.parametrize("case", EQUIPMENT_TAMPERING)
+def test_structural_checks_catch_equipment_depreciation_breakage(built, tmp_path, case):
+    edit, expected = EQUIPMENT_TAMPERING[case]
+    problems = _tampered(built, tmp_path, edit)
+    assert any(expected in p for p in problems), problems
+
+
 def test_structural_checks_catch_a_pivot_table(built, tmp_path):
     copy = tmp_path / "with_pivot.xlsx"
     shutil.copy(built.path, copy)

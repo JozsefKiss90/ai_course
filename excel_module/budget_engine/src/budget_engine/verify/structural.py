@@ -15,10 +15,10 @@ from openpyxl.utils import get_column_letter
 from openpyxl.workbook.workbook import Workbook
 
 from budget_engine.layout import Layout
-from budget_engine.methods import travel_planner
+from budget_engine.methods import equipment_depreciation, travel_planner
 from budget_engine.profiles import Profile
 from budget_engine.shape import ShapeParameters, is_spare
-from budget_engine.sheets import cover, rate_table, reference_lists, task_list, transfer_view
+from budget_engine.sheets import constants, cover, rate_table, reference_lists, task_list, transfer_view
 from budget_engine.sheets.styles import is_input
 
 TRIVIAL_NUMBERS = {0.0, 1.0}
@@ -36,6 +36,8 @@ def check_structure(path: Path, shape: ShapeParameters, profile: Profile, layout
     problems += _check_no_cell_references_into_lists(wb, profile)
     problems += _check_blocks(wb, shape, profile, layout)
     problems += _check_travel(wb, shape, profile, layout)
+    problems += _check_equipment(wb, shape, profile, layout)
+    problems += _check_duration(wb, shape, layout)
     problems += _check_inputs_empty(wb, layout)
     problems += _check_no_bare_numbers(wb)
     problems += _check_constants_labelled(wb, layout)
@@ -279,6 +281,64 @@ def _check_travel(wb: Workbook, shape: ShapeParameters, profile: Profile, layout
             row += 1
     if ws[f"C{row}"].value is not None:
         problems.append(f"{tp.SUMMARY_SHEET}!C{row}: unexpected row below the last block")
+    return problems
+
+
+def _check_equipment(wb: Workbook, shape: ShapeParameters, profile: Profile, layout: Layout) -> list[str]:
+    """With equipment depreciation: the Equipment Table costed by formula from the project duration,
+    and one summary row per BE/AE block × WP × C.2 cost line. Without it: no equipment sheets."""
+    ed = equipment_depreciation
+    sheets = (ed.SHEET, ed.SUMMARY_SHEET)
+    if ed.ID not in shape.methods:
+        return [f"unexpected {name!r} sheet: equipment depreciation is switched off" for name in sheets if name in wb.sheetnames]
+    missing = [f"missing sheet {name!r}" for name in sheets if name not in wb.sheetnames]
+    if missing:
+        return missing
+    problems: list[str] = []
+
+    ws = wb[ed.SHEET]
+    last = ed.FIRST_DATA_ROW + ed.ITEM_ROWS - 1
+    formulas = ed.calculated_formulas(layout.constants[constants.DURATION].ref)
+    if list(ws.tables) != [ed.TABLE]:
+        problems.append(f"{ed.SHEET}: Excel Tables {list(ws.tables)}, expected [{ed.TABLE!r}]")
+    else:
+        table = ws.tables[ed.TABLE]
+        ref = f"A{ed.HEADER_ROW}:{get_column_letter(len(ed.HEADERS))}{last}"
+        if table.ref != ref:
+            problems.append(f"{ed.SHEET}: Table {ed.TABLE} spans {table.ref}, expected {ref}")
+        columns = [(c.name, c.calculatedColumnFormula.attr_text if c.calculatedColumnFormula else None) for c in table.tableColumns]
+        if columns != [(name, formulas.get(name)) for name in ed.HEADERS]:
+            problems.append(f"{ed.SHEET}: Table {ed.TABLE} columns or calculated formulas differ from equipment depreciation's")
+    for i, header in enumerate(ed.CALCULATED, start=len(ed.INPUTS) + 1):
+        for row in range(ed.FIRST_DATA_ROW, last + 1):
+            coord = f"{get_column_letter(i)}{row}"
+            if ws[coord].value != "=" + formulas[header]:
+                problems.append(f"{ed.SHEET}!{coord}: {header} is not the depreciation formula")
+
+    ws = wb[ed.SUMMARY_SHEET]
+    row = ed.FIRST_DATA_ROW
+    for slot in shape.slots:
+        for wp in shape.wp_codes:
+            for label in ed.cost_lines(profile).values():
+                labels = (ws[f"A{row}"].value, ws[f"C{row}"].value, ws[f"D{row}"].value)
+                expected = (layout.slot_label(slot), wp, label)
+                if labels != expected:
+                    problems.append(f"{ed.SUMMARY_SHEET}!A{row}: row labelled {labels}, expected {expected}")
+                row += 1
+    if ws[f"C{row}"].value is not None:
+        problems.append(f"{ed.SUMMARY_SHEET}!C{row}: unexpected row below the last block")
+    return problems
+
+
+def _check_duration(wb: Workbook, shape: ShapeParameters, layout: Layout) -> list[str]:
+    """The project duration formulas use sits in its labelled cell and equals the Shape Parameter."""
+    cell = layout.constants[constants.DURATION]
+    ws = wb[cell.sheet]
+    problems = []
+    if ws[f"A{cell.row}"].value != constants.DURATION_LABEL:
+        problems.append(f"{cell.sheet}!A{cell.row}: {ws[f'A{cell.row}'].value!r}, expected {constants.DURATION_LABEL!r}")
+    if ws[cell.coord].value != shape.duration_months:
+        problems.append(f"{cell.sheet}!{cell.coord}: project duration {ws[cell.coord].value!r}, expected {shape.duration_months}")
     return problems
 
 

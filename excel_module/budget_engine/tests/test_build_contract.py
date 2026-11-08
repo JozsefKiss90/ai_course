@@ -103,7 +103,15 @@ def test_tasks_are_optional_and_coded_per_work_package(tmp_path):
 
 def test_the_travel_planner_is_on_by_default_and_can_be_switched_off(tmp_path):
     default = build(shape(), tmp_path / "default.xlsx").shape
-    assert default.methods == ("staff_effort", "travel_planner")
+    assert "travel_planner" in default.methods
 
     off = build(shape(methods=["staff_effort"]), tmp_path / "off.xlsx").shape
     assert off.methods == ("staff_effort",)
+
+
+def test_equipment_depreciation_is_on_by_default_and_can_be_switched_off(tmp_path):
+    default = build(shape(), tmp_path / "default.xlsx").shape
+    assert default.methods == ("staff_effort", "travel_planner", "equipment_depreciation")
+
+    off = build(shape(methods=["staff_effort", "travel_planner"]), tmp_path / "off.xlsx").shape
+    assert off.methods == ("staff_effort", "travel_planner")

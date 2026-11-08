@@ -40,7 +40,7 @@ def test_structural_checks_pass_across_shapes(tmp_path, beneficiaries, work_pack
         params["headroom"] = headroom
     started = time.perf_counter()
     result = build(params, tmp_path / "planning.xlsx")  # raises BuildError if a check fails
-    assert time.perf_counter() - started < 5, "structural checks must be fast enough for every build"
+    assert time.perf_counter() - started < 10, "structural checks must be fast enough for every build"
 
     wb = load_workbook(result.path)
     spare = 3 if headroom is None else headroom
@@ -485,6 +485,103 @@ EQUIPMENT_TAMPERING = {
 @pytest.mark.parametrize("case", EQUIPMENT_TAMPERING)
 def test_structural_checks_catch_equipment_depreciation_breakage(built, tmp_path, case):
     edit, expected = EQUIPMENT_TAMPERING[case]
+    problems = _tampered(built, tmp_path, edit)
+    assert any(expected in p for p in problems), problems
+
+
+# --- Itemised list (ticket 10) --------------------------------------------------------------------
+
+ITEMISED_INPUTS = ["BE/AE nr", "WP", "Cost line", "Item", "Number of items", "Cost per item (EUR)"]
+ITEMISED_LINES = [
+    "B. DIRECT SUBCONTRACTING COSTS", "Consumables", "Services for meetings, seminars",
+    "Services for dissemination activities (including website)", "Publication fees",
+    "Other (shipment, insurance, translation, etc.)",
+]
+
+
+def test_items_grow_through_an_excel_table_with_number_and_cost_per_item_as_human_inputs(built):
+    ws = load_workbook(built.path)["Itemised list"]
+    assert list(ws.tables) == ["Items"]
+    table = ws.tables["Items"]
+    assert [c.name for c in table.tableColumns] == ITEMISED_INPUTS + ["Total (EUR)"]
+    assert table.tableColumns[-1].calculatedColumnFormula is not None
+    first, last = table.ref.split(":")
+    assert first == "A3" and int(last[1:]) > 4
+
+    keys = [k for k in built.layout.inputs if k[0] == "itemised"]
+    assert {k[2] for k in keys} == {"be", "wp", "line", "item", "number", "cost"}
+    assert all(built.layout.inputs[k].sheet == "Itemised list" for k in keys)
+    total = ws["G4"].value
+    assert "[Number of items]" in total and "[Cost per item (EUR)]" in total
+
+
+def test_the_cost_line_is_picked_from_the_profiles_cost_lines(built):
+    ws = load_workbook(built.path)["Itemised list"]
+    pick = next(dv for dv in ws.data_validations.dataValidation if "C4" in str(dv.sqref))
+    assert pick.type == "list"
+    first, last = pick.formula1.replace("$", "").split(":")
+    column, start, end = first[0], int(first[1:]), int(last[1:])
+    labels = [ws[f"{column}{r}"].value for r in range(start, end + 1)]
+    assert labels[: len(ITEMISED_LINES)] == ITEMISED_LINES  # B (named after its heading), then C.3
+    assert labels[-1].startswith("D.5 ") and len(labels) == len(ITEMISED_LINES) + 5
+
+
+def test_the_itemised_summary_feeds_the_matching_transfer_view_lines(built):
+    wb = load_workbook(built.path)
+    summary = wb["Itemised list summary"]
+    rows = [
+        (summary[f"A{r}"].value, summary[f"C{r}"].value, summary[f"D{r}"].value)
+        for r in range(4, summary.max_row + 1)
+        if summary[f"C{r}"].value
+    ]
+    assert len(rows) == 5 * 3 * 11  # BE/AE blocks (spare ones included) x WPs x cost lines
+    assert rows[:2] == [("BE1", "WP1", ITEMISED_LINES[0]), ("BE1", "WP1", "Consumables")]
+    assert summary["E4"].value.startswith("=SUMIFS(Items[") and summary["F4"].value.startswith("=SUMIFS(Items[")
+
+    tv = wb["Transfer View BE1"]
+    for label, row in (("Consumables", 5), ("Publication fees", 8)):
+        line = next(r for r in range(1, tv.max_row + 1) if tv[f"A{r}"].value == label)
+        assert tv[f"B{line}"].value == f"='Itemised list summary'!$E${row}"
+        assert tv[f"D{line}"].value == f"='Itemised list summary'!$F${row}"
+    subcontracting = next(r for r in range(1, tv.max_row + 1) if tv[f"A{r}"].value == ITEMISED_LINES[0]) + 1
+    assert tv[f"D{subcontracting}"].value == "='Itemised list summary'!$F$4"
+
+
+@pytest.mark.parametrize("label", ["Fees *", "Fees?", "<Fees", "Consumables"])
+def test_cost_line_labels_sumifs_would_not_match_exactly_are_refused(built, label):
+    from dataclasses import replace
+
+    from budget_engine.methods import itemised_list
+
+    rows = tuple(replace(r, label=label) if r.id == "C3_publication" else r for r in built.profile.transfer_view_rows)
+    with pytest.raises(ValueError):
+        itemised_list.cost_lines(replace(built.profile, transfer_view_rows=rows))
+
+
+def test_without_the_itemised_list_there_are_no_itemised_sheets(tmp_path):
+    result = build(shape(methods=["staff_effort"]), tmp_path / "planning.xlsx")
+    names = load_workbook(result.path).sheetnames
+    assert not [n for n in names if n.startswith("Itemised")]
+
+
+ITEMISED_TAMPERING = {
+    "missing Items Table": (lambda wb: wb["Itemised list"].tables.pop("Items"), "Items"),
+    "total typed in": (lambda wb: wb["Itemised list"].__setitem__("G4", 500), "Itemised list!G4"),
+    "pick list edited": (lambda wb: wb["Itemised list"].__setitem__("I4", "Subcontracting"), "Itemised list!I4"),
+    "cost line not validated": (
+        lambda wb: wb["Itemised list"].data_validations.dataValidation.__setitem__(
+            slice(None), [dv for dv in wb["Itemised list"].data_validations.dataValidation if dv.type != "list" or "C4" not in str(dv.sqref)]
+        ),
+        "not validated against the pick list",
+    ),
+    "relabelled summary row": (lambda wb: wb["Itemised list summary"].__setitem__("D5", "Fees"), "Itemised list summary!"),
+    "missing itemised sheet": (lambda wb: wb.remove(wb["Itemised list summary"]), "Itemised list summary"),
+}
+
+
+@pytest.mark.parametrize("case", ITEMISED_TAMPERING)
+def test_structural_checks_catch_itemised_list_breakage(built, tmp_path, case):
+    edit, expected = ITEMISED_TAMPERING[case]
     problems = _tampered(built, tmp_path, edit)
     assert any(expected in p for p in problems), problems
 

@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from budget_engine.layout import Key, Layout
-from budget_engine.methods import equipment_depreciation, travel_planner
+from budget_engine.methods import equipment_depreciation, itemised_list, travel_planner
 from budget_engine.profiles import Profile
 from budget_engine.shape import ShapeParameters
 from budget_engine.sheets import reference_lists
@@ -157,6 +157,49 @@ def _late_equipment(profile: Profile, shape: ShapeParameters) -> LateRow:
     return LateRow(row, _equipment_entries(n, item), f"{row.table}: item {n} ({item['be']}, {item['wp']})")
 
 
+# (number of items, cost per item) per item: whole and fractional numbers, a blank cost and a blank number.
+ITEMS: list[tuple[InputValue, InputValue]] = [
+    (1, 25000), (12, 150.5), (3, 1800), (2.5, 400), (4, None), (None, 900), (1, 30000), (6, 75),
+]
+
+
+def _fake_items(profile: Profile, shape: ShapeParameters, partners: list[str]) -> dict[Key, InputValue]:
+    """One row per item, cycling through the BE/AE codes and the WPs, and striding over the cost
+    lines so several are used. The last row repeats the first row's BE/AE, WP and cost line, so the
+    summary must add two rows up."""
+    labels = list(itemised_list.cost_lines(profile).values())
+    stride = max(1, len(labels) // 4)
+    picks = [
+        (partners[i % len(partners)], shape.wp_codes[(i + i // len(partners)) % shape.work_packages], labels[(i * stride) % len(labels)])
+        for i in range(len(ITEMS) - 1)
+    ]
+    picks.append(picks[0])
+    entries: dict[Key, InputValue] = {}
+    for i, ((be, wp, line), (count, cost)) in enumerate(list(zip(picks, ITEMS))[: itemised_list.ITEM_ROWS]):
+        item: dict[str, InputValue] = {
+            "be": be, "wp": wp, "line": line, "item": f"Synthetic item {i + 1} (fake)", "number": count, "cost": cost,
+        }
+        entries.update(_itemised_entries(str(i + 1), item))
+    return entries
+
+
+def _itemised_entries(n: str, item: dict[str, InputValue]) -> dict[Key, InputValue]:
+    return {("itemised", n, field): value for field, value in item.items()}
+
+
+def _late_item(profile: Profile, shape: ShapeParameters) -> LateRow:
+    """An item appended to the Items Table, inputs only: its total must fill in by itself."""
+    n = str(itemised_list.ITEM_ROWS + 1)
+    item: dict[str, InputValue] = {
+        "be": shape.entity_codes[-1], "wp": shape.wp_codes[-1],
+        "line": list(itemised_list.cost_lines(profile).values())[-1],
+        "item": f"Synthetic item {n} (fake, added late)", "number": 2, "cost": 1250,
+    }
+    values = tuple(item[key] for key, _ in itemised_list.INPUTS)
+    row = TableRowAddition(itemised_list.SHEET, itemised_list.TABLE, itemised_list.ITEM_ROWS + 1, values)
+    return LateRow(row, _itemised_entries(n, item), f"{row.table}: item {n} ({item['be']}, {item['wp']})")
+
+
 def provisional_scenario(profile: Profile, shape: ShapeParameters, layout: Layout) -> Scenario:
     """Fake values for every Human Input cell in ``layout``.
 
@@ -166,6 +209,8 @@ def provisional_scenario(profile: Profile, shape: ShapeParameters, layout: Layou
     included) and the WPs over the travel bands, and one more trip is appended to the Trips Table.
     With equipment depreciation, items cycle the same way over the C.2 cost lines, with depreciation
     periods shorter than, equal to and longer than the project, and one more item is appended.
+    With the itemised list, items cycle the same way over several of its cost lines, two rows
+    landing on the same BE/AE × WP × line, and one more item is appended.
     With headroom, a late AE of BE1 is inserted into the `BE list` Table and claims the first spare
     block; further spare blocks keep a blank code but are filled, so they must calculate anyway.
     An input kind this function does not know raises, so a new sheet cannot slip through unfilled.
@@ -179,6 +224,7 @@ def provisional_scenario(profile: Profile, shape: ShapeParameters, layout: Layou
     partners = shape.entity_codes + ([late_code] if late_code else [])
     trips = _fake_trips(shape, partners)
     equipment = _fake_equipment(profile, shape, partners)
+    items = _fake_items(profile, shape, partners)
     for key in layout.inputs:
         kind = key[0]
         if kind == "be_name":
@@ -206,6 +252,8 @@ def provisional_scenario(profile: Profile, shape: ShapeParameters, layout: Layou
             inputs[key] = trips.get(key)
         elif kind == "equipment":
             inputs[key] = equipment.get(key)
+        elif kind == "itemised":
+            inputs[key] = items.get(key)
         else:
             raise ValueError(f"the provisional scenario has no fake value for input kind {kind!r}")
     return Scenario(
@@ -217,5 +265,6 @@ def provisional_scenario(profile: Profile, shape: ShapeParameters, layout: Layou
             *((late_ae,) if late_ae else ()),
             *((_late_trip(shape),) if travel_planner.ID in shape.methods else ()),
             *((_late_equipment(profile, shape),) if equipment_depreciation.ID in shape.methods else ()),
+            *((_late_item(profile, shape),) if itemised_list.ID in shape.methods else ()),
         ),
     )

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import re
 import zipfile
+from functools import lru_cache
 from pathlib import Path
 
 from openpyxl import load_workbook
@@ -15,7 +16,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.workbook.workbook import Workbook
 
 from budget_engine.layout import Layout
-from budget_engine.methods import equipment_depreciation, travel_planner
+from budget_engine.methods import equipment_depreciation, itemised_list, travel_planner
 from budget_engine.profiles import Profile
 from budget_engine.shape import ShapeParameters, is_spare
 from budget_engine.sheets import constants, cover, rate_table, reference_lists, task_list, transfer_view
@@ -37,6 +38,7 @@ def check_structure(path: Path, shape: ShapeParameters, profile: Profile, layout
     problems += _check_blocks(wb, shape, profile, layout)
     problems += _check_travel(wb, shape, profile, layout)
     problems += _check_equipment(wb, shape, profile, layout)
+    problems += _check_itemised(wb, shape, profile, layout)
     problems += _check_duration(wb, shape, layout)
     problems += _check_inputs_empty(wb, layout)
     problems += _check_no_bare_numbers(wb)
@@ -330,6 +332,60 @@ def _check_equipment(wb: Workbook, shape: ShapeParameters, profile: Profile, lay
     return problems
 
 
+def _check_itemised(wb: Workbook, shape: ShapeParameters, profile: Profile, layout: Layout) -> list[str]:
+    """With the itemised list: the Items Table totalled by formula, the profile's cost lines as the
+    pick list, and one summary row per BE/AE block × WP × cost line. Without it: no itemised sheets."""
+    il = itemised_list
+    sheets = (il.SHEET, il.SUMMARY_SHEET)
+    if il.ID not in shape.methods:
+        return [f"unexpected {name!r} sheet: the itemised list is switched off" for name in sheets if name in wb.sheetnames]
+    missing = [f"missing sheet {name!r}" for name in sheets if name not in wb.sheetnames]
+    if missing:
+        return missing
+    problems: list[str] = []
+    labels = list(il.cost_lines(profile).values())
+
+    ws = wb[il.SHEET]
+    last = il.FIRST_DATA_ROW + il.ITEM_ROWS - 1
+    total_col = get_column_letter(len(il.HEADERS))
+    if list(ws.tables) != [il.TABLE]:
+        problems.append(f"{il.SHEET}: Excel Tables {list(ws.tables)}, expected [{il.TABLE!r}]")
+    else:
+        table = ws.tables[il.TABLE]
+        ref = f"A{il.HEADER_ROW}:{total_col}{last}"
+        if table.ref != ref:
+            problems.append(f"{il.SHEET}: Table {il.TABLE} spans {table.ref}, expected {ref}")
+        columns = [(c.name, c.calculatedColumnFormula.attr_text if c.calculatedColumnFormula else None) for c in table.tableColumns]
+        expected = [(name, il.total_formula() if name == il.TOTAL else None) for name in il.HEADERS]
+        if columns != expected:
+            problems.append(f"{il.SHEET}: Table {il.TABLE} columns or calculated formulas differ from the itemised list's")
+    for row in range(il.FIRST_DATA_ROW, last + 1):
+        if ws[f"{total_col}{row}"].value != "=" + il.total_formula():
+            problems.append(f"{il.SHEET}!{total_col}{row}: {il.TOTAL} is not number of items x cost per item")
+    first, _ = il.pick_range(profile)
+    for row, label in enumerate(labels, start=first):
+        if ws[f"{il.PICK_COLUMN}{row}"].value != label:
+            problems.append(f"{il.SHEET}!{il.PICK_COLUMN}{row}: pick list entry {ws[f'{il.PICK_COLUMN}{row}'].value!r}, expected {label!r}")
+    line_column = f"C{il.FIRST_DATA_ROW}:C{last}"
+    picks = [dv for dv in ws.data_validations.dataValidation if line_column in str(dv.sqref)]
+    if not picks or picks[0].type != "list" or picks[0].formula1 != il.pick_list_source(profile):
+        problems.append(f"{il.SHEET}!{line_column}: the Cost line is not validated against the pick list")
+
+    ws = wb[il.SUMMARY_SHEET]
+    row = il.FIRST_DATA_ROW
+    for slot in shape.slots:
+        for wp in shape.wp_codes:
+            for label in labels:
+                found = (ws[f"A{row}"].value, ws[f"C{row}"].value, ws[f"D{row}"].value)
+                expected_labels = (layout.slot_label(slot), wp, label)
+                if found != expected_labels:
+                    problems.append(f"{il.SUMMARY_SHEET}!A{row}: row labelled {found}, expected {expected_labels}")
+                row += 1
+    if ws[f"C{row}"].value is not None:
+        problems.append(f"{il.SUMMARY_SHEET}!C{row}: unexpected row below the last block")
+    return problems
+
+
 def _check_duration(wb: Workbook, shape: ShapeParameters, layout: Layout) -> list[str]:
     """The project duration formulas use sits in its labelled cell and equals the Shape Parameter."""
     cell = layout.constants[constants.DURATION]
@@ -355,8 +411,19 @@ def _check_inputs_empty(wb: Workbook, layout: Layout) -> list[str]:
     return problems
 
 
+# A cell reference such as E4 or $B$12 (not the exponent of a literal like 1E3).
+CELL_REFERENCE = re.compile(r"(?<![0-9.])\$?[A-Z]{1,3}\$?[0-9]+")
+
+
 def bare_numbers(formula: str) -> list[float]:
     """Numeric literals in a formula other than the trivial 0 and 1."""
+    # Row after row repeats a formula with other cell references; tokenizing each one once keeps
+    # the check fast for large shapes. Replacing references never adds or removes a numeric literal.
+    return list(_bare_numbers(CELL_REFERENCE.sub("A1", formula)))
+
+
+@lru_cache(maxsize=4096)
+def _bare_numbers(formula: str) -> tuple[float, ...]:
     tokens = Tokenizer(formula).items
     found = []
     for t in tokens:
@@ -364,7 +431,7 @@ def bare_numbers(formula: str) -> list[float]:
             value = float(t.value.rstrip("%")) / (100 if t.value.endswith("%") else 1)
             if value not in TRIVIAL_NUMBERS:
                 found.append(value)
-    return found
+    return tuple(found)
 
 
 def _check_no_bare_numbers(wb: Workbook) -> list[str]:

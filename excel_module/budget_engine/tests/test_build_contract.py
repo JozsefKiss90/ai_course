@@ -111,7 +111,15 @@ def test_the_travel_planner_is_on_by_default_and_can_be_switched_off(tmp_path):
 
 def test_equipment_depreciation_is_on_by_default_and_can_be_switched_off(tmp_path):
     default = build(shape(), tmp_path / "default.xlsx").shape
-    assert default.methods == ("staff_effort", "travel_planner", "equipment_depreciation")
+    assert "equipment_depreciation" in default.methods
 
     off = build(shape(methods=["staff_effort", "travel_planner"]), tmp_path / "off.xlsx").shape
     assert off.methods == ("staff_effort", "travel_planner")
+
+
+def test_the_itemised_list_is_on_by_default_and_can_be_switched_off(tmp_path):
+    default = build(shape(), tmp_path / "default.xlsx").shape
+    assert default.methods == ("staff_effort", "travel_planner", "equipment_depreciation", "itemised_list")
+
+    off = build(shape(methods=["staff_effort", "itemised_list"]), tmp_path / "off.xlsx").shape
+    assert off.methods == ("staff_effort", "itemised_list")

@@ -234,3 +234,30 @@ def test_equipment_costed_in_full_beyond_the_project_fails_the_check(tmp_path, m
 
     assert not report.passed
     assert any(" C2_" in m.figure and m.figure.endswith("total") for m in report.mismatches)
+
+
+def test_items_spread_across_several_cost_lines(tmp_path):
+    """The scenario enters items over several cost lines and BE/AEs, two of them on the same line,
+    then appends an item to the Items Table."""
+    result = build(shape(affiliated_entities=[1, 0], headroom=2), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert report.passed, report.to_markdown()
+    assert any(r.startswith("Items: ") for r in report.table_rows_added)
+    figures = set(report.figures)
+    for line in ("B", "C3_consumables", "C3_other", "D1", "D5"):
+        assert f"BE1 WP1 {line} total" in figures and f"SPARE1 WP3 {line} items" in figures
+
+
+def test_an_itemised_total_that_ignores_the_number_of_items_fails_the_check(tmp_path, monkeypatch):
+    from budget_engine.methods import itemised_list
+
+    # Sabotage: the total is the cost per item alone.
+    monkeypatch.setattr(itemised_list, "total_formula", lambda: "Items[[#This Row],[Cost per item (EUR)]]")
+    result = build(shape(beneficiaries=1, work_packages=1, headroom=0), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert not report.passed
+    assert any(m.figure.endswith("total") for m in report.mismatches)

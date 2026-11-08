@@ -32,6 +32,7 @@ from budget_engine.shape import ShapeParameters, is_affiliated, is_spare, parse_
 from budget_engine.verify.scenario import InputValue, Scenario, provisional_scenario
 
 GOLDEN_DIR = Path(__file__).parent / "golden"
+WORKSHEET_DIR = Path(__file__).parents[3] / "golden"  # the human's worksheets, budget_engine/golden/
 BE_FIELDS = {"name": "be_name", "acronym": "be_acronym", "country": "be_country", "funding_rate": "be_funding_rate"}
 TABLES = ("trip", "equipment", "itemised")  # input kinds keyed ("<kind>", row nr, field)
 
@@ -111,14 +112,28 @@ class GoldenScenario:
         return {key: float(value) for key, value in pinned.items()}
 
 
+def transcription_path(profile_id: str, version: str) -> Path:
+    """Where a profile version's Golden Scenario transcription lives, whether or not it exists yet."""
+    return GOLDEN_DIR / f"{profile_id}-{version}.json"
+
+
 def load_golden(profile: Profile) -> GoldenScenario | None:
     """The profile version's Golden Scenario, or None while it has none."""
-    path = GOLDEN_DIR / f"{profile.id}-{profile.version}.json"
+    path = transcription_path(profile.id, profile.version)
     if not path.exists():
         return None
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    shape, _ = parse_shape(raw["shape"])
-    return GoldenScenario(profile, raw["worksheet"], raw["shape"], shape, _inputs(profile, raw), raw["expected"])
+    return golden_from(profile, json.loads(path.read_text(encoding="utf-8")))
+
+
+def golden_from(profile: Profile, raw: Mapping[str, Any]) -> GoldenScenario:
+    """A Golden Scenario from its transcription ``raw``, read under ``profile``.
+
+    The profile maintainer reads an earlier version's transcription under a draft version this way,
+    to propose the draft's expected figures.
+    """
+    shape_parameters = {**raw["shape"], "profile": {"id": profile.id, "version": profile.version}}
+    shape, _ = parse_shape(shape_parameters)
+    return GoldenScenario(profile, raw["worksheet"], shape_parameters, shape, _inputs(profile, raw), raw["expected"])
 
 
 def synthetic_scenario(profile: Profile, shape: ShapeParameters, layout: Layout) -> Scenario:

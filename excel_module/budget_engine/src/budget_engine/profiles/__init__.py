@@ -1,6 +1,7 @@
 """Funding Profiles: versioned data files plus a loader.
 
-A profile version lives at ``data/<id>/<version>.json`` and is immutable once accepted.
+A profile version lives at ``data/<id>/<version>.json`` and is immutable once accepted
+(``data/accepted.json``; see ``budget_engine.maintain``).
 """
 
 from __future__ import annotations
@@ -147,7 +148,7 @@ def load_travel_unit_costs() -> dict[str, Any]:
     return data
 
 
-def _unit_cost_tables(refs: dict[str, dict[str, str]]) -> dict[str, UnitCostTable]:
+def resolve_unit_cost_tables(refs: dict[str, dict[str, str]]) -> dict[str, UnitCostTable]:
     tables = {}
     for key, ref in refs.items():
         data = json.loads((DATA_DIR / ref["file"]).read_text(encoding="utf-8"))
@@ -213,7 +214,7 @@ def load_profile(profile_id: str, version: str) -> Profile:
             )
             for r in tv["rows"]
         ),
-        unit_cost_tables=_unit_cost_tables(raw.get("unit_cost_tables", {})),
+        unit_cost_tables=resolve_unit_cost_tables(raw.get("unit_cost_tables", {})),
         method_settings=raw.get("method_settings", {}),
         check_summaries=raw["check_summaries"],
         countries=_countries(raw["reference_lists"]["be_list"]),

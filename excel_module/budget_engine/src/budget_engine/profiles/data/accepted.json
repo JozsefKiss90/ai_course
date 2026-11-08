@@ -1,0 +1,15 @@
+{
+  "he-lump-sum": {
+    "1.0": {
+      "accepted": "2026-11-08",
+      "files": {
+        "he-lump-sum/1.0.json": "288e6073aa21511a5ec7b06571015ab5e1833dc11fcb97c23e2c939bb217eb3e",
+        "he_country_list_obt_v3_6.json": "6a4ec1f67ea6d4342dad2c20672386c618817a87f122d11b81a0be239f5d4c11",
+        "he_travel_unit_costs_c2024_5405.json": "8ad502f519800c596026af97b26280fe8918717a61330491c705090c4e90bba9"
+      },
+      "golden_scenario": {
+        "he-lump-sum-1.0.json": "3b8f8c3c804fd7fc4a124a447d97d08c988bd550f2f52369c3a53931a1c34c82"
+      }
+    }
+  }
+}

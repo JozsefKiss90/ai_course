@@ -6,6 +6,16 @@
 - ``confirm-rebuild``: reads back the old and the new Shape Parameters of a rebuild
 - ``rebuild --out DIR``: as ``deliver`` for the new Shape Parameters, plus the re-paste guide
 
+The planner commands take accepted Funding Profile versions only. The budget-profile-maintainer
+skill drives the ``profile-*`` commands (``budget_engine.maintain``):
+
+- ``profile-draft ID --from V --version NEW``: start a new version as a copy of V, alongside it
+- ``profile-diff ID OLD NEW``: a Markdown diff of two versions
+- ``profile-propose ID V --from OLD``: proposed Golden Scenario expected figures for V; writes nothing
+- ``profile-approve ID V --from OLD --proposal PID --approved-by NAME``: writes V's Golden Scenario, on the human's approval only
+- ``profile-check ID V --out DIR``: the Synthetic Check against V's Golden Scenario, report into DIR
+- ``profile-accept ID V --out DIR``: the same check, and V is accepted if it passes
+
 Shape Parameters arrive as a JSON object on stdin (for a rebuild, ``{"old": {...}, "new": {...}}``),
 so they are never written to a file. Exit codes: 0 done, 1 a build or check failed (nothing
 delivered), 2 the input is outside the Shape Parameters contract. Error messages name the offending keys, never the values given for them.
@@ -21,9 +31,10 @@ from pathlib import Path
 from typing import Any, TextIO
 
 from budget_engine.build import SyntheticCheckFailed
+from budget_engine import maintain
 from budget_engine.handover import REPORT, HandoverPackage, deliver, rebuild
 from budget_engine.methods import CATALOGUE
-from budget_engine.profiles import Profile, available_profiles, load_profile
+from budget_engine.profiles import Profile, ProfileNotFound, available_profiles, load_profile
 from budget_engine.repaste import parse_rebuild
 from budget_engine.shape import ShapeError, ShapeParameters, parse_shape
 
@@ -35,6 +46,8 @@ class _InputError(Exception):
 def _profiles() -> list[dict[str, Any]]:
     listed = []
     for profile_id, version in available_profiles():
+        if not maintain.is_accepted(profile_id, version):
+            continue  # a draft is the maintainer's until it is accepted
         profile = load_profile(profile_id, version)
         listed.append({
             "id": profile.id,
@@ -99,6 +112,11 @@ def _read_shape(stdin: TextIO) -> dict[str, Any]:
     return raw
 
 
+def _accepted(profile: Profile) -> None:
+    if not maintain.is_accepted(profile.id, profile.version):
+        raise _InputError(f"Funding Profile {profile.id} {profile.version} is a draft, not accepted yet")
+
+
 REBUILD_KEYS = {"old", "new"}
 
 
@@ -128,7 +146,11 @@ def main(
     commands.add_parser("confirm-rebuild", help="read back old and new Shape Parameters on stdin, without building")
     rebuild_cmd = commands.add_parser("rebuild", help="as deliver, plus the re-paste guide; old and new Shape Parameters on stdin")
     rebuild_cmd.add_argument("--out", required=True, help="a new or empty directory for the Handover Package")
+    _maintainer_commands(commands)
     args = parser.parse_args(argv)
+
+    if args.command.startswith("profile-"):
+        return _maintain(args, stdout, stderr)
 
     if args.command == "profiles":
         json.dump(_profiles(), stdout, indent=2)
@@ -139,6 +161,7 @@ def main(
         try:
             old_raw, new_raw = _read_rebuild(stdin)
             old_shape, new_shape, _, profile = parse_rebuild(old_raw, new_raw)
+            _accepted(profile)
         except (_InputError, ShapeError) as exc:
             stderr.write(f"Refused: {exc}\n")
             return 2
@@ -153,6 +176,7 @@ def main(
     try:
         raw = _read_shape(stdin)
         shape, profile = parse_shape(raw)
+        _accepted(profile)
     except (_InputError, ShapeError) as exc:
         stderr.write(f"Refused: {exc}\n")
         return 2
@@ -185,4 +209,65 @@ def _deliver(make: Callable[[], HandoverPackage], out: str, stdout: TextIO, stde
         f"- Fill-in guide: {package.guide}\n"
         f"{repaste}"
     )
+    return 0
+
+
+def _maintainer_commands(commands: Any) -> None:
+    draft = commands.add_parser("profile-draft", help="start a new Funding Profile version as a copy of an earlier one")
+    draft.add_argument("id")
+    draft.add_argument("--from", dest="previous", required=True, help="the version to copy")
+    draft.add_argument("--version", required=True, help="the new version")
+    diff = commands.add_parser("profile-diff", help="a Markdown diff of two Funding Profile versions")
+    diff.add_argument("id")
+    diff.add_argument("old")
+    diff.add_argument("new")
+    for name, text in (
+        ("profile-propose", "propose a version's Golden Scenario expected figures; writes nothing"),
+        ("profile-approve", "write a version's Golden Scenario from the proposal, on the human's approval only"),
+    ):
+        cmd = commands.add_parser(name, help=text)
+        cmd.add_argument("id")
+        cmd.add_argument("version")
+        cmd.add_argument("--from", dest="previous", required=True, help="the version whose Golden Scenario carries forward")
+        if name == "profile-approve":
+            cmd.add_argument("--proposal", required=True, help="the id of the proposal the human approved")
+            cmd.add_argument("--approved-by", required=True, help="who approved the proposed figures")
+    for name, text in (
+        ("profile-check", "the Synthetic Check against a version's Golden Scenario (needs Excel)"),
+        ("profile-accept", "check a version against its Golden Scenario and accept it if it passes"),
+    ):
+        cmd = commands.add_parser(name, help=text)
+        cmd.add_argument("id")
+        cmd.add_argument("version")
+        cmd.add_argument("--out", required=True, help="the directory for the Synthetic Check report")
+
+
+def _maintain(args: argparse.Namespace, stdout: TextIO, stderr: TextIO) -> int:
+    """Run a ``profile-*`` command: 0 done, 1 a check failed or the version was not accepted, 2 refused."""
+    try:
+        if args.command == "profile-draft":
+            stdout.write(f"Draft written: {maintain.draft_version(args.id, args.previous, args.version)}\n")
+        elif args.command == "profile-diff":
+            stdout.write(maintain.profile_diff(args.id, args.old, args.new))
+        elif args.command == "profile-propose":
+            stdout.write(maintain.propose_expectations(args.id, args.version, args.previous).to_markdown())
+        elif args.command == "profile-approve":
+            written = maintain.approve_expectations(
+                args.id, args.version, args.previous, proposal_id=args.proposal, approved_by=args.approved_by
+            )
+            stdout.write("Golden Scenario written:\n" + "".join(f"- {path}\n" for path in written))
+        else:
+            check = maintain.accept_version if args.command == "profile-accept" else maintain.check_version
+            check(args.id, args.version, args.out)
+            accepted = f"{args.id} {args.version} accepted.\n" if args.command == "profile-accept" else ""
+            stdout.write(f"Synthetic Check: PASS\nReport: {Path(args.out) / maintain.CHECK_REPORT}\n{accepted}")
+    except (ProfileNotFound, FileExistsError, ValueError) as exc:
+        stderr.write(f"Refused: {exc}\n")
+        return 2
+    except SyntheticCheckFailed:
+        stderr.write(f"Synthetic Check failed. Not accepted.\nReport: {Path(args.out) / maintain.CHECK_REPORT}\n")
+        return 1
+    except (maintain.NotAccepted, RuntimeError, OSError) as exc:  # Excel unavailable, a build failure
+        stderr.write(f"{exc}\n")
+        return 1
     return 0

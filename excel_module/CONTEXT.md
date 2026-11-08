@@ -27,7 +27,7 @@ _Avoid_: Partner (in the workbook), participant
 An entity linked to a Beneficiary that carries out part of its work and declares its own costs; listed under its Beneficiary in the `BE list`.
 
 **Funding Profile**:
-The definition of one funding model that a Planning Workbook is built from: its cost categories, effort unit, indirect cost rule, unit-cost tables and the layout of its Submission Budget. Exactly one Funding Profile per proposal. v1 covers Horizon Europe lump sum and Erasmus+ KA220 Cooperation Partnerships. Profiles are versioned against their source documents; old versions are kept so a proposal can be rebuilt under the rules it started with, and every Planning Workbook records the profile version it was built from.
+The definition of one funding model that a Planning Workbook is built from: its cost categories, effort unit, indirect cost rule, unit-cost tables and the layout of its Submission Budget. Exactly one Funding Profile per proposal. v1 covers Horizon Europe lump sum and Erasmus+ KA220 Cooperation Partnerships. Profiles are versioned against their source documents; old versions are kept so a proposal can be rebuilt under the rules it started with, and every Planning Workbook records the profile version it was built from. A new version is accepted only once it passes the Synthetic Check against its own Golden Scenario, whose expected figures the human approved; accepted versions are immutable, and only they are offered for a build.
 _Avoid_: Programme, call type, template type
 
 **Estimation Method**:
@@ -69,7 +69,7 @@ A fixed total grant amount the applicant chooses rather than calculates — for 
 The verification every newly built or rebuilt Planning Workbook must pass before handover: a disposable copy is filled with the profile's Golden Scenario (obviously fake inputs, scaled to the build's Shape Parameters where they differ), recalculated in Excel, and compared against expected figures computed independently of the workbook's formulas. A workbook without a passed Synthetic Check is not delivered. Expected figures come from a reference model of the Funding Profile and Estimation Methods, itself pinned to a Golden Scenario; expected figures change only with human approval.
 
 **Golden Scenario**:
-A small fixed synthetic proposal per Funding Profile (a couple of Beneficiaries, one Affiliated Entity, two work packages, a few trips) whose expected totals were worked out by hand once and committed. It anchors the Synthetic Check to reality.
+A small fixed synthetic proposal per Funding Profile version (a couple of Beneficiaries, one Affiliated Entity, two work packages, a few trips) whose expected totals were worked out by hand once and committed. It anchors the Synthetic Check to reality. A new profile version carries its predecessor's Golden Scenario forward with the same inputs; the human approves any expected figure the new rules change (ADR-0003).
 _Avoid_: Test run, smoke test
 
 **Input Guards**:

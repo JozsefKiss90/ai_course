@@ -60,7 +60,7 @@ def _build_one(ctx: BuildContext, slot: str, by_line: dict[tuple[str, str, str],
     code = ctx.layout.slot_codes[slot]
     ws["A1"] = _title(slot, code)
     ws["A1"].font = TITLE
-    ws["A2"] = "=" + be_field(ctx, "be_name", code)
+    put_derived(ws, "A2", "=" + be_field(ctx, "be_name", code))
     ctx.layout.outputs[("tv", slot, "name")] = Cell(ws.title, "A2")
     for col, header in zip("ABCD", profile.transfer_view_headers):
         put_header(ws, f"{col}{HEADER_ROW}", header)

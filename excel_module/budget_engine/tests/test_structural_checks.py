@@ -1015,3 +1015,185 @@ def test_structural_checks_catch_input_guard_breakage(built, tmp_path, case):
     edit, expected = GUARD_TAMPERING[case]
     problems = _tampered(built, tmp_path, edit)
     assert any(expected in p for p in problems), problems
+
+
+# --- Handover: fill-in order, styling by cell role, colour legend, no synthetic values or personal metadata ---
+
+
+def _cover_steps(wb) -> list[str]:
+    ws = wb["Cover"]
+    start = next(c.row for c in ws["A"] if c.value == "Fill-in order")
+    steps = []
+    for row in range(start + 1, ws.max_row + 1):
+        value = ws[f"A{row}"].value
+        if not value:
+            break
+        steps.append(value.split(". ", 1)[1])
+    return steps
+
+
+def test_the_fill_in_order_follows_formula_dependencies(built):
+    steps = _cover_steps(load_workbook(built.path))
+    sheets = [step.split(":")[0] for step in steps]
+
+    def before(first: str, then: str) -> bool:
+        return sheets.index(first) < sheets.index(then)
+
+    assert tuple(steps) == built.fill_in_order
+    assert sheets[:2] == ["BE list", "WP list"]
+    assert before("BE list", "Rate Table") and before("Rate Table", "Staff effort")
+    # The Input Guards' formulas read effort and rates; the optional thresholds come last of the inputs.
+    assert before("Staff effort", "Input Guards")
+    assert sheets[-4:] == ["Profile Constants", "Transfer View sheets", "Check sheets", "Cover"]
+
+
+def test_the_fill_in_order_is_read_from_the_workbooks_own_references(built):
+    from budget_engine.sheets import fill_in_order
+
+    deps = fill_in_order.dependencies(load_workbook(built.path), built.layout)
+
+    assert deps["BE list"] == set() and deps["WP list"] == set()
+    assert deps["Rate Table"] == {"BE list"}
+    assert deps["Staff effort"] == {"BE list", "Rate Table"}
+    # Data validations count: a trip's BE/AE nr and WP are picked from the Reference Lists.
+    assert deps["Travel planner"] == {"BE list", "WP list"}
+    # The duration constant is fixed data, so equipment does not wait for the thresholds.
+    assert "Profile Constants" not in deps["Equipment depreciation"]
+    assert deps["Profile Constants"] == set()
+
+
+def test_the_fill_in_order_lists_only_the_switched_on_sheets(tmp_path):
+    result = build(shape(methods=["staff_effort"], tasks=[1, 2, 1]), tmp_path / "planning.xlsx")
+    sheets = [step.split(":")[0] for step in result.fill_in_order]
+
+    assert sheets.index("Task List") > sheets.index("WP list")
+    assert not {"Travel planner", "Equipment depreciation", "Itemised list"} & set(sheets)
+
+
+def test_the_cover_carries_a_colour_legend_with_a_swatch_per_cell_role(built):
+    from budget_engine.sheets.styles import is_derived, is_input
+
+    ws = load_workbook(built.path)["Cover"]
+    swatch = {c.value: ws[f"B{c.row}"] for c in ws["A"] if isinstance(c.value, str)}
+    assert is_input(swatch["Light yellow: Human Input (you type here)"].fill)
+    assert is_derived(swatch["White: derived by formula (do not overwrite)"].fill)
+    assert swatch["Blue: column headers"].fill.fgColor.rgb == "FFD9E1F2"
+    guards_row = next(c.row for c in ws["A"] if isinstance(c.value, str) and c.value.startswith("Guards:"))
+    assert [ws[f"{col}{guards_row}"].value for col in "BCD"] == ["OK", "warning", "error"]
+
+
+def test_every_figure_the_engine_reads_back_is_styled_as_derived(built):
+    from budget_engine.sheets.styles import is_derived
+
+    wb = load_workbook(built.path)
+    assert all(is_derived(wb[c.sheet][c.coord].fill) for c in built.layout.outputs.values())
+
+
+def _swap_steps(first: str, second: str):
+    def edit(wb):
+        ws = wb["Cover"]
+        rows = {
+            c.value.split(". ", 1)[1].split(":")[0]: c.row
+            for c in ws["A"]
+            if isinstance(c.value, str) and c.value[:1].isdigit() and ". " in c.value
+        }
+        a, b = ws[f"A{rows[first]}"], ws[f"A{rows[second]}"]
+        a.value, b.value = b.value, a.value
+    return edit
+
+
+def _paint_yellow(wb):
+    from budget_engine.sheets.styles import INPUT_FILL
+
+    wb["Transfer View BE1"]["H1"].fill = INPUT_FILL
+
+
+def _unpaint_first_total(wb):
+    from openpyxl.styles import PatternFill
+
+    ws = wb["Transfer View BE1"]
+    ws[_first_formula(ws, "=SUM(")].fill = PatternFill()
+
+
+def _repaint_input_swatch(wb):
+    from budget_engine.sheets.styles import DERIVED_FILL
+
+    ws = wb["Cover"]
+    row = next(c.row for c in ws["A"] if c.value == "Light yellow: Human Input (you type here)")
+    ws[f"B{row}"].fill = DERIVED_FILL
+
+
+def _replace_step(wb):
+    ws = wb["Cover"]
+    row = next(c.row for c in ws["A"] if isinstance(c.value, str) and "Staff effort:" in c.value)
+    ws[f"A{row}"] = "5. Have a coffee"
+
+
+HANDOVER_TAMPERING = {
+    "fill-in order against the dependencies": (_swap_steps("BE list", "Rate Table"), "lists 'Rate Table' before 'BE list'"),
+    "fill-in step dropped": (_replace_step, "fill-in order does not list 'Staff effort'"),
+    "yellow cell that is not an input": (_paint_yellow, "Transfer View BE1!H1: light yellow but not a Human Input"),
+    "derived figure not white": (_unpaint_first_total, "is not styled as derived"),
+    "legend swatch repainted": (_repaint_input_swatch, "swatch"),
+    "synthetic name left behind": (
+        lambda wb: wb["Transfer View BE1"].__setitem__("H1", "SYNTHETIC BE1 (fake)"),
+        "Transfer View BE1!H1: synthetic value",
+    ),
+    "last-modified-by in properties": (lambda wb: setattr(wb.properties, "lastModifiedBy", "Jane Doe"), "lastModifiedBy"),
+}
+
+
+@pytest.mark.parametrize("case", HANDOVER_TAMPERING)
+def test_structural_checks_catch_handover_breakage(built, tmp_path, case):
+    edit, expected = HANDOVER_TAMPERING[case]
+    problems = _tampered(built, tmp_path, edit)
+    assert any(expected in p for p in problems), problems
+
+
+def _rezipped(built, tmp_path: Path, part: str, transform) -> list[str]:
+    """A copy with one package part rewritten (or added), checked without an openpyxl re-save."""
+    copy = tmp_path / "rezipped.xlsx"
+    with zipfile.ZipFile(built.path) as src, zipfile.ZipFile(copy, "w", zipfile.ZIP_DEFLATED) as dst:
+        for item in src.infolist():
+            data = src.read(item.filename)
+            dst.writestr(item, transform(data) if item.filename == part else data)
+        if part not in src.namelist():
+            dst.writestr(part, transform(b""))
+    return check_structure(copy, built.shape, built.profile, built.layout)
+
+
+ABS_PATH = (
+    b'<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">'
+    b'<mc:Choice Requires="x15"><x15ac:absPath xmlns:x15ac="http://schemas.microsoft.com/office/spreadsheetml/2010/11/ac"'
+    b' url="C:\\Users\\jane\\Documents\\"/></mc:Choice></mc:AlternateContent>'
+)
+LINKED_FILE = b'<Relationships><Relationship Id="rId9" Target="file:///S:/budgets/old.xlsx"/></Relationships>'
+
+
+@pytest.mark.parametrize(
+    "part, transform, expected",
+    [
+        ("xl/workbook.xml", lambda d: d.replace(b"<workbookPr", ABS_PATH + b"<workbookPr", 1), "absPath"),
+        ("docProps/app.xml", lambda d: d.replace(b"</Properties>", b"<Company>Acme University</Company></Properties>"), "Company"),
+        ("docProps/custom.xml", lambda d: b"<Properties/>", "custom document properties"),
+        ("xl/_rels/linked.xml.rels", lambda d: LINKED_FILE, "contains a file path"),
+    ],
+    ids=["save path", "company", "custom properties", "linked file"],
+)
+def test_structural_checks_catch_personal_metadata_in_the_package(built, tmp_path, part, transform, expected):
+    problems = _rezipped(built, tmp_path, part, transform)
+    assert any(expected in p for p in problems), problems
+
+
+def test_the_built_package_holds_no_personal_metadata(built):
+    with zipfile.ZipFile(built.path) as z:
+        core = z.read("docProps/core.xml")
+        names = z.namelist()
+        workbook = z.read("xl/workbook.xml")
+    from lxml import etree
+
+    properties = {el.tag.split("}")[1]: el.text for el in etree.fromstring(core)}
+    assert not properties.get("creator")
+    assert set(properties) <= {"creator", "created", "modified"}
+    assert b"absPath" not in workbook
+    assert "docProps/custom.xml" not in names

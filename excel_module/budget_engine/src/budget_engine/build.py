@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from datetime import date
@@ -15,7 +16,8 @@ from budget_engine.methods import CATALOGUE
 from budget_engine.profiles import Profile
 from budget_engine.shape import ShapeParameters, parse_shape
 from budget_engine.sheets import (
-    check_summaries, constants, cover, input_guards, rate_table, reference_lists, task_list, transfer_view, validation,
+    check_summaries, constants, cover, fill_in_order, input_guards, rate_table, reference_lists, task_list, transfer_view,
+    validation,
 )
 from budget_engine.verify.structural import check_structure
 from budget_engine.verify.synthetic import SyntheticCheckReport, run_synthetic_check
@@ -39,6 +41,8 @@ class BuildResult:
     profile: Profile
     shape: ShapeParameters
     layout: Layout
+    sheets: tuple[str, ...]  # in workbook order
+    fill_in_order: tuple[str, ...]  # the steps listed on the Cover Sheet
     synthetic_check: SyntheticCheckReport | None = None
 
 
@@ -73,27 +77,17 @@ def build(
     reference_lists.build_country_list(ctx)
     input_guards.build_thresholds(ctx)
     rate_table.build_rate_table(ctx)
-    method_sheets = []
     for method_id in shape.methods:
         CATALOGUE[method_id].build(ctx)
-        method_sheets.append(CATALOGUE[method_id].SHEET)
     transfer_view.build_transfer_views(ctx)
     check_summaries.build_check_summaries(ctx)
     guards = input_guards.build_input_guards(ctx)
 
-    fill_in_order = [
-        reference_lists_sheet(profile, "be_list"),
-        reference_lists_sheet(profile, "wp_list"),
-        *([task_list.SHEET] if shape.tasks is not None else []),
-        f"{input_guards.SHEET}: the lead of each work package",
-        rate_table.SHEET,
-        *method_sheets,
-        "Transfer View sheets: copy into the Submission Budget",
-        "Check sheets: compare with the Submission Budget's own summaries",
-        f"{constants.SHEET}: plausibility thresholds, if you want the warnings (optional)",
-        "Cover Sheet: review the Checks panel",
-    ]
-    cover.build_cover(ctx, cover_ws, fill_in_order, date.today(), guards)
+    steps = fill_in_order.steps(wb, ctx.layout, {
+        reference_lists_sheet(profile, "be_list"): "names, acronyms, countries and funding rates",
+        reference_lists_sheet(profile, "wp_list"): "work package names",
+    })
+    cover.build_cover(ctx, cover_ws, steps, date.today(), guards)
     _clear_personal_metadata(wb)
 
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -104,9 +98,12 @@ def build(
     if problems:
         out.unlink()
         raise BuildError("structural checks failed:\n- " + "\n- ".join(problems))
-    result = BuildResult(path=out, profile=profile, shape=shape, layout=ctx.layout)
+    result = BuildResult(
+        path=out, profile=profile, shape=shape, layout=ctx.layout, sheets=tuple(wb.sheetnames), fill_in_order=tuple(steps)
+    )
     if not synthetic_check:
         return result
+    before = _digest(out)
     try:
         report = run_synthetic_check(result)
     except BaseException:
@@ -115,6 +112,13 @@ def build(
     if not report.passed:
         out.unlink()
         raise SyntheticCheckFailed(report)
+    # The check worked on a copy: the deliverable must be byte for byte what was built, so no
+    # synthetic value can have reached it. The structural checks confirm it once more.
+    problems = [] if _digest(out) == before else ["the workbook changed during the Synthetic Check"]
+    problems += check_structure(out, shape, profile, ctx.layout)
+    if problems:
+        out.unlink()
+        raise BuildError("checks after the Synthetic Check failed:\n- " + "\n- ".join(problems))
     return replace(result, synthetic_check=report)
 
 
@@ -130,3 +134,11 @@ def _clear_personal_metadata(wb: Workbook) -> None:
     props.subject = None
     props.description = None
     props.keywords = None
+    props.category = None
+    props.contentStatus = None
+    props.identifier = None
+    props.lastPrinted = None
+
+
+def _digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()

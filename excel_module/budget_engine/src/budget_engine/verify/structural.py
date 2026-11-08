@@ -24,9 +24,11 @@ from budget_engine.methods import equipment_depreciation, itemised_list, travel_
 from budget_engine.profiles import Profile
 from budget_engine.shape import ShapeParameters, is_spare
 from budget_engine.sheets import (
-    check_summaries, constants, cover, input_guards, rate_table, reference_lists, task_list, transfer_view, validation,
+    check_summaries, constants, cover, fill_in_order, input_guards, rate_table, reference_lists, task_list,
+    transfer_view, validation,
 )
-from budget_engine.sheets.styles import is_input
+from budget_engine.sheets.styles import is_derived, is_input
+from budget_engine.verify.scenario import provisional_scenario
 
 TRIVIAL_NUMBERS = {0.0, 1.0}
 SPARE_ROWS_CHECKED = 5  # rows below a list that must stay empty
@@ -56,8 +58,11 @@ def check_structure(path: Path, shape: ShapeParameters, profile: Profile, layout
     problems += _check_inputs_empty(wb, layout)
     problems += _check_no_bare_numbers(wb)
     problems += _check_constants_labelled(wb, layout)
-    problems += _check_metadata(wb)
+    problems += _check_no_synthetic_values(wb, shape, profile, layout)
+    problems += _check_styling(wb, layout)
+    problems += _check_metadata(path, wb)
     problems += _check_cover(wb, shape, profile)
+    problems += _check_fill_in_order(wb, layout)
     return problems
 
 
@@ -617,13 +622,120 @@ def _check_constants_labelled(wb: Workbook, layout: Layout) -> list[str]:
     return problems
 
 
-def _check_metadata(wb: Workbook) -> list[str]:
+EXTENDED_NS = "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"
+APP_PROPERTIES = "docProps/app.xml"
+# Extended properties that name a person, an organisation or a location.
+PERSONAL_APP_PROPERTIES = ("Company", "Manager", "HyperlinkBase")
+# A saved path: a drive letter, a UNC share or a file URL.
+SAVE_PATH = re.compile(rb"[A-Za-z]:\\|\\\\[A-Za-z0-9]|file:/", re.I)
+
+
+def _check_metadata(path: Path, wb: Workbook) -> list[str]:
+    """No author, last-modified-by or other identifying property, and no save path anywhere in the package."""
     props = wb.properties
-    return [
+    problems = [
         f"document property {name} is set ({value!r})"
-        for name in ("creator", "lastModifiedBy", "title", "subject", "description", "keywords")
+        for name in ("creator", "lastModifiedBy", "title", "subject", "description", "keywords", "category")
         if (value := getattr(props, name))
     ]
+    with zipfile.ZipFile(path) as z:
+        names = z.namelist()
+        if "docProps/custom.xml" in names:
+            problems.append("workbook has custom document properties")
+        if APP_PROPERTIES in names:
+            app = etree.fromstring(z.read(APP_PROPERTIES))
+            for name in PERSONAL_APP_PROPERTIES:
+                found = app.find(f"{{{EXTENDED_NS}}}{name}")
+                if found is not None and (found.text or "").strip():
+                    problems.append(f"document property {name} is set ({found.text!r})")
+        for name in names:
+            if not name.endswith((".xml", ".rels")):
+                continue
+            data = z.read(name)
+            if b"absPath" in data:
+                problems.append(f"{name}: records the path the workbook was saved at (absPath)")
+            if SAVE_PATH.search(data):
+                problems.append(f"{name}: contains a file path")
+    return problems
+
+
+def _check_no_synthetic_values(wb: Workbook, shape: ShapeParameters, profile: Profile, layout: Layout) -> list[str]:
+    """No value the Synthetic Check types into its copy may appear in the deliverable.
+
+    Every Human Input must be empty (``_check_inputs_empty``); on top, the scenario's free text
+    (fake names, titles, item descriptions) must not sit in any cell at all.
+    """
+    scenario = provisional_scenario(profile, shape, layout)
+    free_text = {(k[0], k[-1]) for k in layout.free_text}
+    entries = {**scenario.inputs, **scenario.added_inputs}
+    fake = {v for k, v in entries.items() if isinstance(v, str) and (k[0], k[-1]) in free_text}
+    return [
+        f"{ws.title}!{c.coordinate}: synthetic value {c.value!r}"
+        for ws in wb.worksheets
+        for row in ws.iter_rows()
+        for c in row
+        if isinstance(c.value, str) and c.value in fake
+    ]
+
+
+def _check_styling(wb: Workbook, layout: Layout) -> list[str]:
+    """Light yellow marks Human Inputs and nothing else; every figure the engine reads back is derived (white)."""
+    inputs = {(c.sheet, c.coord) for c in layout.inputs.values()}
+    swatch = _legend_swatches(wb).get(cover.LEGEND_INPUT)
+    problems = [
+        f"{ws.title}!{c.coordinate}: light yellow but not a Human Input"
+        for ws in wb.worksheets
+        for row in ws.iter_rows()
+        for c in row
+        if is_input(c.fill) and (ws.title, c.coordinate) not in inputs and (ws.title, c.coordinate) != swatch
+    ]
+    for key, cell in layout.outputs.items():
+        if cell.sheet in wb.sheetnames and not is_derived(wb[cell.sheet][cell.coord].fill):
+            problems.append(f"{cell.sheet}!{cell.coord}: derived figure {' '.join(key)} is not styled as derived")
+    return problems
+
+
+LEGEND_LABELS = (cover.LEGEND_INPUT, cover.LEGEND_DERIVED, cover.LEGEND_HEADER, cover.LEGEND_GUARDS)
+
+
+def _legend_swatches(wb: Workbook) -> dict[str, tuple[str, str]]:
+    """Cover legend label -> its swatch cell (column B of the label's row)."""
+    if cover.SHEET not in wb.sheetnames:
+        return {}
+    ws = wb[cover.SHEET]
+    return {c.value: (ws.title, f"B{c.row}") for c in ws["A"] if c.value in LEGEND_LABELS}
+
+
+def _check_legend(wb: Workbook) -> list[str]:
+    swatches = _legend_swatches(wb)
+    ws = wb[cover.SHEET]
+    problems = [f"Cover Sheet colour legend has no entry {label!r}" for label in LEGEND_LABELS if label not in swatches]
+    fills = {cover.LEGEND_INPUT: is_input, cover.LEGEND_DERIVED: is_derived}
+    for label, matches in fills.items():
+        if label in swatches and not matches(ws[swatches[label][1]].fill):
+            problems.append(f"Cover Sheet colour legend: the swatch for {label!r} has the wrong fill")
+    return problems
+
+
+def _check_fill_in_order(wb: Workbook, layout: Layout) -> list[str]:
+    """The Cover's fill-in order lists every sheet with Human Inputs, each after the sheets it depends on."""
+    if cover.SHEET not in wb.sheetnames:
+        return []
+    column = [c.value for c in wb[cover.SHEET]["A"]]
+    if cover.FILL_IN_ORDER not in column:
+        return ["Cover Sheet has no fill-in order"]
+    listed = []
+    for value in column[column.index(cover.FILL_IN_ORDER) + 1:]:
+        if not isinstance(value, str) or not re.match(r"\d+\. ", value):
+            break
+        listed.append(fill_in_order.step_sheet(value.split(". ", 1)[1]))
+    position = {sheet: i for i, sheet in enumerate(listed)}
+    problems = [f"fill-in order does not list {s!r}" for s in fill_in_order.input_sheets(wb, layout) if s not in position]
+    for sheet, needs in fill_in_order.dependencies(wb, layout).items():
+        for need in sorted(needs):
+            if sheet in position and need in position and position[need] > position[sheet]:
+                problems.append(f"fill-in order lists {sheet!r} before {need!r}, which it depends on")
+    return problems
 
 
 def _check_cover(wb: Workbook, shape: ShapeParameters, profile: Profile) -> list[str]:
@@ -637,4 +749,4 @@ def _check_cover(wb: Workbook, shape: ShapeParameters, profile: Profile) -> list
         f"Cover Sheet records {label} = {recorded.get(label)!r}, expected {value!r}"
         for label, value in expected.items()
         if recorded.get(label) != value
-    ]
+    ] + _check_legend(wb)

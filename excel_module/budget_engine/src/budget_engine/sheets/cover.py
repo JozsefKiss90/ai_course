@@ -1,6 +1,8 @@
 """Cover Sheet: provenance, the Checks panel, fill-in order and colour legend.
 
 The provenance block is a contract the structural checks read: label in column A, value in B.
+So are the fill-in order (one numbered step per row under its heading, see ``sheets/fill_in_order.py``)
+and the colour legend (a swatch in column B beside each label).
 The Checks panel has a row per Input Guard (label, status, count, kind, where to look) and an
 Overall row with the worst status; statuses are formulas, coloured by conditional formatting.
 """
@@ -21,6 +23,12 @@ SHEET = "Cover"
 PANEL_TITLE = "Checks panel"
 PANEL_HEADERS = ("Guard", "Status", "Count", "Kind", "Where to look")
 OVERALL = "Overall"
+FILL_IN_ORDER = "Fill-in order"
+LEGEND = "Colour legend"
+LEGEND_INPUT = "Light yellow: Human Input (you type here)"
+LEGEND_DERIVED = "White: derived by formula (do not overwrite)"
+LEGEND_HEADER = "Blue: column headers"
+LEGEND_GUARDS = "Guards: green OK, amber warning, red error (conditionally coloured)"
 
 
 def provenance(profile: Profile, shape: ShapeParameters, build_date: date | None) -> list[tuple[str, str | int]]:
@@ -59,24 +67,30 @@ def build_cover(
     row = _build_panel(ctx, ws, row + 2, guards)
 
     row += 2
-    ws[f"A{row}"] = "Fill-in order"
+    ws[f"A{row}"] = FILL_IN_ORDER
     ws[f"A{row}"].font = BOLD
-    for i, sheet in enumerate(fill_in_order, start=1):
+    for i, step in enumerate(fill_in_order, start=1):
         row += 1
-        ws[f"A{row}"] = f"{i}. {sheet}"
+        ws[f"A{row}"] = f"{i}. {step}"
 
     row += 2
-    ws[f"A{row}"] = "Colour legend"
+    ws[f"A{row}"] = LEGEND
     ws[f"A{row}"].font = BOLD
     row += 1
-    ws[f"A{row}"] = "Light yellow: Human Input (you type here)"
+    ws[f"A{row}"] = LEGEND_INPUT
     ws[f"B{row}"].fill = INPUT_FILL
     ws[f"B{row}"].border = BOX
     row += 1
-    ws[f"A{row}"] = "White: derived by formula (do not overwrite)"
-    ws[f"B{row}"].border = BOX
+    ws[f"A{row}"] = LEGEND_DERIVED
+    put_derived(ws, f"B{row}", None)
     row += 1
-    ws[f"A{row}"] = "Guards: green OK, amber warning, red error (conditionally coloured)"
+    ws[f"A{row}"] = LEGEND_HEADER
+    put_header(ws, f"B{row}", "")
+    row += 1
+    ws[f"A{row}"] = LEGEND_GUARDS
+    for col, status in zip("BCD", (OK, WARNING, ERROR)):
+        put_derived(ws, f"{col}{row}", status)
+        ws[f"{col}{row}"].fill = STATUS_FILLS[status]
 
     ws.column_dimensions["A"].width = 48
     ws.column_dimensions["B"].width = 36

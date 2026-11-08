@@ -128,6 +128,10 @@ class Profile:
     countries: tuple[str, ...]
     plausibility: tuple[PlausibilityThreshold, ...]
     rule_checks: tuple[RuleCheck, ...]
+    # For the Handover Package's fill-in guide: what the Submission Budget is called and how a human
+    # transfers the Transfer Views into it, step by step.
+    submission_budget: str
+    transfer_steps: tuple[str, ...]
 
     def constant(self, constant_id: str) -> ProfileConstant:
         return next(c for c in self.constants if c.id == constant_id)
@@ -215,4 +219,6 @@ def load_profile(profile_id: str, version: str) -> Profile:
         countries=_countries(raw["reference_lists"]["be_list"]),
         plausibility=tuple(PlausibilityThreshold(**t) for t in raw["input_guards"]["plausibility"]),
         rule_checks=tuple(RuleCheck(**r) for r in raw["input_guards"]["rule_checks"]),
+        submission_budget=raw["handover"]["submission_budget"],
+        transfer_steps=tuple(raw["handover"]["transfer_steps"]),
     )

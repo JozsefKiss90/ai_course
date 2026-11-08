@@ -21,7 +21,8 @@ from budget_engine.layout import BuildContext, Cell, Key
 
 INPUT_RGB = "FFFFF2CC"
 INPUT_FILL = PatternFill("solid", fgColor=INPUT_RGB)
-DERIVED_FILL = PatternFill("solid", fgColor="FFFFFFFF")
+DERIVED_RGB = "FFFFFFFF"
+DERIVED_FILL = PatternFill("solid", fgColor=DERIVED_RGB)
 HEADER_FILL = PatternFill("solid", fgColor="FFD9E1F2")
 THIN = Side(style="thin", color="FFBFBFBF")
 BOX = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
@@ -36,6 +37,11 @@ QUANTITY = "#,##0.00"
 def is_input(cell_fill: Any) -> bool:
     """True for the Human Input fill; takes a cell's ``fill`` (a PatternFill or openpyxl's StyleProxy)."""
     return bool(cell_fill.fill_type == "solid" and cell_fill.fgColor.rgb == INPUT_RGB)
+
+
+def is_derived(cell_fill: Any) -> bool:
+    """True for the derived (white) fill."""
+    return bool(cell_fill.fill_type == "solid" and cell_fill.fgColor.rgb == DERIVED_RGB)
 
 
 # Per workbook, the style each helper gives a fresh cell. Assigning a fill or border makes openpyxl

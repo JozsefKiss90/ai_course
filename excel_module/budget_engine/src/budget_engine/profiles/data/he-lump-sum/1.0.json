@@ -131,6 +131,19 @@
     ],
     "rule_checks": []
   },
+  "handover": {
+    "submission_budget": "the Official Budget Table (Horizon Europe detailed lump sum budget table, v3.6)",
+    "transfer_steps": [
+      "In the Official Budget Table, fill its `BE list` and `WP list`: copy the data block of the Planning Workbook's `BE list` and `WP list` and paste it into the same cells there (Paste Special > Values). The layouts are identical.",
+      "Let the Official Budget Table generate its budget sheets with its own buttons: one sheet per Beneficiary (BE1, BE2, ...), with a column block for each of its Affiliated Entities.",
+      "For each `Transfer View BEn` sheet: on the Official Budget Table's sheet of that Beneficiary, work package by work package and line by line, type ITEMS and COST PER ITEM into the BE columns. The rows are in the same order.",
+      "For each `Transfer View BEn-AEm` sheet: do the same in that Affiliated Entity's column block (ITEMS, COST PER ITEM) on its Beneficiary's sheet.",
+      "A spare block (`Transfer View spare k`) is transferred like the Beneficiary or Affiliated Entity whose code was typed into its Rate Table row; an unused spare block is not transferred.",
+      "Transfer values only, never formulas. Leave a line blank where the Transfer View shows no items.",
+      "Do not type totals, indirect costs (E) or summary rows: the Official Budget Table calculates them. Compare them with the Transfer View instead.",
+      "Finally, compare the Official Budget Table's Lump sum breakdown, Person-months overview and Summary per WP with the Planning Workbook's `Check - ...` sheets; every figure should match."
+    ]
+  },
   "check_summaries": {
     "grid": {"corner": "BENEFICIARIES \\ WORK PACKAGES", "total": "Total", "share": "Pct %", "total_row": "Total: ", "share_row": "Percentage: "},
     "lump_sum": {"sheet": "Check - Lump sum breakdown", "title": "ESTIMATED BREAKDOWN OF THE LUMP SUM", "of_row": "F", "rate_header": "Funding rate"},

@@ -69,6 +69,17 @@ class MethodRules:
 
 
 @dataclass(frozen=True)
+class UnitCostTable:
+    """A unit-cost table taken verbatim from a shared data file, with its provenance."""
+
+    title: str
+    source: str  # the decision or document the amounts come from
+    annex: str
+    pages: str
+    rows: tuple[dict[str, Any], ...]
+
+
+@dataclass(frozen=True)
 class Profile:
     id: str
     version: str
@@ -86,6 +97,8 @@ class Profile:
     transfer_view_headers: tuple[str, ...]
     wp_title: str
     transfer_view_rows: tuple[LayoutRow, ...]
+    unit_cost_tables: dict[str, UnitCostTable]
+    method_settings: dict[str, dict[str, Any]]  # per Estimation Method id, e.g. the cost line it fills
 
     def constant(self, constant_id: str) -> ProfileConstant:
         return next(c for c in self.constants if c.id == constant_id)
@@ -99,6 +112,26 @@ def load_travel_unit_costs() -> dict[str, Any]:
     """HE travel, accommodation and subsistence unit costs from C(2024)5405, with provenance."""
     data: dict[str, Any] = json.loads(HE_TRAVEL_UNIT_COSTS.read_text(encoding="utf-8"))
     return data
+
+
+def _unit_cost_tables(refs: dict[str, dict[str, str]]) -> dict[str, UnitCostTable]:
+    tables = {}
+    for key, ref in refs.items():
+        data = json.loads((DATA_DIR / ref["file"]).read_text(encoding="utf-8"))
+        raw = next(t for t in data["tables"] if t["id"] == ref["table"])
+        if "source" in ref:  # amounts from a supplementary source the data file names
+            supplement = next(s for s in data["supplementary_sources"] if s["id"] == ref["source"])
+            source = supplement["document"]
+        else:
+            source = f"{data['source']['decision']} of {data['source']['date']}"
+        tables[key] = UnitCostTable(
+            title=raw["title"],
+            source=source,
+            annex=raw["annex"],
+            pages=raw["pages"],
+            rows=tuple(raw["rows"]),
+        )
+    return tables
 
 
 def load_profile(profile_id: str, version: str) -> Profile:
@@ -142,4 +175,6 @@ def load_profile(profile_id: str, version: str) -> Profile:
             )
             for r in tv["rows"]
         ),
+        unit_cost_tables=_unit_cost_tables(raw.get("unit_cost_tables", {})),
+        method_settings=raw.get("method_settings", {}),
     )

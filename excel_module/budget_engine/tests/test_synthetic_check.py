@@ -99,7 +99,7 @@ def test_a_late_partner_in_a_spare_block_and_a_new_table_row_flow_through(tmp_pa
     report = run_synthetic_check(result)
 
     assert report.passed, report.to_markdown()
-    assert report.table_rows_added == ("BEList: BE1-AE2 under BE1",)
+    assert "BEList: BE1-AE2 under BE1" in report.table_rows_added
     figures = set(report.figures)
     assert "SPARE1 name" in figures  # the late AE's name, typed into the new Table row
     assert "SPARE1 WP1 A1_senior total" in figures and "SPARE2 WP3 F total" in figures
@@ -168,3 +168,36 @@ def test_the_copy_is_deleted_when_the_check_breaks_down(tmp_path, monkeypatch):
 
     assert seen and not seen[0].parent.exists()
     assert not out.exists()
+
+
+def test_trips_across_several_partners_and_work_packages_are_priced_and_summed(tmp_path):
+    """The scenario enters trips for every BE/AE, a late AE in a spare block and several WPs, then
+    appends a trip row to the Trips Table as a human would; its prices must fill in by themselves."""
+    result = build(shape(affiliated_entities=[1, 0], headroom=2), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert report.passed, report.to_markdown()
+    assert any(r.startswith("Trips: ") for r in report.table_rows_added)
+    c1 = {f for f in report.figures if " C1 " in f}
+    for block in ("BE1", "BE1-AE1", "BE2", "SPARE1"):
+        assert {f"{block} WP{n} C1 total" for n in (1, 2, 3)} <= c1, block
+
+
+def test_a_travel_summary_that_ignores_the_work_package_fails_the_check(tmp_path, monkeypatch):
+    from budget_engine.methods import travel_planner
+
+    real = travel_planner._sumifs
+    # Sabotage: every summary row adds up the trips of its BE/AE in all work packages.
+    monkeypatch.setattr(travel_planner, "_sumifs", lambda column, code, wp: _without_wp(real(column, code, wp)))
+    result = build(shape(beneficiaries=2, work_packages=2, headroom=0), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert not report.passed
+    assert any(m.figure.endswith("C1 total") for m in report.mismatches)
+
+
+def _without_wp(sumifs: str) -> str:
+    """Drop the last criteria pair (the WP) from a SUMIFS formula."""
+    return sumifs.rsplit(",", 2)[0] + ")"

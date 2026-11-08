@@ -15,6 +15,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.workbook.workbook import Workbook
 
 from budget_engine.layout import Layout
+from budget_engine.methods import travel_planner
 from budget_engine.profiles import Profile
 from budget_engine.shape import ShapeParameters, is_spare
 from budget_engine.sheets import cover, rate_table, reference_lists, task_list, transfer_view
@@ -34,6 +35,7 @@ def check_structure(path: Path, shape: ShapeParameters, profile: Profile, layout
     problems += _check_task_list(wb, shape)
     problems += _check_no_cell_references_into_lists(wb, profile)
     problems += _check_blocks(wb, shape, profile, layout)
+    problems += _check_travel(wb, shape, profile, layout)
     problems += _check_inputs_empty(wb, layout)
     problems += _check_no_bare_numbers(wb)
     problems += _check_constants_labelled(wb, layout)
@@ -218,6 +220,65 @@ def _check_blocks(wb: Workbook, shape: ShapeParameters, profile: Profile, layout
         for be in shape.slots:
             if (unit, be) not in effort_blocks:
                 problems.append(f"no staff effort block for {unit} x {be}")
+    return problems
+
+
+def _check_travel(wb: Workbook, shape: ShapeParameters, profile: Profile, layout: Layout) -> list[str]:
+    """With the travel planner: the Trips Table priced by formula, the unit costs exactly as in the
+    profile data, and one summary row per BE/AE block × WP. Without it: no travel sheets."""
+    tp = travel_planner
+    sheets = (tp.SHEET, tp.SUMMARY_SHEET, tp.UNIT_COSTS_SHEET)
+    if tp.ID not in shape.methods:
+        return [f"unexpected {name!r} sheet: the travel planner is switched off" for name in sheets if name in wb.sheetnames]
+    missing = [f"missing sheet {name!r}" for name in sheets if name not in wb.sheetnames]
+    if missing:
+        return missing
+    problems: list[str] = []
+
+    ws = wb[tp.SHEET]
+    last = tp.FIRST_DATA_ROW + tp.TRIP_ROWS - 1
+    formulas = tp.price_formulas()
+    if list(ws.tables) != [tp.TABLE]:
+        problems.append(f"{tp.SHEET}: Excel Tables {list(ws.tables)}, expected [{tp.TABLE!r}]")
+    else:
+        table = ws.tables[tp.TABLE]
+        ref = f"A{tp.HEADER_ROW}:{get_column_letter(len(tp.HEADERS))}{last}"
+        if table.ref != ref:
+            problems.append(f"{tp.SHEET}: Table {tp.TABLE} spans {table.ref}, expected {ref}")
+        columns = [(c.name, c.calculatedColumnFormula.attr_text if c.calculatedColumnFormula else None) for c in table.tableColumns]
+        expected = [(name, formulas.get(name)) for name in tp.HEADERS]
+        if columns != expected:
+            problems.append(f"{tp.SHEET}: Table {tp.TABLE} columns or calculated formulas differ from the travel planner's")
+    for i, header in enumerate(tp.PRICES, start=len(tp.INPUTS) + 1):
+        for row in range(tp.FIRST_DATA_ROW, last + 1):
+            coord = f"{get_column_letter(i)}{row}"
+            if ws[coord].value != "=" + formulas[header]:
+                problems.append(f"{tp.SHEET}!{coord}: {header} is not the unit-cost lookup formula")
+
+    ws = wb[tp.UNIT_COSTS_SHEET]
+    for first_col, name, rows in zip(
+        (tp.BANDS_FIRST_COL, tp.RATES_FIRST_COL), (tp.BANDS_TABLE, tp.RATES_TABLE), tp.unit_cost_rows(profile)
+    ):
+        last_cell = f"{get_column_letter(first_col + len(rows[0]) - 1)}{tp.FIRST_DATA_ROW + len(rows) - 1}"
+        ref = f"{get_column_letter(first_col)}{tp.HEADER_ROW}:{last_cell}"
+        if name not in ws.tables or ws.tables[name].ref != ref:
+            problems.append(f"{tp.UNIT_COSTS_SHEET}: Table {name} missing or not spanning {ref}")
+        for i, values in enumerate(rows):
+            for j, value in enumerate(values):
+                coord = f"{get_column_letter(first_col + j)}{tp.FIRST_DATA_ROW + i}"
+                if ws[coord].value != value:
+                    problems.append(f"{tp.UNIT_COSTS_SHEET}!{coord}: {ws[coord].value!r}, profile data has {value!r}")
+
+    ws = wb[tp.SUMMARY_SHEET]
+    row = tp.FIRST_DATA_ROW
+    for slot in shape.slots:
+        for wp in shape.wp_codes:
+            labels = (ws[f"A{row}"].value, ws[f"C{row}"].value)
+            if labels != (layout.slot_label(slot), wp):
+                problems.append(f"{tp.SUMMARY_SHEET}!A{row}: row labelled {labels}, expected {(layout.slot_label(slot), wp)}")
+            row += 1
+    if ws[f"C{row}"].value is not None:
+        problems.append(f"{tp.SUMMARY_SHEET}!C{row}: unexpected row below the last block")
     return problems
 
 

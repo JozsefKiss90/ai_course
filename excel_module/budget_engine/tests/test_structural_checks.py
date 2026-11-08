@@ -310,3 +310,97 @@ def test_transfer_view_rows_match_the_official_budget_table(built):
     official = _official("BE tpl")
     for r in range(7, 44):  # first WP block: A. DIRECT PERSONNEL COSTS ... F. TOTAL COSTS
         assert (ours[f"A{r}"].value or None) == official[f"A{r}"].value, f"row {r}"
+
+
+# --- Travel planner (ticket 08) ----------------------------------------------------------------
+
+TRIP_INPUTS = ["BE/AE nr", "WP", "Travellers", "One-way distance (km)", "Nights", "Days", "Destination country"]
+TRIP_PRICES = [
+    "Travel (EUR per traveller)", "Accommodation (EUR per night)", "Subsistence (EUR per day)",
+    "Cost per traveller (EUR)", "Trip cost (EUR)",
+]
+
+
+def test_trips_grow_through_an_excel_table_with_human_inputs_and_priced_columns(built):
+    wb = load_workbook(built.path)
+    ws = wb["Travel planner"]
+    assert list(ws.tables) == ["Trips"]
+    table = ws.tables["Trips"]
+    assert [c.name for c in table.tableColumns] == TRIP_INPUTS + TRIP_PRICES
+    first, last = table.ref.split(":")
+    assert first == "A3" and int(last[1:]) > 4  # blank trip rows to start from
+
+    # Inputs are empty Human Inputs; prices are calculated columns, so a row a human adds is priced too.
+    trip_keys = [k for k in built.layout.inputs if k[0] == "trip"]
+    assert {k[2] for k in trip_keys} == {"be", "wp", "travellers", "distance", "nights", "days", "country"}
+    assert all(built.layout.inputs[k].sheet == "Travel planner" for k in trip_keys)
+    for column in table.tableColumns[len(TRIP_INPUTS):]:
+        assert column.calculatedColumnFormula is not None, column.name
+    assert ws["H4"].value.startswith("=") and "TravelBands" in ws["H4"].value
+    assert "TravelRates" in ws["I4"].value and "TravelRates" in ws["J4"].value
+
+
+def test_unit_costs_come_from_the_profile_data_and_prices_are_looked_up_by_formula(built):
+    from budget_engine.profiles import load_travel_unit_costs
+
+    data = {t["id"]: t for t in load_travel_unit_costs()["tables"]}
+    ws = load_workbook(built.path)["Travel unit costs"]
+    assert set(ws.tables) == {"TravelBands", "TravelRates"}
+
+    bands = data["travel_bands"]["rows"]
+    rows = list(ws.iter_rows(min_row=4, max_row=3 + len(bands), max_col=3, values_only=True))
+    assert rows == [(b["from_km"], b["to_km"], b["amount"]) for b in bands]
+    rates = data["subsistence"]["rows"]  # calls opening from 13 May 2025
+    assert ws.tables["TravelRates"].ref == f"E3:G{3 + len(rates)}"
+    belgium = next(r for r in ws.iter_rows(min_row=4, min_col=5, max_col=7, values_only=True) if r[0] == "Belgium")
+    assert belgium == ("Belgium", 171, 132)
+    assert "C(2024)5405" in ws["A2"].value and "Annex 2a" in ws["E2"].value
+
+
+def test_the_travel_summary_is_formula_based_and_feeds_the_transfer_view(built):
+    wb = load_workbook(built.path)
+    summary = wb["Travel summary"]
+    rows = [
+        (summary[f"A{r}"].value, summary[f"C{r}"].value)
+        for r in range(4, summary.max_row + 1)
+        if summary[f"C{r}"].value
+    ]
+    slots = ["BE1", "BE2"] + [None] * 3  # spare blocks show a code typed in the Rate Table
+    assert len(rows) == len(slots) * 3
+    assert rows[:4] == [("BE1", "WP1"), ("BE1", "WP2"), ("BE1", "WP3"), ("BE2", "WP1")]
+    assert summary["D4"].value.startswith("=SUMIFS(Trips[") and summary["E4"].value.startswith("=SUMIFS(Trips[")
+
+    tv = wb["Transfer View BE1"]
+    c1 = next(r for r in range(1, tv.max_row + 1) if tv[f"A{r}"].value == "C.1 Travel and subsistence")
+    assert tv[f"B{c1}"].value == "='Travel summary'!$D$4"
+    assert tv[f"D{c1}"].value == "='Travel summary'!$E$4"
+
+
+def test_without_the_travel_planner_there_are_no_travel_sheets(tmp_path):
+    result = build(shape(methods=["staff_effort"]), tmp_path / "planning.xlsx")
+    names = load_workbook(result.path).sheetnames
+    assert not [n for n in names if n.startswith("Travel")]
+
+
+TRAVEL_TAMPERING = {
+    "changed unit cost": (lambda wb: wb["Travel unit costs"].__setitem__("C5", 999), "Travel unit costs!C5"),
+    "missing Trips Table": (lambda wb: wb["Travel planner"].tables.pop("Trips"), "Trips"),
+    "trip price typed in": (lambda wb: wb["Travel planner"].__setitem__("H4", 365), "Travel planner!H4"),
+    "relabelled summary row": (lambda wb: wb["Travel summary"].__setitem__("C5", "WP3"), "Travel summary!"),
+    "missing travel sheet": (lambda wb: wb.remove(wb["Travel summary"]), "Travel summary"),
+}
+
+
+@pytest.mark.parametrize("case", TRAVEL_TAMPERING)
+def test_structural_checks_catch_travel_planner_breakage(built, tmp_path, case):
+    edit, expected = TRAVEL_TAMPERING[case]
+    problems = _tampered(built, tmp_path, edit)
+    assert any(expected in p for p in problems), problems
+
+
+def test_structural_checks_catch_a_pivot_table(built, tmp_path):
+    copy = tmp_path / "with_pivot.xlsx"
+    shutil.copy(built.path, copy)
+    with zipfile.ZipFile(copy, "a") as z:
+        z.writestr("xl/pivotCache/pivotCacheDefinition1.xml", b"")
+    assert "workbook contains a PivotTable or pivot cache" in check_structure(copy, built.shape, built.profile, built.layout)

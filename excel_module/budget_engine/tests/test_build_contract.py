@@ -99,3 +99,11 @@ def test_tasks_are_optional_and_coded_per_work_package(tmp_path):
     assert with_tasks.tasks == (2, 1, 3)
     assert with_tasks.task_codes == ["T1.1", "T1.2", "T2.1", "T3.1", "T3.2", "T3.3"]
     assert with_tasks.effort_units[:3] == [("WP1", "T1.1"), ("WP1", "T1.2"), ("WP2", "T2.1")]
+
+
+def test_the_travel_planner_is_on_by_default_and_can_be_switched_off(tmp_path):
+    default = build(shape(), tmp_path / "default.xlsx").shape
+    assert default.methods == ("staff_effort", "travel_planner")
+
+    off = build(shape(methods=["staff_effort"]), tmp_path / "off.xlsx").shape
+    assert off.methods == ("staff_effort",)

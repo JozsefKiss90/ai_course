@@ -2,7 +2,7 @@
 
 1. Copy the blank workbook to a fresh temporary directory outside the deliverable's directory.
 2. Open the copy read-only in real Excel via COM and type the scenario into its Human Input cells.
-   Then add the scenario's Reference List Table rows (e.g. a late partner), as a human would.
+   Then add the scenario's Table rows (e.g. a late partner, another trip), as a human would.
 3. Recalculate and read the Transfer View back; Excel closes the copy without saving.
 4. Compare with the reference model, which works from the scenario inputs alone.
 
@@ -107,7 +107,7 @@ def run_synthetic_check(result: BuildResult, scenario: Scenario | None = None) -
         raise ValueError(f"scenario {scenario.name!r} has no value for {sorted(missing)[:5]}")
     fill = {result.layout.inputs[k]: v for k, v in scenario.inputs.items() if v is not None}  # None: left blank
     expected: dict[Key, float | str] = {
-        **expected_transfer_view(result.profile, result.shape, scenario.inputs),
+        **expected_transfer_view(result.profile, result.shape, {**scenario.inputs, **scenario.added_inputs}),
         **expected_names(result.shape, scenario.inputs, scenario.added_inputs),
     }
     outputs = result.layout.outputs
@@ -128,7 +128,7 @@ def run_synthetic_check(result: BuildResult, scenario: Scenario | None = None) -
         scenario_provenance=scenario.provenance,
         human_owned=scenario.human_owned,
         figures=tuple(_figure_name(k) for k in keys),
-        table_rows_added=tuple(e.description for e in scenario.late_entities),
+        table_rows_added=tuple(r.description for r in scenario.late_rows),
         mismatches=tuple(_compare(keys, expected, outputs, actual)),
         copy_path=copy,
         copy_deleted=not workdir.exists(),

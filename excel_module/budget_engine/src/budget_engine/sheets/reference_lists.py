@@ -30,16 +30,18 @@ def _column(spec: dict[str, Any], letter: str) -> str:
     return f"[[{spec['headers'][column_index_from_string(letter) - 1]}]]"
 
 
+def column_ref(profile: Profile, which: str, column: str) -> str:
+    """Structured reference to one column of a Reference List Table, e.g. ``BEList[[BE/AE nr]]``."""
+    return TABLES[which] + _column(profile.reference_lists[which], column)
+
+
 def lookup(profile: Profile, which: str, column: str, code: str) -> str:
     """Formula text: the entry in ``column`` of the Reference List row whose code is ``code``, or "".
 
     ``code`` is a formula operand: a quoted literal such as ``"BE1"`` or a cell reference.
     """
-    spec = profile.reference_lists[which]
-    table = TABLES[which]
-    return (
-        f'IFERROR(INDEX({table}{_column(spec, column)},MATCH({code},{table}{_column(spec, "A")},0))&"","")'
-    )
+    found = f"MATCH({code},{column_ref(profile, which, 'A')},0)"
+    return f'IFERROR(INDEX({column_ref(profile, which, column)},{found})&"","")'
 
 
 def be_field(ctx: BuildContext, key: str, code: str) -> str:

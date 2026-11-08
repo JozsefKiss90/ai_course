@@ -23,12 +23,16 @@ class ExcelUnavailable(RuntimeError):
 
 @dataclass(frozen=True)
 class TableRowAddition:
-    """A row a human adds to an Excel Table: inserted at ``position`` (1-based, within the data rows)."""
+    """A row a human adds to an Excel Table: inserted at ``position`` (1-based, within the data rows).
+
+    ``values`` fill the Table's columns from the first; columns after them keep what the Table puts
+    there, e.g. a calculated column's formula.
+    """
 
     sheet: str
     table: str
     position: int
-    values: tuple[object, ...]  # one per Table column, in column order
+    values: tuple[object, ...]  # in column order, from the first column
 
 
 def recalculate_and_read(
@@ -69,7 +73,11 @@ def recalculate_and_read(
                     wb.Worksheets(cell.sheet).Range(cell.coord).Value = value
                 for addition in table_rows:
                     table = wb.Worksheets(addition.sheet).ListObjects(addition.table)
-                    table.ListRows.Add(addition.position).Range.Value = (addition.values,)
+                    row = table.ListRows.Add(addition.position).Range
+                    # Not row.Resize(...): late-bound COM resolves that to the default Item(row, col).
+                    filled = row.Worksheet.Range(row.Cells(1, 1), row.Cells(1, len(addition.values)))
+                    filled.Value = (addition.values,)
+                    del row, filled
                     del table
                 app.CalculateFull()
                 return {cell: value for sheet, wanted in by_sheet.items() for cell, value in _read(wb, sheet, wanted)}

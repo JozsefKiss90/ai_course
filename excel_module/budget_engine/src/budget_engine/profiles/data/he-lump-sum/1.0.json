@@ -6,7 +6,9 @@
     {"document": "Detailed lump sum budget table (HE/Euratom), Official Budget Table", "version": "v3.6", "file": "docs/detailed-budget-table_he-ls-euratom_en.xlsm"},
     {"document": "Lump sum Model Grant Agreement (HE/Euratom)", "file": "docs/ls-mga_en.pdf"},
     {"document": "Annotated Grant Agreement (AGA)", "file": "docs/aga_en.pdf"},
-    {"document": "Handbook on the lump sum funding", "file": "docs/Handbook-on-the-lump-sum-funding.pdf"}
+    {"document": "Handbook on the lump sum funding", "file": "docs/Handbook-on-the-lump-sum-funding.pdf"},
+    {"document": "Commission Decision C(2024)5405 on unit costs for travel, accommodation and subsistence", "version": "C(2024) 5405 final of 31.7.2024", "file": "profiles/data/he_travel_unit_costs_c2024_5405.json"},
+    {"document": "EU Grants: Additional Information on Unit Costs and Contributions, Annex 2a and 2b (accommodation and subsistence amounts)", "version": "V1.11 of 01.05.2026", "file": "docs/additional-information-on-unit-costs-and-contributions_en.pdf"}
   ],
   "effort_unit": "person-months",
   "rate_unit": "EUR per person-month",
@@ -34,9 +36,16 @@
     {"id": "A4", "label": "SME owners and natural person beneficiaries", "cost_line": "A4"}
   ],
   "estimation_methods": {
-    "allowed": ["staff_effort"],
-    "default": ["staff_effort"],
+    "allowed": ["staff_effort", "travel_planner"],
+    "default": ["staff_effort", "travel_planner"],
     "mandatory": ["staff_effort"]
+  },
+  "unit_cost_tables": {
+    "travel_bands": {"file": "he_travel_unit_costs_c2024_5405.json", "table": "travel_bands"},
+    "accommodation_subsistence": {"file": "he_travel_unit_costs_c2024_5405.json", "table": "subsistence", "source": "annex_2a"}
+  },
+  "method_settings": {
+    "travel_planner": {"cost_line": "C1", "travel_bands": "travel_bands", "rates": "accommodation_subsistence"}
   },
   "reference_lists": {
     "be_list": {

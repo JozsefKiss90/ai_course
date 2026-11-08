@@ -6,11 +6,11 @@
 
 **Status:** ready-for-human
 
-- [ ] Shape Parameters chosen: at least two Beneficiaries, one Affiliated Entity, two or more work packages, tasks on at least one WP
-- [ ] Fake Human Inputs exercise all four v1 Estimation Methods: staff effort, travel planner, equipment depreciation, itemised list
-- [ ] Inputs are obviously fake (no real names, countries chosen arbitrarily, round synthetic rates)
+- [x] Shape Parameters chosen: at least two Beneficiaries, one Affiliated Entity, two or more work packages, tasks on at least one WP
+- [x] Fake Human Inputs exercise all four v1 Estimation Methods: staff effort, travel planner, equipment depreciation, itemised list
+- [x] Inputs are obviously fake (no real names, countries chosen arbitrarily, round synthetic rates)
 - [ ] Expected figures computed by hand: items and average cost per item per BE/AE × WP × cost line, category E, the lump sum breakdown, person-months overview, per-WP summary and % shares
-- [ ] Working shown so a reviewer can follow every figure
+- [x] Working shown so a reviewer can follow every figure
 - [ ] Committed and marked human-owned; changes require explicit human approval
 
 ## Comments
@@ -23,3 +23,7 @@
     - The OBT lump sum breakdown is F × funding rate per BE/AE × WP. §4.4 was reshaped to match, and the per-category table moved to §4.4b.
     - Trip 3, combined air/rail, takes table 5.1's 400–600 km band.
   - `docs/Handbook-on-the-lump-sum-funding.pdf` is the Erasmus+ KA2 handbook, but profile `he-lump-sum` 1.0 lists it in its provenance. That needs fixing before the version is accepted.
+- **2026-11-08, agent:** the human made the open decisions (2 travellers = 2 C.1 items; rounding and destination country confirmed), ticked every §3 rule, and asked the agent to compute §4.
+  - Unit costs come from Annex 2a V1.11 (`docs/additional-information-on-unit-costs-and-contributions_en.pdf`): p9 for travel (identical to C(2024)5405 point 5.1), p14 for accommodation and p22 for subsistence.
+  - §4.2–4.6 are filled in with full working in §5. A calculator script written separately from the engine code cross-checked the figures.
+  - **Still open:** "computed by hand" is not ticked, because an agent computed the figures. It counts as done once the human has checked §4.1 and §5. "Marked human-owned" waits for the human's sign-off in the worksheet. After that, set the status to done.

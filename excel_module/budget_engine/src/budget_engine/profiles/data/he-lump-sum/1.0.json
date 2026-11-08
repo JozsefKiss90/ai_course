@@ -121,5 +121,21 @@
       {"kind": "blank"},
       {"kind": "grand_total", "id": "F", "label": "F. TOTAL COSTS (A+B+C+D+E)", "add": ["direct", "E"]}
     ]
+  },
+  "check_summaries": {
+    "grid": {"corner": "BENEFICIARIES \\ WORK PACKAGES", "total": "Total", "share": "Pct %", "total_row": "Total: ", "share_row": "Percentage: "},
+    "lump_sum": {"sheet": "Check - Lump sum breakdown", "title": "ESTIMATED BREAKDOWN OF THE LUMP SUM", "of_row": "F", "rate_header": "Funding rate"},
+    "effort": {"sheet": "Check - Person-months overview", "title": "TOTAL PERSON-MONTHS", "groups": ["A"]},
+    "per_wp": {
+      "sheet": "Check - Summary per WP",
+      "title": "SUM OF ALL BENEFICIARIES (including AFFILIATED ENTITIES) FOR ALL THE WORK PACKAGES",
+      "all_title": "SUM OF ALL WORK PACKAGES FOR ALL BENEFICIARIES",
+      "parts": {
+        "be": {"header": "ALL BENEFICIARIES \n(without affiliated entities)", "columns": ["ITEMS", "COST PER ITEM", "BE TOTAL COSTS"]},
+        "ae": {"header": "ALL AFFILIATED ENTITIES", "columns": ["ITEMS", "COST PER ITEM", "AE TOTAL COSTS"]},
+        "all": {"header": "ALL BENEFICIARIES \n(with affiliated entities)", "columns": ["ITEMS\n(TOTAL)", "AVERAGE COST PER ITEM", "TOTAL COSTS"]}
+      },
+      "spare_headers": ["Spare block", "Counted as"]
+    }
   }
 }

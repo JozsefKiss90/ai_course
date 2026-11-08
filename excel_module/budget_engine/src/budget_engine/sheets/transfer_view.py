@@ -13,7 +13,9 @@ from collections import defaultdict
 from openpyxl.worksheet.worksheet import Worksheet
 
 from budget_engine.layout import BuildContext, Cell, Contribution
+from budget_engine.profiles import LayoutRow
 from budget_engine.shape import SPARE_PREFIX, is_affiliated, is_spare
+from budget_engine.sheets.breakdown import TOTAL_KINDS, write_breakdown
 from budget_engine.sheets.reference_lists import be_field, lookup
 from budget_engine.sheets.styles import BOLD, MONEY, QUANTITY, TITLE, put_derived, put_header
 
@@ -82,46 +84,22 @@ def _wp_block(
     by_line: dict[tuple[str, str, str], list[Contribution]],
 ) -> int:
     """Write one work package's rows; return the next free row."""
-    line_rows: dict[str, tuple[int, str]] = {}  # line id -> (row, group)
-    total_rows: dict[str, int] = {}
     outputs = ctx.layout.outputs
     sheet = ws.title
 
-    def total_of(groups: tuple[str, ...]) -> str:
-        cells = [f"D{r}" for r, g in line_rows.values() if g in groups]
-        return f"SUM({','.join(cells)})"
+    def write_line(spec: LayoutRow, r: int) -> bool:
+        sources = by_line.get((slot, wp, spec.id), [])
+        if not sources:
+            return False
+        put_derived(ws, f"B{r}", _sum([s.items.ref for s in sources]), QUANTITY)
+        put_derived(ws, f"D{r}", _sum([s.total.ref for s in sources]), MONEY)
+        put_derived(ws, f"C{r}", f"=IF(B{r}>0,D{r}/B{r},0)", MONEY)
+        for col, what in (("B", "items"), ("C", "avg"), ("D", "total")):
+            outputs[("tv", slot, wp, spec.id, what)] = Cell(sheet, f"{col}{r}")
+        return True
 
+    row, rows = write_breakdown(ctx, ws, row, ["D"], write_line)
     for spec in ctx.profile.transfer_view_rows:
-        if spec.kind == "blank":
-            row += 1
-            continue
-        if spec.label:
-            ws[f"A{row}"] = spec.label
-        if spec.kind == "heading":
-            ws[f"A{row}"].font = BOLD
-        elif spec.kind == "line":
-            line_rows[spec.id] = (row, spec.group)
-            sources = by_line.get((slot, wp, spec.id), [])
-            if sources:
-                put_derived(ws, f"B{row}", _sum([s.items.ref for s in sources]), QUANTITY)
-                put_derived(ws, f"D{row}", _sum([s.total.ref for s in sources]), MONEY)
-                put_derived(ws, f"C{row}", f"=IF(B{row}>0,D{row}/B{row},0)", MONEY)
-                for col, what in (("B", "items"), ("C", "avg"), ("D", "total")):
-                    outputs[("tv", slot, wp, spec.id, what)] = Cell(sheet, f"{col}{row}")
-        else:
-            if spec.kind == "total":
-                formula = "=" + total_of(spec.sum_groups)
-            elif spec.kind == "indirect":
-                rule = ctx.profile.indirect_rule
-                rate = ctx.layout.constants[rule.rate_constant].ref
-                formula = f"={total_of(rule.base_groups)}*{rate}"
-            elif spec.kind == "grand_total":
-                formula = "=" + "+".join(f"D{total_rows[i]}" for i in spec.add)
-            else:
-                raise ValueError(f"unknown Transfer View row kind {spec.kind!r}")
-            ws[f"A{row}"].font = BOLD
-            put_derived(ws, f"D{row}", formula, MONEY, bold=True)
-            total_rows[spec.id] = row
-            outputs[("tv", slot, wp, spec.id, "total")] = Cell(sheet, f"D{row}")
-        row += 1
+        if spec.kind in TOTAL_KINDS:
+            outputs[("tv", slot, wp, spec.id, "total")] = Cell(sheet, f"D{rows[spec.id]}")
     return row

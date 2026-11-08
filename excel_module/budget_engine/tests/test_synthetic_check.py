@@ -142,7 +142,8 @@ def test_a_spare_block_that_does_not_calculate_fails_the_check(tmp_path, monkeyp
     report = run_synthetic_check(result)
 
     assert not report.passed
-    assert {m.figure.split()[0] for m in report.mismatches} == {"SPARE1"}
+    in_transfer_views = [m for m in report.mismatches if m.location.startswith("'Transfer View")]
+    assert {m.figure.split()[0] for m in in_transfer_views} == {"SPARE1"}
 
 
 def _spare(refs: list[str]) -> bool:
@@ -261,3 +262,48 @@ def test_an_itemised_total_that_ignores_the_number_of_items_fails_the_check(tmp_
 
     assert not report.passed
     assert any(m.figure.endswith("total") for m in report.mismatches)
+
+
+def test_the_check_summaries_match_the_reference_model(tmp_path):
+    """Lump sum breakdown, person-months overview and summary per WP, with their % shares, are
+    compared figure by figure; the late AE in the spare block counts with the AEs."""
+    result = build(shape(affiliated_entities=[1, 0], headroom=2), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert report.passed, report.to_markdown()
+    figures = set(report.figures)
+    for grid in ("ls", "pm"):
+        assert {f"{grid} BE1 WP1", f"{grid} SPARE1 total", f"{grid} BE2 share", f"{grid} share WP3"} <= figures
+        assert f"{grid} total total" in figures
+    assert "ls BE2 rate" in figures
+    for wp in ("WP1", "all"):
+        assert {f"wps {wp} A1_senior ae items", f"wps {wp} C1 be avg", f"wps {wp} F all total"} <= figures
+
+
+def test_a_lump_sum_that_ignores_the_funding_rate_fails_the_check(tmp_path, monkeypatch):
+    from budget_engine.sheets import check_summaries
+
+    # Sabotage: the lump sum is the total costs, whatever the funding rate (the scenario gives BE2 70%).
+    monkeypatch.setattr(check_summaries, "_lump_sum", lambda total, rate: f"={total}")
+    result = build(shape(work_packages=1, headroom=0), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert not report.passed
+    differing = {m.figure for m in report.mismatches}
+    assert "ls BE2 WP1" in differing and "ls BE1 WP1" not in differing
+
+
+def test_a_summary_per_wp_that_counts_a_late_ae_as_a_beneficiary_fails_the_check(tmp_path, monkeypatch):
+    from budget_engine.sheets import check_summaries
+
+    # Sabotage: every spare block counts as a Beneficiary, whatever code is typed in for it.
+    monkeypatch.setattr(check_summaries, "_spare_part", lambda code: '"BE"')
+    result = build(shape(work_packages=1, headroom=1), tmp_path / "planning.xlsx")
+
+    report = run_synthetic_check(result)
+
+    assert not report.passed
+    differing = {m.figure for m in report.mismatches}
+    assert "wps WP1 A1_senior ae items" in differing and "wps WP1 A1_senior all items" not in differing

@@ -40,14 +40,27 @@ def lookup(profile: Profile, which: str, column: str, code: str) -> str:
 
     ``code`` is a formula operand: a quoted literal such as ``"BE1"`` or a cell reference.
     """
-    found = f"MATCH({code},{column_ref(profile, which, 'A')},0)"
-    return f'IFERROR(INDEX({column_ref(profile, which, column)},{found})&"","")'
+    return f'IFERROR(INDEX({column_ref(profile, which, column)},{_match(profile, which, code)})&"","")'
+
+
+def _match(profile: Profile, which: str, code: str) -> str:
+    return f"MATCH({code},{column_ref(profile, which, 'A')},0)"
+
+
+def _be_column(ctx: BuildContext, key: str) -> str:
+    return str(ctx.profile.reference_lists["be_list"]["input_columns"][BE_INPUT_KEYS.index(key)])
 
 
 def be_field(ctx: BuildContext, key: str, code: str) -> str:
     """Formula text for a `BE list` entry (``key`` one of BE_INPUT_KEYS) of the BE/AE with ``code``."""
-    column = ctx.profile.reference_lists["be_list"]["input_columns"][BE_INPUT_KEYS.index(key)]
-    return lookup(ctx.profile, "be_list", column, code)
+    return lookup(ctx.profile, "be_list", _be_column(ctx, key), code)
+
+
+def be_number(ctx: BuildContext, key: str, code: str) -> str:
+    """Formula text for a numeric `BE list` entry (e.g. the funding rate) of the BE/AE with ``code``,
+    0 when the code or the entry is blank."""
+    column = column_ref(ctx.profile, "be_list", _be_column(ctx, key))
+    return f"IFERROR(N(INDEX({column},{_match(ctx.profile, 'be_list', code)})),0)"
 
 
 def _add_table(ws: Worksheet, which: str, spec: dict[str, Any], rows: int) -> None:

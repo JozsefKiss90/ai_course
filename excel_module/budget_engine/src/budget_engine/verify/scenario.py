@@ -67,6 +67,10 @@ def _late_ae_of_be1(profile: Profile, shape: ShapeParameters) -> tuple[str, Late
     return code, LateRow(row, added, f"{row.table}: {code} under BE1")
 
 
+# BE2 and its AEs get a reduced funding rate, so the lump sum breakdown must apply each block's own.
+REDUCED_FUNDING_RATE = 0.7
+
+
 # Distances (km) spanning the bands of table 5.1, both edges of a band included; none below 400.
 TRIP_DISTANCES = (450, 600, 601, 1100, 2900, 12000, 4500, 7501)
 TRIP_COUNTRIES = ("Belgium", "Hungary", "Other Countries")
@@ -203,6 +207,7 @@ def _late_item(profile: Profile, shape: ShapeParameters) -> LateRow:
 def provisional_scenario(profile: Profile, shape: ShapeParameters, layout: Layout) -> Scenario:
     """Fake values for every Human Input cell in ``layout``.
 
+    BE2 and its AEs have a 70% funding rate, every other BE/AE 100%.
     Rates are round numbers that encode the BE/AE block and Staff Category (second block, third
     category -> 2,300); effort, per WP or per task, cycles through blank, 0.5, 1 and 1.5 so blank
     cells are exercised too. With the travel planner, trips cycle through every BE/AE (the late AE
@@ -234,7 +239,7 @@ def provisional_scenario(profile: Profile, shape: ShapeParameters, layout: Layou
         elif kind == "be_country":
             inputs[key] = "Testland (fake)"
         elif kind == "be_funding_rate":
-            inputs[key] = 1
+            inputs[key] = REDUCED_FUNDING_RATE if key[1].split("-")[0] == "BE2" else 1
         elif kind == "wp_name":
             inputs[key] = f"Synthetic work package {wp_index[key[1]]} (fake)"
         elif kind == "task_title":

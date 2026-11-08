@@ -99,6 +99,9 @@ class Profile:
     transfer_view_rows: tuple[LayoutRow, ...]
     unit_cost_tables: dict[str, UnitCostTable]
     method_settings: dict[str, dict[str, Any]]  # per Estimation Method id, e.g. the cost line it fills
+    # The Submission Budget's own summaries the Check Summaries mirror: sheets, titles and headers,
+    # the Transfer View row the lump sum is taken of, and the cost categories counted as effort.
+    check_summaries: dict[str, Any]
 
     def constant(self, constant_id: str) -> ProfileConstant:
         return next(c for c in self.constants if c.id == constant_id)
@@ -177,4 +180,5 @@ def load_profile(profile_id: str, version: str) -> Profile:
         ),
         unit_cost_tables=_unit_cost_tables(raw.get("unit_cost_tables", {})),
         method_settings=raw.get("method_settings", {}),
+        check_summaries=raw["check_summaries"],
     )

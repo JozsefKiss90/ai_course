@@ -3,7 +3,7 @@
 1. Copy the blank workbook to a fresh temporary directory outside the deliverable's directory.
 2. Open the copy read-only in real Excel via COM and type the scenario into its Human Input cells.
    Then add the scenario's Table rows (e.g. a late partner, another trip), as a human would.
-3. Recalculate and read the Transfer View back; Excel closes the copy without saving.
+3. Recalculate and read the Transfer Views and Check Summaries back; Excel closes the copy without saving.
 4. Compare with the reference model, which works from the scenario inputs alone.
 
 The copy is deleted afterwards, also on failure, and the deletion is verified. The deliverable
@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING
 
 from budget_engine.layout import Cell, Key
 from budget_engine.verify.excel import recalculate_and_read
-from budget_engine.verify.reference import expected_names, expected_transfer_view
+from budget_engine.verify.reference import expected_check_summaries, expected_names, expected_transfer_view
 from budget_engine.verify.scenario import Scenario, provisional_scenario
 
 if TYPE_CHECKING:
@@ -106,8 +106,11 @@ def run_synthetic_check(result: BuildResult, scenario: Scenario | None = None) -
     if missing:
         raise ValueError(f"scenario {scenario.name!r} has no value for {sorted(missing)[:5]}")
     fill = {result.layout.inputs[k]: v for k, v in scenario.inputs.items() if v is not None}  # None: left blank
+    entries = {**scenario.inputs, **scenario.added_inputs}
+    tv = expected_transfer_view(result.profile, result.shape, entries)
     expected: dict[Key, float | str] = {
-        **expected_transfer_view(result.profile, result.shape, {**scenario.inputs, **scenario.added_inputs}),
+        **tv,
+        **expected_check_summaries(result.profile, result.shape, entries, tv),
         **expected_names(result.shape, scenario.inputs, scenario.added_inputs),
     }
     outputs = result.layout.outputs
@@ -136,7 +139,8 @@ def run_synthetic_check(result: BuildResult, scenario: Scenario | None = None) -
 
 
 def _figure_name(key: Key) -> str:
-    return " ".join(key[1:])
+    """E.g. "BE1 WP2 A1_senior items" for a Transfer View figure, "ls BE1 WP2" for a Check Summary one."""
+    return " ".join(key[1:] if key[0] == "tv" else key)
 
 
 def _compare(

@@ -19,7 +19,7 @@ from budget_engine.layout import Layout
 from budget_engine.methods import equipment_depreciation, itemised_list, travel_planner
 from budget_engine.profiles import Profile
 from budget_engine.shape import ShapeParameters, is_spare
-from budget_engine.sheets import constants, cover, rate_table, reference_lists, task_list, transfer_view
+from budget_engine.sheets import check_summaries, constants, cover, rate_table, reference_lists, task_list, transfer_view
 from budget_engine.sheets.styles import is_input
 
 TRIVIAL_NUMBERS = {0.0, 1.0}
@@ -39,6 +39,7 @@ def check_structure(path: Path, shape: ShapeParameters, profile: Profile, layout
     problems += _check_travel(wb, shape, profile, layout)
     problems += _check_equipment(wb, shape, profile, layout)
     problems += _check_itemised(wb, shape, profile, layout)
+    problems += _check_summaries(wb, shape, profile, layout)
     problems += _check_duration(wb, shape, layout)
     problems += _check_inputs_empty(wb, layout)
     problems += _check_no_bare_numbers(wb)
@@ -384,6 +385,66 @@ def _check_itemised(wb: Workbook, shape: ShapeParameters, profile: Profile, layo
     if ws[f"C{row}"].value is not None:
         problems.append(f"{il.SUMMARY_SHEET}!C{row}: unexpected row below the last block")
     return problems
+
+
+def _check_summaries(wb: Workbook, shape: ShapeParameters, profile: Profile, layout: Layout) -> list[str]:
+    """The Check Summaries after the Transfer Views: a grid row per BE/AE block with total and share
+    rows, the summary per WP's rows in the profile's order per WP and for all WPs, and a formula in
+    every figure cell (no typed-in figures, no PivotTables)."""
+    names = check_summaries.sheets(profile)
+    missing = [f"missing sheet {name!r}" for name in names if name not in wb.sheetnames]
+    if missing:
+        return missing
+    problems: list[str] = []
+    if wb.sheetnames[-len(names):] != names:
+        problems.append(f"the Check Summaries {names} are not the last sheets")
+    cs = profile.check_summaries
+
+    for summary in ("lump_sum", "effort"):
+        spec = cs[summary]
+        ws = wb[spec["sheet"]]
+        if ws["A1"].value != spec["title"]:
+            problems.append(f"{ws.title}!A1: title {ws['A1'].value!r}, expected {spec['title']!r}")
+        row = check_summaries.GRID_FIRST_ROW
+        for slot in shape.slots:
+            label = ws[f"A{row}"].value
+            expected = _grid_label_mark(slot, layout)
+            if not (isinstance(label, str) and expected in label):
+                problems.append(f"{ws.title}!A{row}: row label {label!r} is not the one of block {slot}")
+            row += 1
+        for key in ("total_row", "share_row"):
+            if ws[f"A{row}"].value != cs["grid"][key]:
+                problems.append(f"{ws.title}!A{row}: {ws[f'A{row}'].value!r}, expected {cs['grid'][key]!r}")
+            row += 1
+
+    spec = cs["per_wp"]
+    ws = wb[spec["sheet"]]
+    row = transfer_view.HEADER_ROW + 2
+    for n in range(1, shape.work_packages + 2):
+        title = ws[f"A{row}"].value
+        if n > shape.work_packages:
+            if title != spec["all_title"]:
+                problems.append(f"{ws.title}!A{row}: {title!r}, expected {spec['all_title']!r}")
+        elif not (isinstance(title, str) and title.startswith('="' + profile.wp_title.format(n=n) + '"')):
+            problems.append(f"{ws.title}!A{row}: {title!r} is not the title of WP{n}")
+        row += 2
+        for row_spec in profile.transfer_view_rows:
+            if row_spec.label and ws[f"A{row}"].value != row_spec.label:
+                problems.append(f"{ws.title}!A{row}: label {ws[f'A{row}'].value!r}, expected {row_spec.label!r}")
+            row += 1
+        row += transfer_view.GAP_AFTER_WP
+
+    for figure, cell in layout.outputs.items():
+        if cell.sheet in names:
+            value = wb[cell.sheet][cell.coord].value
+            if not (isinstance(value, str) and value.startswith("=")):
+                problems.append(f"{cell.sheet}!{cell.coord}: {' '.join(figure)} is not a formula")
+    return problems
+
+
+def _grid_label_mark(slot: str, layout: Layout) -> str:
+    """What a grid row label of a block must contain: its code, or for a spare block the code's cell."""
+    return layout.slot_codes[slot] if is_spare(slot) else f'="{slot}: "'
 
 
 def _check_duration(wb: Workbook, shape: ShapeParameters, layout: Layout) -> list[str]:

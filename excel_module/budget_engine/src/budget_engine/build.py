@@ -14,7 +14,7 @@ from budget_engine.layout import BuildContext, Layout
 from budget_engine.methods import CATALOGUE
 from budget_engine.profiles import Profile
 from budget_engine.shape import ShapeParameters, parse_shape
-from budget_engine.sheets import constants, cover, rate_table, reference_lists, task_list, transfer_view
+from budget_engine.sheets import check_summaries, constants, cover, rate_table, reference_lists, task_list, transfer_view
 from budget_engine.verify.structural import check_structure
 from budget_engine.verify.synthetic import SyntheticCheckReport, run_synthetic_check
 
@@ -74,6 +74,7 @@ def build(
         CATALOGUE[method_id].build(ctx)
         method_sheets.append(CATALOGUE[method_id].SHEET)
     transfer_view.build_transfer_views(ctx)
+    check_summaries.build_check_summaries(ctx)
 
     fill_in_order = [
         reference_lists_sheet(profile, "be_list"),
@@ -82,6 +83,7 @@ def build(
         rate_table.SHEET,
         *method_sheets,
         "Transfer View sheets: copy into the Submission Budget",
+        "Check sheets: compare with the Submission Budget's own summaries",
     ]
     cover.build_cover(ctx, cover_ws, fill_in_order, date.today())
     _clear_personal_metadata(wb)

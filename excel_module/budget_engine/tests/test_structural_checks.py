@@ -592,3 +592,158 @@ def test_structural_checks_catch_a_pivot_table(built, tmp_path):
     with zipfile.ZipFile(copy, "a") as z:
         z.writestr("xl/pivotCache/pivotCacheDefinition1.xml", b"")
     assert "workbook contains a PivotTable or pivot cache" in check_structure(copy, built.shape, built.profile, built.layout)
+
+
+# --- Full Transfer View and Check Summaries (ticket 11) ----------------------------------------
+
+LUMP_SUM = "Check - Lump sum breakdown"
+PERSON_MONTHS = "Check - Person-months overview"
+PER_WP = "Check - Summary per WP"
+CHECK_SHEETS = [LUMP_SUM, PERSON_MONTHS, PER_WP]
+
+
+@pytest.fixture(scope="module")
+def built_with_aes(tmp_path_factory):
+    """Two Beneficiaries, one AE under BE1, one spare block and two WPs."""
+    params = shape(affiliated_entities=[1, 0], headroom=1, work_packages=2)
+    return build(params, tmp_path_factory.mktemp("aes") / "planning.xlsx")
+
+
+def _labels(ws, rows) -> list[object]:
+    return [ws[f"A{r}"].value or None for r in rows]
+
+
+def test_the_check_summaries_follow_the_transfer_views(built):
+    names = load_workbook(built.path).sheetnames
+    assert names[-3:] == CHECK_SHEETS
+    assert names[-4] == "Transfer View spare 3"
+
+
+def test_every_category_has_its_transfer_view_row_even_when_no_method_fills_it(tmp_path):
+    """With only staff effort switched on, B, C and D lines keep their rows, labelled and blank."""
+    result = build(shape(methods=["staff_effort"]), tmp_path / "planning.xlsx")
+    tv = load_workbook(result.path)["Transfer View BE1"]
+    official = _official("BE tpl")
+    for r in range(7, 44):
+        assert (tv[f"A{r}"].value or None) == official[f"A{r}"].value, f"row {r}"
+    d2 = next(r for r in range(7, 44) if tv[f"A{r}"].value == "D.2 Internally invoiced goods and services")
+    for r in [d2, d2 + 1, d2 + 2, d2 + 3, 18, 20]:  # D.2-D.5, B, C.1
+        assert [tv[f"{c}{r}"].value for c in "BCD"] == [None, None, None], f"row {r}"
+    assert tv["D9"].value is not None  # A.1 senior is filled by staff effort
+
+
+def test_the_transfer_view_row_order_comes_from_the_profile(tmp_path, monkeypatch):
+    from dataclasses import replace
+
+    from budget_engine import shape as shape_module
+    from budget_engine.profiles import LayoutRow, load_profile
+
+    real = load_profile("he-lump-sum", "1.0")
+    rows = real.transfer_view_rows
+    i = next(n for n, r in enumerate(rows) if r.id == "C1")
+    reordered = rows[:i] + (LayoutRow(kind="heading", label="NOT IN THE BUILDER"),) + rows[i:]
+    monkeypatch.setattr(shape_module, "load_profile", lambda *_: replace(real, transfer_view_rows=reordered))
+
+    result = build(shape(), tmp_path / "planning.xlsx")
+
+    wb = load_workbook(result.path)
+    for sheet in ("Transfer View BE1", PER_WP):
+        labels = [c.value for c in wb[sheet]["A"]]
+        at = labels.index("NOT IN THE BUILDER")
+        assert labels[at + 1] == "C.1 Travel and subsistence", sheet
+
+
+@pytest.mark.parametrize(
+    "sheet, title",
+    [(LUMP_SUM, "ESTIMATED BREAKDOWN OF THE LUMP SUM"), (PERSON_MONTHS, "TOTAL PERSON-MONTHS")],
+)
+def test_lump_sum_and_person_month_grids_have_a_row_per_block_and_a_column_per_wp(built_with_aes, sheet, title):
+    ws = load_workbook(built_with_aes.path)[sheet]
+    assert ws["A1"].value == title
+    assert ws["A2"].value == "BENEFICIARIES \\ WORK PACKAGES"
+    assert '"WP1 "' in ws["B2"].value and '"WP2 "' in ws["C2"].value
+    assert [ws["D2"].value, ws["E2"].value] == ["Total", "Pct %"]
+    labels = _labels(ws, range(3, 9))
+    for label, code in zip(labels, ["BE1", "BE1-AE1", "BE2"]):
+        assert str(label).startswith(f'="{code}: "'), label
+    assert "'Rate Table'!" in str(labels[3])  # the spare block shows the code typed into the Rate Table
+    assert labels[4:] == ["Total: ", "Percentage: "]
+    figures = [f"{c}{r}" for r in range(3, 8) for c in "BCDE"] + ["B8", "C8", "D8"]
+    for coord in figures:
+        assert str(ws[coord].value).startswith("="), f"{sheet}!{coord} is not a formula"
+
+
+def test_the_lump_sum_applies_each_blocks_funding_rate_to_its_total_costs(built_with_aes):
+    wb = load_workbook(built_with_aes.path)
+    ws = wb[LUMP_SUM]
+    assert ws["F2"].value == "Funding rate"
+    assert "BEList[[Funding rate]]" in ws["F3"].value
+    tv = wb["Transfer View BE1-AE1"]
+    f_row = next(r for r in range(1, tv.max_row + 1) if tv[f"A{r}"].value == "F. TOTAL COSTS (A+B+C+D+E)")
+    assert f"'Transfer View BE1-AE1'!$D${f_row}" in ws["B4"].value and "$F4" in ws["B4"].value
+
+
+def test_person_months_add_up_the_personnel_items(built_with_aes):
+    ws = load_workbook(built_with_aes.path)[PERSON_MONTHS]
+    assert ws["B3"].value.count("'Transfer View BE1'!$B$") == 8  # A.1 (five lines), A.2, A.3, A.4
+
+
+def test_the_summary_per_wp_mirrors_the_official_rows_for_each_wp_and_all_wps(built_with_aes):
+    ws = load_workbook(built_with_aes.path)[PER_WP]
+    official = _official("BE tpl")
+    assert ws["A1"].value == "SUM OF ALL BENEFICIARIES (including AFFILIATED ENTITIES) FOR ALL THE WORK PACKAGES"
+    assert [ws["B2"].value, ws["E2"].value, ws["H2"].value] == [
+        "ALL BENEFICIARIES \n(without affiliated entities)", "ALL AFFILIATED ENTITIES",
+        "ALL BENEFICIARIES \n(with affiliated entities)",
+    ]
+    assert [ws[f"{c}3"].value for c in "BCDEFGHIJ"] == [
+        "ITEMS", "COST PER ITEM", "BE TOTAL COSTS", "ITEMS", "COST PER ITEM", "AE TOTAL COSTS",
+        "ITEMS\n(TOTAL)", "AVERAGE COST PER ITEM", "TOTAL COSTS",
+    ]
+    for r in range(7, 44):
+        assert (ws[f"A{r}"].value or None) == official[f"A{r}"].value, f"row {r}"
+    titles = [
+        c.value for c in ws["A"]
+        if isinstance(c.value, str) and c.value.startswith(('="COSTS WORK PACKAGE', "SUM OF ALL WORK"))
+    ]
+    assert len(titles) == 3 and titles[-1] == "SUM OF ALL WORK PACKAGES FOR ALL BENEFICIARIES"
+
+
+def test_the_summary_per_wp_splits_beneficiaries_from_affiliated_entities(built_with_aes):
+    ws = load_workbook(built_with_aes.path)[PER_WP]
+    be_items, ae_items = ws["B9"].value, ws["E9"].value  # A.1 senior scientists, WP1
+    assert "'Transfer View BE1'!" in be_items and "'Transfer View BE2'!" in be_items
+    assert "'Transfer View BE1-AE1'!" in ae_items and "'Transfer View BE1-AE1'!" not in be_items
+    # The spare block counts as an AE or a Beneficiary by the code typed in for it.
+    assert "'Transfer View spare 1'!" in be_items and "'Transfer View spare 1'!" in ae_items
+    assert ws["L3"].value == "Spare block" and ws["L4"].value == "spare 1"
+    assert '"-AE"' in ws["M4"].value
+
+
+def test_indirect_costs_in_the_summary_per_wp_follow_the_profile_rule(built_with_aes):
+    wb = load_workbook(built_with_aes.path)
+    constants = wb["Profile Constants"]
+    rate_row = next(r for r in range(1, constants.max_row + 1) if constants[f"B{r}"].value == 0.25)
+    ws = wb[PER_WP]
+    e_rows = [r for r in range(1, ws.max_row + 1) if str(ws[f"A{r}"].value).startswith("E. INDIRECT")]
+    assert len(e_rows) == built_with_aes.shape.work_packages + 1
+    for r in e_rows:
+        for col in "DGJ":
+            assert f"'Profile Constants'!$B${rate_row}" in ws[f"{col}{r}"].value, f"{col}{r}"
+
+
+SUMMARY_TAMPERING = {
+    "missing summary sheet": (lambda wb: wb.remove(wb[PERSON_MONTHS]), PERSON_MONTHS),
+    "lump sum typed in": (lambda wb: wb[LUMP_SUM].__setitem__("B3", 10000), f"{LUMP_SUM}!B3"),
+    "share typed in": (lambda wb: wb[PERSON_MONTHS].__setitem__("F3", 0.5), f"{PERSON_MONTHS}!F3"),
+    "relabelled summary per WP row": (lambda wb: wb[PER_WP].__setitem__("A9", "Seniors"), f"{PER_WP}!A9"),
+    "summary per WP figure typed in": (lambda wb: wb[PER_WP].__setitem__("D9", 5000), f"{PER_WP}!D9"),
+    "missing block row": (lambda wb: wb[LUMP_SUM].__setitem__("A4", None), f"{LUMP_SUM}!A4"),
+}
+
+
+@pytest.mark.parametrize("case", SUMMARY_TAMPERING)
+def test_structural_checks_catch_check_summary_breakage(built, tmp_path, case):
+    edit, expected = SUMMARY_TAMPERING[case]
+    problems = _tampered(built, tmp_path, edit)
+    assert any(expected in p for p in problems), problems

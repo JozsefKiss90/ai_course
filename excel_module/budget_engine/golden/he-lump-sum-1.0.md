@@ -100,17 +100,27 @@ Row 4 is there to show that subcontracting (B) is left out of the indirect-cost 
 
 These rules are what the agent understands them to be. **The human confirms or corrects each one before computing.** A rule changed here must also change in tickets 08–11.
 
-| Rule | Proposed definition | Confirmed? |
-|---|---|---|
-| Staff cost | person-months × rate of that BE/AE and Staff Category. Task effort rolls up to its WP | ☐ |
-| Travel cost per trip | travellers × (travel unit cost for the distance band + nights × accommodation rate + days × subsistence rate) | ☐ |
-| Equipment eligible cost | purchase cost × usage share × min(duration, depreciation period) ÷ depreciation period. This assumes purchase in month 1, since there is no purchase-month input. Check whether HE lump sum allows full purchase cost instead | ☐ |
-| Itemised cost | items × cost per item | ☐ |
-| Transfer View "items" | staff lines: person-months. C.1: number of trips (or person-trips? Trip 1 has 2 travellers. Check the Official Budget Table's unit). C.2: number of equipment items. Itemised lines: the number of items entered | ☐ |
-| Transfer View "cost per item" | line total ÷ items (an average where the rates are mixed) | ☐ |
-| Indirect costs E | indirect_rate Profile Constant (25%) × (A + C), per BE/AE and WP. B and D are excluded | ☐ |
-| Rounding | none until display. Compare figures to the cent. Check how the Official Budget Table rounds averages | ☐ |
-| Requested EU contribution | F × funding rate of the BE/AE | ☐ |
+The "What the sources say" column was researched by an agent on 2026-11-08 and gives rules only, no amounts. The references are:
+- **OBT:** `docs/detailed-budget-table_he-ls-euratom_en.xlsm` v3.6. "Instr. Bn" is a cell on its Instructions sheet.
+- **AGA:** `docs/aga_en.pdf`, cited by page.
+- **UCD:** the consolidated C(2024)5405 PDF, cited by PDF page.
+
+`docs/Handbook-on-the-lump-sum-funding.pdf` is the Erasmus+ KA2 handbook, so it is not cited for HE.
+
+| Rule | Proposed definition | What the sources say | Confirmed? |
+|---|---|---|---|
+| Staff cost | person-months × rate of that BE/AE and Staff Category. Task effort rolls up to its WP | Matches. Items = person-months and cost per item = average monthly cost; several people in one category are averaged (Instr. B14). Line total = items × cost per item (`D = B*C`) | ☐ |
+| Travel cost per trip | travellers × (travel unit cost for the distance band + nights × accommodation rate + days × subsistence rate) | The structure matches. The travel unit cost is per person per **return** trip. The band is set by the **one-way** distance from the Commission's distance calculator (UCD p11 table 5.1 fn 4–5; AGA p88–89). Accommodation is per night and subsistence per day (AGA p90–91; UCD p9). A subsistence day is a 24-hour period, rounded to the nearest whole day, and any part of the first day counts as a full day (AGA p91). The day counts in §2.5 are taken as already counted that way. The rate country is the destination (inferred: UCD p9 speaks of work trips "outside their place of employment"). The OBT itself does not require the Decision for HE lump sum; it only asks for items × average cost (Instr. B16). Using the Decision is an estimating choice | ☐ |
+| Trip 3 table | combined air/rail, 450 km | Table 5.1 covers "return air and combined air/rail journey" (UCD p11), so trip 3 takes the 400–600 km band of 5.1. Air needs a flight-calculator distance of 400 km or more (AGA p92–93). A rail-only trip would use land tables 5.2–5.4 instead, and a route with no land unit cost is paid at actual cost (UCD p7) | ☐ |
+| Equipment eligible cost | purchase cost × usage share × min(duration, depreciation period) ÷ depreciation period. This assumes purchase in month 1, since there is no purchase-month input | Matches the OBT "Depreciation costs" sheet: K = purchase cost × "% used for the project" × "% of useful life of the equipment in the project". Depreciation is the default; full purchase cost is allowed only if the topic explicitly permits it (Instr. B16, B19). The min(…) cap is implied (AGA rules apply "based on estimations", Instr. B19). The OBT sheet also records a purchase date | ☐ |
+| Itemised cost | items × cost per item | Matches (`D = B*C`, Instr. B13) | ☐ |
+| Transfer View "items" | staff lines: person-months. C.1: number of trips. C.2: number of equipment items. Itemised lines: the number of items entered | Items are "several travels, or two pieces of equipment", and cost per item is the average (Instr. B16). **Not settled:** whether a trip with 2 travellers is 1 item or 2. The unit cost is per person per return trip, which suggests **person-trips** (trip 1 = 2 items). Human decision | ☐ |
+| Transfer View "cost per item" | line total ÷ items (an average where the rates are mixed) | Matches (Instr. B14, B16). The OBT asks for cost per item "preferably" in whole euros, while items may be fractions (Instr. B13). See Rounding | ☐ |
+| Indirect costs E | indirect_rate Profile Constant (25%) × (A + C), per BE/AE and WP. B and D are excluded | Matches: `=D38*0.25`, with A + C = rows A.1–A.4 and C.1–C.3. D.2 is excluded too (AGA p110), and so is D.1 (AGA p136–137). The OBT computes E separately for the BE table, the AE table and BE+AE | ☐ |
+| Rounding | none until display. Compare figures to the cent | The OBT rounds nothing, except the prefilled A.4 rate (2 decimals). The Planning Workbook's average cost per item can have cents, and a human typing it into the OBT may round it to whole euros, so the OBT total can drift from the Planning Workbook total by up to ½ euro × items. **Proposal:** expected figures unrounded, compared to the cent. The drift is a transfer note, not part of this scenario | ☐ |
+| Requested EU contribution | F × funding rate of the BE/AE | Matches the OBT "Lump sum breakdown": `='BE1'!D43*'BE list'!F4`, **per BE/AE × WP**. No rounding. Part A may request less (operating grant, own resources: Instr. B23). Funding rate: RIA/CSA always 100%; IA 70% (exceptionally 60%), up to 100% for non-profits (Instr. B11). The scenario's 70% for BE2 therefore implies an IA topic | ☐ |
+| Affiliated Entity | AE1.1 is its own BE/AE with its own Transfer View | The AE has its own BE list row, country and **funding rate**, but **no sheet of its own**. Its costs go in a second table on BE1's sheet, with BE, AE and BE+AE total columns (Instr. B13; `BE tpl` headers). The lump sum breakdown and Part A list "each beneficiary and affiliated entity" (Instr. B11, B23). Expected figures therefore stay per AE, plus a BE1 + AE1.1 column where the OBT shows one. Ticket 06 must lay the Transfer View out the same way | ☐ |
+| Person-months overview | PM per BE/AE × WP | Matches the OBT "Person-months overview": `=SUM('BE1'!B9:B16)` = items of A.1–A.4, per row × WP, with total and Pct %. No split by Staff Category | ☐ |
 
 ---
 
@@ -236,18 +246,28 @@ Fill in one table per combination: BE1/WP1, BE1/WP2, AE1.1/WP1, AE1.1/WP2, BE2/W
 
 ### 4.4 Check Summaries: lump sum breakdown
 
-Mirrors the Official Budget Table summary.
+Mirrors the OBT "Estimated breakdown of the lump sum": F × funding rate, per BE/AE × WP, with totals and Pct %. An agent reshaped this table on 2026-11-08 to match the OBT's own structure; the per-category view moved to 4.4b.
 
-| BE/AE | A | B | C | D | E | F | Funding rate | Requested EU contribution |
-|---|---|---|---|---|---|---|---|---|
-| BE1 | | | | | | | 100% | |
-| AE1.1 | | | | | | | 100% | |
-| BE2 | | | | | | | 70% | |
-| **Total** | | | | | | | | |
+| BE/AE (funding rate) | WP1 | WP2 | Total | Pct % |
+|---|---|---|---|---|
+| BE1 (100%) | | | | |
+| AE1.1 (100%) | | | | |
+| BE2 (70%) | | | | |
+| **Total** | | | | |
+| **Percentage** | | | | |
+
+### 4.4b Cost categories per BE/AE (all WPs)
+
+| BE/AE | A | B | C | D | E | F |
+|---|---|---|---|---|---|---|
+| BE1 | | | | | | |
+| AE1.1 | | | | | | |
+| BE2 | | | | | | |
+| **Total** | | | | | | |
 
 ### 4.5 Check Summaries: person-months overview
 
-If the Official Budget Table's overview also splits by Staff Category, add those columns.
+The OBT overview sums A.1–A.4 items per BE/AE × WP; it has no Staff Category split (see §3).
 
 | BE/AE | WP1 | WP2 | Total |
 |---|---|---|---|

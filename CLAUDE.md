@@ -10,4 +10,4 @@ The five canonical triage roles, each label string equal to its name (`needs-tri
 
 ### Domain docs
 
-Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+Multi-context: `CONTEXT-MAP.md` at the repo root points to the course context (`CONTEXT.md`, `docs/adr/`) and the budget templating context (`excel_module/CONTEXT.md`, `excel_module/docs/adr/`). See `docs/agents/domain.md`.
